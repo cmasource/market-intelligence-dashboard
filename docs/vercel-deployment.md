@@ -1,0 +1,113 @@
+# Vercel Deployment
+
+## Pre-Deploy Checklist
+
+Run these commands before deploying:
+
+```bash
+npm run lint
+npm run validate:finance
+npm run build
+npm run test:e2e
+```
+
+## Local Port Note
+
+Local development may run on `3001` when `3000` is already busy. The app itself does not depend on a fixed local port.
+
+## Deployment Option A: GitHub + Vercel Dashboard
+
+This is the recommended public demo workflow.
+
+### Git
+
+```bash
+git status
+git add .
+git commit -m "Prepare CMA Market Intelligence public demo"
+git push
+```
+
+### Vercel
+
+1. Import the GitHub repository into Vercel.
+2. Framework preset: Next.js.
+3. Install command: `npm install`.
+4. Build command: `npm run build`.
+5. Output directory: Next.js default.
+6. Environment variables: none required for the current demo.
+7. Deploy Preview.
+8. Review the generated URL.
+9. Promote to Production only after manual review.
+
+## Deployment Option B: Vercel CLI or VS Code Extension
+
+If the project was already connected from VS Code or Vercel CLI, verify whether a local `.vercel` folder exists. This folder is local deployment metadata and should not contain committed secrets.
+
+Useful commands:
+
+```bash
+vercel link
+vercel
+vercel --prod
+```
+
+Use `vercel --prod` only when the public demo is ready for production traffic.
+
+CLI deployment can work without Git, but GitHub integration is better for ongoing previews, collaboration and review history.
+
+## Vercel Assumptions
+
+- Next.js App Router application.
+- No required secrets yet.
+- No database yet.
+- No paid APIs yet.
+- Public demo mode uses mixed provider, mock, fallback and future coverage.
+- API routes are serverless-compatible and provider failures fall back safely.
+
+## Environment Variables
+
+No environment variables are required for the current demo.
+
+Future production integrations may require:
+
+- Market data provider keys.
+- AI provider key.
+- News API key.
+- Database URL.
+
+Use `.env.example` as the placeholder template. Do not commit real secrets.
+
+## Post-Deploy Checklist
+
+1. Open home.
+2. Open `/markets`.
+3. Open `/screener`.
+4. Open `/asset/AAPL`.
+5. Open `/asset/AL30`.
+6. Open `/argentina`.
+7. Open `/crypto`.
+8. Open `/status`.
+9. Test theme toggle.
+10. Test language toggle.
+11. Test search.
+12. Confirm footer disclaimer.
+13. Confirm no 404 on planned demo routes.
+14. Confirm no legacy or forbidden branding appears.
+
+## Demo Caveats
+
+- Argentina data is still mock or future coverage.
+- CEDEARs are modeled but not fully real yet.
+- This public demo is noindex/nofollow for now.
+- The platform is informational and not investment advice.
+
+## Future Production Requirements
+
+- Real provider keys.
+- Database/cache.
+- Error monitoring.
+- Analytics.
+- Privacy/cookie policy if search history or tracking expands.
+- Terms and conditions.
+- More robust data licensing review.

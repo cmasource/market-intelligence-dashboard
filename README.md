@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CMA Market Intelligence
 
-## Getting Started
+CMA Market Intelligence is a public-demo MVP financial intelligence dashboard created under CMA Consulting and developed by cma_source.
 
-First, run the development server:
+It combines market universe exploration, asset detail pages, interactive charts, technical analysis, fundamentals, fixed income analytics, a screener, bilingual UI and transparent data coverage labels.
+
+## Branding
+
+- Product: CMA Market Intelligence
+- Company: CMA Consulting
+- Technology division: cma_source
+
+## Current Status
+
+Public demo / MVP.
+
+The app is transparent about mixed coverage: selected USA and crypto instruments can attempt public/provider data, while Argentina instruments, CEDEARs and several future-universe entries use mock, fallback or future coverage labels.
+
+## Features
+
+- Dashboard overview
+- Markets universe page
+- Advanced instrument screener
+- Asset detail pages
+- Real/provider USA and crypto market data with fallback
+- Technical analysis from OHLCV candles
+- Integrated market signal gauge
+- USA fundamentals provider layer with fallback
+- Fixed income analytics using mock structured bond data
+- Argentina bond species: AL30, AL30D, AL30C, GD30, GD30D, GD30C and TX26
+- CEDEAR foundation
+- English/Spanish language switcher
+- Dark/light theme toggle
+- Public demo footer and informational disclaimer
+
+## Local Development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open the local URL printed by Next.js. Use port `3000` by default, or `3001` if `3000` is already busy:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run dev -- -p 3001
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Validation
 
-## Learn More
+Run the full pre-demo checklist:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run lint
+npm run validate:finance
+npm run build
+npm run test:e2e
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Vercel Deployment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Recommended workflow:
 
-## Deploy on Vercel
+1. Push the project to GitHub.
+2. Import the repository in the Vercel Dashboard.
+3. Use the Next.js preset.
+4. Build command: `npm run build`.
+5. Install command: `npm install`.
+6. Environment variables: none required for the current demo.
+7. Review the preview deployment before promoting to production.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Alternative workflow:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Vercel CLI or the VS Code extension can also deploy the app.
+- GitHub + Vercel Dashboard is preferred for ongoing previews, review and collaboration.
+
+See `docs/vercel-deployment.md` for the full deployment checklist.
+
+## Disclaimer
+
+This platform provides informational analysis only and does not constitute personalized financial advice or an investment recommendation.
+
+Some data comes from public providers, while other data is simulated or marked as future coverage.

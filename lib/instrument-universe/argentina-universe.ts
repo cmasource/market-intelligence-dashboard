@@ -1,0 +1,208 @@
+import type { InstrumentCategory, InstrumentRelationType, InstrumentUniverseItem } from "./types";
+
+const fullCoverage = {
+  price: true,
+  technical: true,
+  fundamentals: true,
+  fixedIncome: false,
+  news: true,
+};
+
+const fixedIncomeCoverage = {
+  price: true,
+  technical: true,
+  fundamentals: false,
+  fixedIncome: true,
+  news: true,
+};
+
+const futureCoverage = {
+  price: false,
+  technical: false,
+  fundamentals: false,
+  fixedIncome: false,
+  news: false,
+};
+
+function bondItem(input: {
+  symbol: string;
+  displayName: string;
+  category: InstrumentCategory;
+  currency: string;
+  primarySymbol: string;
+  relatedSymbols: string[];
+  relationType: InstrumentRelationType;
+  isPrimary: boolean;
+  priority: number;
+}) {
+  return {
+    ...input,
+    country: "AR" as const,
+    market: "BYMA" as const,
+    localTicker: input.symbol,
+    underlyingSymbol: input.primarySymbol,
+    displayCurrency: input.currency,
+    tradingCurrency: input.currency,
+    settlementCurrency: input.currency,
+    sourceStatus: "mock_supported" as const,
+    dataCoverage: fixedIncomeCoverage,
+    isSearchable: true,
+    tags: ["argentina", "fixed income", "bond", "species", "mock"],
+    searchableAliases: [input.primarySymbol, ...input.relatedSymbols],
+  };
+}
+
+function equityItem(symbol: string, displayName: string, sector: string, priority: number): InstrumentUniverseItem {
+  return {
+    symbol,
+    displayName,
+    category: "equity",
+    country: "AR",
+    market: "BYMA",
+    currency: "ARS",
+    localTicker: symbol,
+    displayCurrency: "ARS",
+    tradingCurrency: "ARS",
+    settlementCurrency: "ARS",
+    sector,
+    primarySymbol: symbol,
+    underlyingSymbol: symbol,
+    relatedSymbols: [symbol],
+    isPrimary: true,
+    isSearchable: true,
+    sourceStatus: symbol === "GGAL" || symbol === "YPFD" ? "mock_supported" : "future_supported",
+    dataCoverage: symbol === "GGAL" || symbol === "YPFD" ? fullCoverage : futureCoverage,
+    tags: ["argentina", "equity", sector.toLowerCase()],
+    priority,
+  };
+}
+
+function cedearItem(symbol: string, displayName: string, sector: string, priority: number): InstrumentUniverseItem {
+  return {
+    symbol,
+    displayName,
+    category: "cedear",
+    country: "AR",
+    market: "BYMA",
+    currency: "ARS",
+    localTicker: symbol,
+    globalTicker: symbol,
+    displayCurrency: "ARS",
+    tradingCurrency: "ARS",
+    settlementCurrency: "ARS",
+    sector,
+    primarySymbol: symbol,
+    underlyingSymbol: symbol,
+    relatedSymbols: [symbol],
+    relationType: "cedear",
+    isPrimary: true,
+    isSearchable: true,
+    sourceStatus: ["AAPL", "SPY", "QQQ"].includes(symbol) ? "mock_supported" : "future_supported",
+    dataCoverage: ["AAPL", "SPY", "QQQ"].includes(symbol) ? fullCoverage : futureCoverage,
+    searchableAliases: [`${symbol} CEDEAR`, `${symbol} US stock`],
+    tags: ["argentina", "cedear", "future model", sector.toLowerCase()],
+    priority,
+    descriptionEn: "Mock CEDEAR universe placeholder for future Argentina market coverage.",
+    descriptionEs: "Placeholder simulado de CEDEAR para futura cobertura del mercado argentino.",
+  };
+}
+
+export const ARGENTINA_INSTRUMENT_UNIVERSE: InstrumentUniverseItem[] = [
+  bondItem({
+    symbol: "AL30",
+    displayName: "Bonar 2030",
+    category: "sovereign_bond",
+    currency: "ARS",
+    primarySymbol: "AL30",
+    relatedSymbols: ["AL30", "AL30D", "AL30C"],
+    relationType: "peso_species",
+    isPrimary: true,
+    priority: 10,
+  }),
+  bondItem({
+    symbol: "AL30D",
+    displayName: "Bonar 2030 - Dollar MEP Species",
+    category: "sovereign_bond",
+    currency: "USD MEP",
+    primarySymbol: "AL30",
+    relatedSymbols: ["AL30", "AL30D", "AL30C"],
+    relationType: "dollar_mep_species",
+    isPrimary: false,
+    priority: 9,
+  }),
+  bondItem({
+    symbol: "AL30C",
+    displayName: "Bonar 2030 - Dollar Cable Species",
+    category: "sovereign_bond",
+    currency: "USD CABLE",
+    primarySymbol: "AL30",
+    relatedSymbols: ["AL30", "AL30D", "AL30C"],
+    relationType: "dollar_cable_species",
+    isPrimary: false,
+    priority: 8,
+  }),
+  bondItem({
+    symbol: "GD30",
+    displayName: "Global 2030",
+    category: "global_bond",
+    currency: "ARS",
+    primarySymbol: "GD30",
+    relatedSymbols: ["GD30", "GD30D", "GD30C"],
+    relationType: "peso_species",
+    isPrimary: true,
+    priority: 10,
+  }),
+  bondItem({
+    symbol: "GD30D",
+    displayName: "Global 2030 - Dollar MEP Species",
+    category: "global_bond",
+    currency: "USD MEP",
+    primarySymbol: "GD30",
+    relatedSymbols: ["GD30", "GD30D", "GD30C"],
+    relationType: "dollar_mep_species",
+    isPrimary: false,
+    priority: 9,
+  }),
+  bondItem({
+    symbol: "GD30C",
+    displayName: "Global 2030 - Dollar Cable Species",
+    category: "global_bond",
+    currency: "USD CABLE",
+    primarySymbol: "GD30",
+    relatedSymbols: ["GD30", "GD30D", "GD30C"],
+    relationType: "dollar_cable_species",
+    isPrimary: false,
+    priority: 8,
+  }),
+  bondItem({
+    symbol: "TX26",
+    displayName: "CER-linked Argentine Treasury Bond",
+    category: "cer_bond",
+    currency: "ARS CER",
+    primarySymbol: "TX26",
+    relatedSymbols: ["TX26"],
+    relationType: "same_underlying",
+    isPrimary: true,
+    priority: 7,
+  }),
+  equityItem("GGAL", "Grupo Financiero Galicia", "Financials", 7),
+  equityItem("YPFD", "YPF Sociedad Anonima", "Energy", 7),
+  equityItem("PAMP", "Pampa Energia", "Energy", 4),
+  equityItem("COME", "Sociedad Comercial del Plata", "Industrials", 3),
+  equityItem("BMA", "Banco Macro", "Financials", 4),
+  equityItem("TXAR", "Ternium Argentina", "Materials", 3),
+  equityItem("TGSU2", "Transportadora de Gas del Sur", "Utilities", 3),
+  equityItem("TRAN", "Transener", "Utilities", 3),
+  equityItem("CEPU", "Central Puerto", "Utilities", 3),
+  equityItem("MIRG", "Mirgor", "Technology", 3),
+  cedearItem("AAPL", "Apple CEDEAR reference", "Technology", 5),
+  cedearItem("MSFT", "Microsoft CEDEAR reference", "Technology", 4),
+  cedearItem("KO", "Coca-Cola CEDEAR reference", "Consumer Staples", 3),
+  cedearItem("TSLA", "Tesla CEDEAR reference", "Consumer Discretionary", 4),
+  cedearItem("AMZN", "Amazon CEDEAR reference", "Consumer Discretionary", 4),
+  cedearItem("NVDA", "NVIDIA CEDEAR reference", "Technology", 4),
+  cedearItem("META", "Meta CEDEAR reference", "Communication Services", 4),
+  cedearItem("GOOGL", "Alphabet CEDEAR reference", "Communication Services", 4),
+  cedearItem("SPY", "SPY CEDEAR reference", "ETF", 5),
+  cedearItem("QQQ", "QQQ CEDEAR reference", "ETF", 5),
+];
