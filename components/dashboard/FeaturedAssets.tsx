@@ -4,6 +4,7 @@ import Link from "next/link";
 import { formatCurrency, formatPercent } from "@/lib/formatters";
 import { getAssetTypeLabel } from "@/lib/i18n/domain";
 import { useLanguage } from "@/lib/i18n/useLanguage";
+import { useTheme } from "@/lib/theme/useTheme";
 import type { Asset } from "@/types/asset";
 import { ScoreBadge } from "../ui/ScoreBadge";
 import { SectionHeader } from "../ui/SectionHeader";
@@ -14,6 +15,8 @@ type FeaturedAssetsProps = {
 
 export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
   const { t } = useLanguage();
+  const { resolvedMode } = useTheme();
+  const isLight = resolvedMode === "light";
 
   return (
     <section>
@@ -30,7 +33,11 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
             <Link
               key={asset.symbol}
               href={`/asset/${encodeURIComponent(asset.symbol)}`}
-              className="group rounded-lg border border-white/10 bg-white/[0.045] p-4 shadow-2xl shadow-black/10 backdrop-blur transition hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-cyan-300/10"
+              className={`group rounded-lg border p-4 backdrop-blur transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10 ${
+                isLight
+                  ? "border-slate-300 bg-white/90 shadow-xl shadow-slate-900/10"
+                  : "border-white/10 bg-white/[0.045] shadow-2xl shadow-black/10"
+              }`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div>

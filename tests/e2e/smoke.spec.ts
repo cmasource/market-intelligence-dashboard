@@ -298,6 +298,11 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.locator("[data-app-theme='light']")).toBeVisible();
     await expect(page.getByText("CMA Market Intelligence").first()).toBeVisible();
     await expect(page.locator("#markets")).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Created by|Creado por/);
+    await expect(page.locator("body")).toContainText(/Developed by|Desarrollado por/);
+    await expect(page.locator("body")).toContainText(/Mixed coverage|Cobertura mixta/);
+    await expect(page.locator("body")).toContainText(/informational analysis only|analisis informativo/);
+    await expect(page.locator("body")).toContainText(/Very high|Muy alto|High|Alto|Medium|Medio/);
     await page.getByRole("button", { name: "Dark" }).click();
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await expect(page.getByText("CMA Market Intelligence").first()).toBeVisible();

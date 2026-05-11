@@ -74,6 +74,17 @@ body {
   color: #6d28d9;
 }
 
+:root[data-theme="light"] .text-blue-100,
+:root[data-theme="light"] .text-blue-200,
+:root[data-theme="light"] .text-indigo-100,
+:root[data-theme="light"] .text-indigo-200,
+:root[data-theme="light"] .text-purple-100,
+:root[data-theme="light"] .text-purple-200,
+:root[data-theme="light"] .text-fuchsia-100,
+:root[data-theme="light"] .text-fuchsia-200 {
+  color: #4338ca;
+}
+
 :root[data-theme="light"] .text-emerald-100,
 :root[data-theme="light"] .text-emerald-200,
 :root[data-theme="light"] .text-emerald-300 {
@@ -87,6 +98,7 @@ body {
 }
 
 :root[data-theme="light"] .text-rose-100,
+:root[data-theme="light"] .text-rose-200,
 :root[data-theme="light"] .text-rose-300 {
   color: #be123c;
 }
@@ -126,6 +138,40 @@ body {
 
 :root[data-theme="light"] [class*="bg-amber-300/10"] {
   background-color: rgba(180, 83, 9, 0.12);
+}
+
+:root[data-theme="light"] [class*="bg-rose-500/15"],
+:root[data-theme="light"] [class*="bg-rose-300/10"] {
+  background-color: rgba(190, 18, 60, 0.1);
+}
+
+:root[data-theme="light"] [class*="bg-slate-500/15"],
+:root[data-theme="light"] [class*="bg-slate-500/10"] {
+  background-color: rgba(71, 85, 105, 0.12);
+}
+
+:root[data-theme="light"] [class*="bg-blue-300/10"],
+:root[data-theme="light"] [class*="bg-indigo-300/10"],
+:root[data-theme="light"] [class*="bg-purple-300/10"],
+:root[data-theme="light"] [class*="bg-fuchsia-300/10"] {
+  background-color: rgba(67, 56, 202, 0.09);
+}
+
+:root[data-theme="light"] [class*="border-rose-400/30"],
+:root[data-theme="light"] [class*="border-rose-300/"] {
+  border-color: rgba(190, 18, 60, 0.32);
+}
+
+:root[data-theme="light"] [class*="border-slate-400/25"],
+:root[data-theme="light"] [class*="border-slate-500/25"] {
+  border-color: rgba(71, 85, 105, 0.28);
+}
+
+:root[data-theme="light"] [class*="border-blue-300/25"],
+:root[data-theme="light"] [class*="border-indigo-300/25"],
+:root[data-theme="light"] [class*="border-purple-300/25"],
+:root[data-theme="light"] [class*="border-fuchsia-300/25"] {
+  border-color: rgba(67, 56, 202, 0.3);
 }
 
 :root[data-theme="light"] [class*="shadow-2xl"],
