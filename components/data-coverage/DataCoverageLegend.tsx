@@ -1,10 +1,13 @@
 "use client";
 
 import { useLanguage } from "@/lib/i18n/useLanguage";
+import { useTheme } from "@/lib/theme/useTheme";
 
 export function DataCoverageLegend() {
   const { language } = useLanguage();
+  const { resolvedMode } = useTheme();
   const isSpanish = language === "es";
+  const isLight = resolvedMode === "light";
 
   const items = [
     {
@@ -26,16 +29,18 @@ export function DataCoverageLegend() {
   ];
 
   return (
-    <section className="rounded-lg border border-white/10 bg-slate-950/55 p-5 backdrop-blur">
-      <h2 className="text-lg font-semibold text-white">
+    <section className={`rounded-lg border p-5 backdrop-blur ${
+      isLight ? "border-slate-300 bg-white/90 shadow-xl shadow-slate-900/5" : "border-white/10 bg-slate-950/55"
+    }`}>
+      <h2 className={`text-lg font-semibold ${isLight ? "text-slate-950" : "text-white"}`}>
         {isSpanish ? "Origen y cobertura de datos" : "Data provenance and coverage"}
       </h2>
-      <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
+      <p className={`mt-3 max-w-4xl text-sm leading-6 ${isLight ? "text-slate-700" : "text-slate-300"}`}>
         {isSpanish
           ? "Los datos reales/de proveedor estan disponibles actualmente para instrumentos seleccionados de Estados Unidos y cripto. Los instrumentos argentinos y CEDEARs usan datos simulados o cobertura futura hasta habilitar integraciones de mercado local."
           : "Real/provider data is currently available for selected USA and crypto instruments. Argentine market instruments and CEDEARs use mock or future coverage until local market data integrations are enabled."}
       </p>
-      <p className="mt-2 text-xs text-slate-500">
+      <p className={`mt-2 text-xs ${isLight ? "text-slate-600" : "text-slate-500"}`}>
         {isSpanish
           ? "Indica si los datos provienen de proveedor real, fallback simulado o cobertura futura."
           : "Shows whether data comes from a real provider, mock fallback or future coverage."}

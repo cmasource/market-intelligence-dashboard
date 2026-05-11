@@ -15,6 +15,7 @@ import {
 } from "@/lib/instrument-universe";
 import type { InstrumentUniverseItem } from "@/lib/instrument-universe";
 import { useLanguage } from "@/lib/i18n/useLanguage";
+import { useTheme } from "@/lib/theme/useTheme";
 import { mockAssets } from "@/lib/mock-data";
 
 const supportedAssetSymbols = new Set(mockAssets.map((asset) => asset.symbol));
@@ -53,7 +54,9 @@ function coverageBadges(instrument: InstrumentUniverseItem, isSpanish: boolean) 
 
 export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerProps) {
   const { language } = useLanguage();
+  const { resolvedMode } = useTheme();
   const isSpanish = language === "es";
+  const isLight = resolvedMode === "light";
   const [filters, setFilters] = useState<InstrumentUniverseFilters>(initialFilters);
 
   const categories = getInstrumentCategories();
@@ -73,17 +76,27 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
   };
 
   return (
-    <section className="rounded-lg border border-cyan-300/20 bg-slate-950/55 p-5 backdrop-blur">
+    <section
+      className={`rounded-lg border p-5 backdrop-blur ${
+        isLight
+          ? "border-cyan-700/20 bg-white/90 shadow-xl shadow-slate-900/5"
+          : "border-cyan-300/20 bg-slate-950/55"
+      }`}
+    >
       <div className="grid gap-3 lg:grid-cols-[1.5fr_repeat(6,1fr)_auto]">
         <label className="block">
-          <span className="text-xs uppercase tracking-[0.14em] text-slate-500">
+          <span className={`text-xs uppercase tracking-[0.14em] ${isLight ? "text-slate-600" : "text-slate-500"}`}>
             {isSpanish ? "Buscar" : "Search"}
           </span>
           <input
             value={filters.query ?? ""}
             onChange={(event) => updateFilter("query", event.target.value)}
             placeholder={isSpanish ? "Buscar AL30, AAPL, BTC..." : "Search AL30, AAPL, BTC..."}
-            className="mt-2 w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300/50"
+            className={`mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-cyan-400/70 ${
+              isLight
+                ? "border-slate-300 bg-white text-slate-950 placeholder:text-slate-500"
+                : "border-white/10 bg-slate-950/70 text-white placeholder:text-slate-600"
+            }`}
           />
         </label>
         {[
@@ -95,11 +108,13 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
           ["coverageGroup", isSpanish ? "Cobertura" : "Coverage", coverageGroups],
         ].map(([key, label, options]) => (
           <label key={key as string} className="block">
-            <span className="text-xs uppercase tracking-[0.14em] text-slate-500">{label as string}</span>
+            <span className={`text-xs uppercase tracking-[0.14em] ${isLight ? "text-slate-600" : "text-slate-500"}`}>{label as string}</span>
             <select
               value={(filters[key as keyof InstrumentUniverseFilters] as string | undefined) ?? ""}
               onChange={(event) => updateFilter(key as keyof InstrumentUniverseFilters, event.target.value)}
-              className="mt-2 w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-300/50"
+              className={`mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-cyan-400/70 ${
+                isLight ? "border-slate-300 bg-white text-slate-950" : "border-white/10 bg-slate-950/70 text-white"
+              }`}
             >
               <option value="">{isSpanish ? "Todos" : "All"}</option>
               {(options as Array<string | { value: string; label: string }>).map((option) => {
@@ -118,13 +133,15 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
         <button
           type="button"
           onClick={() => setFilters({})}
-          className="self-end rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-300 transition hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white"
+          className={`self-end rounded-lg border px-3 py-2 text-sm font-medium transition hover:border-cyan-400/50 hover:bg-cyan-300/10 ${
+            isLight ? "border-slate-300 text-slate-700 hover:text-slate-950" : "border-white/10 text-slate-300 hover:text-white"
+          }`}
         >
           {isSpanish ? "Resetear" : "Reset"}
         </button>
       </div>
 
-      <p className="mt-5 text-sm text-slate-400">
+      <p className={`mt-5 text-sm ${isLight ? "text-slate-700" : "text-slate-400"}`}>
         {isSpanish ? `${results.length} instrumentos encontrados` : `${results.length} instruments found`}
       </p>
 
@@ -135,7 +152,12 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
           const relatedCount = Math.max(0, instrument.relatedSymbols.length - 1);
 
           return (
-            <article key={`${instrument.country}-${instrument.market}-${instrument.symbol}-${instrument.category}`} className="rounded-lg border border-white/10 bg-white/[0.045] p-4">
+            <article
+              key={`${instrument.country}-${instrument.market}-${instrument.symbol}-${instrument.category}`}
+              className={`rounded-lg border p-4 ${
+                isLight ? "border-slate-300 bg-white shadow-lg shadow-slate-900/5" : "border-white/10 bg-white/[0.045]"
+              }`}
+            >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h3 className="text-xl font-semibold text-white">{instrument.symbol}</h3>

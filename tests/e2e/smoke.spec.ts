@@ -50,6 +50,10 @@ test.describe("CMA Market Intelligence smoke tests", () => {
   test("header navigation exists", async ({ page }) => {
     await page.goto("/");
 
+    const header = page.locator("header");
+    await expect(header.locator('[aria-label="CMA"]')).toContainText("CMA");
+    await expect(header.locator("span").filter({ hasText: /^S$/ })).toHaveCount(0);
+
     const navigation = page.getByRole("navigation", { name: "Primary navigation" });
     await expect(navigation.getByRole("link", { name: "Dashboard" })).toBeVisible();
     await expect(navigation.getByRole("link", { name: "Markets" })).toBeVisible();
@@ -306,6 +310,17 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
     await expect(page.getByText("CEDEARs").first()).toBeVisible();
     await expect(page.getByText(/Bonds|Bonos/).first()).toBeVisible();
+  });
+
+  test("screener remains readable in light mode", async ({ page }) => {
+    await page.goto("/screener");
+    await page.getByRole("button", { name: "Light" }).click();
+
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await expect(page.getByRole("heading", { name: /Instrument Screener|Screener de instrumentos/ })).toBeVisible();
+    await expect(page.locator("body")).toContainText(/The screener lets users explore|El screener permite explorar/);
+    await expect(page.locator("body")).toContainText(/Data provenance and coverage|Origen y cobertura de datos/);
+    await expect(page.getByPlaceholder(/Search AL30|Buscar AL30/)).toBeVisible();
   });
 
   test("public demo footer is visible", async ({ page }) => {
