@@ -1,3 +1,7 @@
+"use client";
+
+import { useTheme } from "@/lib/theme/useTheme";
+
 type MetricCardProps = {
   label: string;
   value: string;
@@ -14,8 +18,17 @@ const toneClasses = {
 };
 
 export function MetricCard({ label, value, change, context, trend, tone = "neutral" }: MetricCardProps) {
+  const { resolvedMode } = useTheme();
+  const isLight = resolvedMode === "light";
+
   return (
-    <article className="rounded-lg border border-white/10 bg-white/[0.045] p-4 shadow-2xl shadow-black/10 backdrop-blur">
+    <article
+      className={`rounded-lg border p-4 backdrop-blur ${
+        isLight
+          ? "border-slate-300 bg-white shadow-lg shadow-slate-900/10"
+          : "border-white/10 bg-white/[0.045] shadow-2xl shadow-black/10"
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-medium text-slate-300">{label}</p>
         {change ? <span className={`text-xs font-semibold ${toneClasses[tone]}`}>{change}</span> : null}
