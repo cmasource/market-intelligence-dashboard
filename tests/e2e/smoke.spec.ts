@@ -723,6 +723,17 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     expect(typeof data.technicalScore).toBe("number");
     expect(data.snapshot).toBeTruthy();
     expect(data.candlesCount).toBeGreaterThan(0);
+
+    const debugResponse = await request.get("/api/analysis/technical/AAPL?timeframe=1Y&debug=1");
+    expect(debugResponse.ok()).toBeTruthy();
+    const debugData = await debugResponse.json();
+    expect(debugData.providerTrace === undefined || Array.isArray(debugData.providerTrace)).toBeTruthy();
+    if (process.env.FMP_API_KEY) expect(JSON.stringify(debugData)).not.toContain(process.env.FMP_API_KEY);
+
+    const unknownResponse = await request.get("/api/analysis/technical/UNKNOWN_TEST_SYMBOL?timeframe=1Y");
+    expect([200, 404]).toContain(unknownResponse.status());
+    const unknownData = await unknownResponse.json();
+    expect(unknownData).not.toHaveProperty("stack");
   });
 
   test("fundamentals source and API stay fallback-safe", async ({ page, request }) => {

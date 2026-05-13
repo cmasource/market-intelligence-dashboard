@@ -1,4 +1,5 @@
 import type { MarketDataProviderName, MarketDataTimeframe } from "@/lib/market-data/types";
+import type { ProviderTraceEntry } from "@/lib/providers/types";
 
 export type TechnicalAnalysisRequest = {
   symbol: string;
@@ -44,4 +45,6 @@ export type TechnicalAnalysisResponse = {
   technicalScore: number;
   interpretation: TechnicalInterpretation;
   warnings?: string[];
+  analysisWarnings?: string[];
+  providerTrace?: ProviderTraceEntry[];
 };

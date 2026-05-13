@@ -4,7 +4,8 @@ import {
   calculateRSI,
   calculateSMA,
 } from "@/lib/finance/technical";
-import { getMarketData } from "@/lib/market-data";
+import { getMarketData, getMockMarketData } from "@/lib/market-data";
+import type { MarketDataResponse } from "@/lib/market-data/types";
 import type { Timeframe } from "@/types/chart";
 import { calculateRecentResistance, calculateRecentSupport, calculateVolumeTrend } from "./support-resistance";
 import {
@@ -36,79 +37,87 @@ function buildWarnings(candlesCount: number, snapshot: TechnicalIndicatorSnapsho
   return warnings;
 }
 
+function analyzeMarketData(
+  marketData: MarketDataResponse,
+  timeframe: Timeframe,
+  extraWarnings: string[] = [],
+): TechnicalAnalysisResponse {
+  const closes = marketData.candles.map((candle) => candle.close).filter(Number.isFinite);
+  const volumes = marketData.candles.map((candle) => candle.volume).filter(Number.isFinite);
+  const macdResult = calculateMACD(closes);
+  const snapshotBase = {
+    lastClose: closes.at(-1) ?? null,
+    sma20: latestValue(calculateSMA(closes, 20)),
+    sma50: latestValue(calculateSMA(closes, 50)),
+    sma200: latestValue(calculateSMA(closes, 200)),
+    ema12: latestValue(calculateEMA(closes, 12)),
+    ema26: latestValue(calculateEMA(closes, 26)),
+    rsi14: latestValue(calculateRSI(closes, 14)),
+    macd: latestValue(macdResult.macdLine),
+    macdSignal: latestValue(macdResult.signalLine),
+    macdHistogram: latestValue(macdResult.histogram),
+    support: calculateRecentSupport(closes),
+    resistance: calculateRecentResistance(closes),
+    volumeTrend: calculateVolumeTrend(volumes),
+  };
+  const trendLabel = getTrendLabel({ ...snapshotBase, trendLabel: "", momentumLabel: "" });
+  const momentumLabel = getMomentumLabel({ ...snapshotBase, trendLabel, momentumLabel: "" });
+  const snapshot: TechnicalIndicatorSnapshot = {
+    ...snapshotBase,
+    trendLabel,
+    momentumLabel,
+    volatilityLabel: marketData.isFallback ? "Fallback data volatility" : "Provider data volatility",
+  };
+  const technicalScore = calculateTechnicalScore(snapshot);
+  const warnings = [...extraWarnings, ...buildWarnings(marketData.candles.length, snapshot)];
+
+  return {
+    symbol: marketData.symbol,
+    timeframe,
+    provider: marketData.provider,
+    sourceLabel: marketData.sourceLabel,
+    isFallback: marketData.isFallback,
+    candlesCount: marketData.candles.length,
+    snapshot,
+    technicalScore,
+    interpretation: buildTechnicalInterpretation(snapshot, technicalScore),
+    warnings,
+    analysisWarnings: warnings,
+    providerTrace: [
+      {
+        provider: marketData.provider,
+        attempted: true,
+        success: marketData.candles.length > 0,
+        endpointName: "technical-analysis",
+        sourceLabel: marketData.sourceLabel,
+      },
+    ],
+  };
+}
+
+export function getFallbackTechnicalAnalysis(symbol: string, timeframe: Timeframe, warnings: string[] = []) {
+  const fallbackMarketData = getMockMarketData(
+    { symbol, timeframe },
+    warnings.length ? `Technical analysis fallback: ${warnings.join(" | ")}` : "Technical analysis fallback.",
+  );
+
+  return analyzeMarketData(fallbackMarketData, timeframe, warnings);
+}
+
 export async function getTechnicalAnalysis(symbol: string, timeframe: Timeframe): Promise<TechnicalAnalysisResponse> {
   try {
     const marketData = await getMarketData({ symbol, timeframe });
-    const closes = marketData.candles.map((candle) => candle.close).filter(Number.isFinite);
-    const volumes = marketData.candles.map((candle) => candle.volume).filter(Number.isFinite);
-    const macdResult = calculateMACD(closes);
-    const snapshotBase = {
-      lastClose: closes.at(-1) ?? null,
-      sma20: latestValue(calculateSMA(closes, 20)),
-      sma50: latestValue(calculateSMA(closes, 50)),
-      sma200: latestValue(calculateSMA(closes, 200)),
-      ema12: latestValue(calculateEMA(closes, 12)),
-      ema26: latestValue(calculateEMA(closes, 26)),
-      rsi14: latestValue(calculateRSI(closes, 14)),
-      macd: latestValue(macdResult.macdLine),
-      macdSignal: latestValue(macdResult.signalLine),
-      macdHistogram: latestValue(macdResult.histogram),
-      support: calculateRecentSupport(closes),
-      resistance: calculateRecentResistance(closes),
-      volumeTrend: calculateVolumeTrend(volumes),
-    };
-    const trendLabel = getTrendLabel({ ...snapshotBase, trendLabel: "", momentumLabel: "" });
-    const momentumLabel = getMomentumLabel({ ...snapshotBase, trendLabel, momentumLabel: "" });
-    const snapshot: TechnicalIndicatorSnapshot = {
-      ...snapshotBase,
-      trendLabel,
-      momentumLabel,
-      volatilityLabel: marketData.isFallback ? "Fallback data volatility" : "Provider data volatility",
-    };
-    const technicalScore = calculateTechnicalScore(snapshot);
 
-    return {
-      symbol: marketData.symbol,
-      timeframe,
-      provider: marketData.provider,
-      sourceLabel: marketData.sourceLabel,
-      isFallback: marketData.isFallback,
-      candlesCount: marketData.candles.length,
-      snapshot,
-      technicalScore,
-      interpretation: buildTechnicalInterpretation(snapshot, technicalScore),
-      warnings: buildWarnings(marketData.candles.length, snapshot),
-    };
+    if (!marketData.candles.length) {
+      return getFallbackTechnicalAnalysis(symbol, timeframe, [
+        marketData.error ?? `${marketData.provider} returned no candles for technical analysis.`,
+      ]);
+    }
+
+    return analyzeMarketData(marketData, timeframe, marketData.error ? [marketData.error] : []);
   } catch (error) {
-    const snapshot: TechnicalIndicatorSnapshot = {
-      lastClose: null,
-      sma20: null,
-      sma50: null,
-      sma200: null,
-      ema12: null,
-      ema26: null,
-      rsi14: null,
-      macd: null,
-      macdSignal: null,
-      macdHistogram: null,
-      support: null,
-      resistance: null,
-      volumeTrend: "unavailable",
-      trendLabel: "Trend unavailable",
-      momentumLabel: "Momentum unavailable",
-    };
-
-    return {
-      symbol,
-      timeframe,
-      provider: "mock",
-      sourceLabel: "Mock OHLCV data",
-      isFallback: true,
-      candlesCount: 0,
-      snapshot,
-      technicalScore: 0,
-      interpretation: buildTechnicalInterpretation(snapshot, 0),
-      warnings: [error instanceof Error ? error.message : "Technical analysis failed."],
-    };
+    return getFallbackTechnicalAnalysis(symbol, timeframe, [
+      error instanceof Error ? error.message : "Technical analysis failed.",
+    ]);
   }
 }
