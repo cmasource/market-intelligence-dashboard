@@ -18,5 +18,10 @@ export function getProviderStatus(): ProviderStatus {
     activeMarketDataProvider: getFirstEnabledProvider(marketData),
     activeFundamentalsProvider: getFirstEnabledProvider(fundamentals),
     activeNewsProvider: getFirstEnabledProvider(news),
+    configuredActiveMarketDataProvider: getFirstEnabledProvider(marketData),
+    configuredActiveFundamentalsProvider: getFirstEnabledProvider(fundamentals),
+    configuredActiveNewsProvider: getFirstEnabledProvider(news),
+    actualProviderDependsOnEndpoint: true,
+    fallbackChain: ["fmp", "yahoo", "mock"],
   };
 }

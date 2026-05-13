@@ -2,9 +2,9 @@ import { buildFundamentalsInterpretation, calculateFundamentalScore } from "@/li
 import { getFundamentalsAssetClass, normalizeFundamentalsSymbol } from "@/lib/fundamentals-data/symbol-map";
 import type { FundamentalsRequest, FundamentalsResponse, FundamentalsSnapshot } from "@/lib/fundamentals-data/types";
 import { getAssetClassForMarketData, normalizeSymbol } from "@/lib/market-data/symbol-map";
-import type { MarketDataCandle, MarketDataRequest, MarketDataResponse } from "@/lib/market-data/types";
+import type { MarketDataCandle, MarketDataRequest, MarketDataResponse, MarketQuoteResponse } from "@/lib/market-data/types";
 import type { NewsArticle } from "@/lib/news/types";
-import type { ProviderResult } from "./types";
+import type { ProviderDiagnosticReason, ProviderResult, ProviderTraceEntry } from "./types";
 
 const baseUrl = "https://financialmodelingprep.com/api/v3";
 
@@ -12,13 +12,30 @@ function apiKey() {
   return process.env.FMP_API_KEY?.trim() ?? "";
 }
 
-function disabled<T>(provider: "fmp" = "fmp"): ProviderResult<T> {
-  return { ok: false, provider, disabled: true, error: "Missing FMP_API_KEY" };
+function disabled<T>(provider: "fmp" = "fmp", endpointName?: string): ProviderResult<T> {
+  return {
+    ok: false,
+    provider,
+    disabled: true,
+    error: "Missing FMP_API_KEY",
+    reason: "missing_key",
+    endpointName,
+  };
 }
 
-async function fetchFmp<T>(path: string, params: Record<string, string> = {}): Promise<ProviderResult<T>> {
+function classifyFmpHttpError(statusCode: number): ProviderDiagnosticReason {
+  if (statusCode === 429) return "rate_limited";
+  if (statusCode === 402 || statusCode === 403) return "plan_restricted";
+  return "http_error";
+}
+
+async function fetchFmp<T>(
+  path: string,
+  params: Record<string, string> = {},
+  endpointName?: string,
+): Promise<ProviderResult<T>> {
   const key = apiKey();
-  if (!key) return disabled();
+  if (!key) return disabled("fmp", endpointName);
 
   const url = new URL(`${baseUrl}${path}`);
   url.searchParams.set("apikey", key);
@@ -26,15 +43,57 @@ async function fetchFmp<T>(path: string, params: Record<string, string> = {}): P
 
   try {
     const response = await fetch(url, { next: { revalidate: 120 } });
-    if (!response.ok) return { ok: false, provider: "fmp", error: `FMP returned HTTP ${response.status}` };
-    return { ok: true, provider: "fmp", data: await response.json() as T };
+    if (!response.ok) {
+      return {
+        ok: false,
+        provider: "fmp",
+        error: `FMP returned HTTP ${response.status}`,
+        reason: classifyFmpHttpError(response.status),
+        statusCode: response.status,
+        endpointName,
+      };
+    }
+    const data = await response.json() as T & { "Error Message"?: string; Information?: string; Note?: string };
+    const providerMessage = data["Error Message"] ?? data.Information ?? data.Note;
+    if (providerMessage) {
+      const normalizedMessage = providerMessage.toLowerCase();
+      return {
+        ok: false,
+        provider: "fmp",
+        error: providerMessage,
+        reason: normalizedMessage.includes("limit") ? "rate_limited" : "plan_restricted",
+        endpointName,
+      };
+    }
+    return { ok: true, provider: "fmp", data };
   } catch (error) {
-    return { ok: false, provider: "fmp", error: error instanceof Error ? error.message : "FMP request failed" };
+    return {
+      ok: false,
+      provider: "fmp",
+      error: error instanceof Error ? error.message : "FMP request failed",
+      reason: "unknown_error",
+      endpointName,
+    };
   }
 }
 
 type FmpHistorical = { historical?: Array<{ date?: string; open?: number; high?: number; low?: number; close?: number; volume?: number }> };
-type FmpQuote = Array<{ price?: number; marketCap?: number; pe?: number; eps?: number; sharesOutstanding?: number; yearHigh?: number; yearLow?: number }>;
+type FmpQuoteItem = {
+  symbol?: string;
+  price?: number;
+  change?: number;
+  changesPercentage?: number;
+  changePercent?: number;
+  exchange?: string;
+  timestamp?: number;
+  marketCap?: number;
+  pe?: number;
+  eps?: number;
+  sharesOutstanding?: number;
+  yearHigh?: number;
+  yearLow?: number;
+};
+type FmpQuote = FmpQuoteItem[];
 type FmpProfile = Array<{ companyName?: string; beta?: number; mktCap?: number; price?: number; volAvg?: number; currency?: string }>;
 type FmpRatios = Array<{
   priceEarningsRatioTTM?: number;
@@ -66,7 +125,11 @@ function normalizeFmpCandles(data: FmpHistorical): MarketDataCandle[] {
 
 export async function getFmpHistoricalPrices(request: MarketDataRequest): Promise<MarketDataResponse> {
   const symbol = normalizeSymbol(request.symbol);
-  const result = await fetchFmp<FmpHistorical>(`/historical-price-full/${encodeURIComponent(symbol)}`, { timeseries: "260" });
+  const result = await fetchFmp<FmpHistorical>(
+    `/historical-price-full/${encodeURIComponent(symbol)}`,
+    { timeseries: "260" },
+    "historical-price-full",
+  );
   if (!result.ok) {
     return {
       symbol,
@@ -94,7 +157,127 @@ export async function getFmpHistoricalPrices(request: MarketDataRequest): Promis
 }
 
 export async function getFmpQuote(symbol: string) {
-  return fetchFmp<FmpQuote>(`/quote/${encodeURIComponent(normalizeSymbol(symbol))}`);
+  return fetchFmp<FmpQuote>(`/quote/${encodeURIComponent(normalizeSymbol(symbol))}`, {}, "quote");
+}
+
+function validNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function numberValue(value: unknown) {
+  if (validNumber(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+export async function getFmpQuoteSnapshot(symbol: string): Promise<MarketQuoteResponse> {
+  const normalizedSymbol = normalizeSymbol(symbol);
+  const result = await getFmpQuote(normalizedSymbol);
+  const quote = result.ok ? result.data[0] : undefined;
+  const price = numberValue(quote?.price);
+
+  if (!result.ok) {
+    return {
+      symbol: normalizedSymbol,
+      price: null,
+      change: null,
+      changePercent: null,
+      currency: "USD",
+      provider: "fmp",
+      sourceLabel: "FMP provider",
+      isFallback: false,
+      fetchedAt: new Date().toISOString(),
+      error: result.error,
+      providerTrace: [
+        {
+          provider: "fmp",
+          attempted: true,
+          success: false,
+          reason: result.reason ?? "unknown_error",
+          statusCode: result.statusCode,
+          endpointName: "quote",
+          sourceLabel: "FMP provider",
+        },
+      ],
+    };
+  }
+
+  if (!Array.isArray(result.data)) {
+    return {
+      symbol: normalizedSymbol,
+      price: null,
+      change: null,
+      changePercent: null,
+      currency: "USD",
+      provider: "fmp",
+      sourceLabel: "FMP provider",
+      isFallback: false,
+      fetchedAt: new Date().toISOString(),
+      error: "FMP returned an invalid quote response shape.",
+      providerTrace: [buildFmpTrace(false, "invalid_response_shape")],
+    };
+  }
+
+  if (result.data.length === 0) {
+    return {
+      symbol: normalizedSymbol,
+      price: null,
+      change: null,
+      changePercent: null,
+      currency: "USD",
+      provider: "fmp",
+      sourceLabel: "FMP provider",
+      isFallback: false,
+      fetchedAt: new Date().toISOString(),
+      error: "FMP returned an empty quote response.",
+      providerTrace: [buildFmpTrace(false, "empty_response")],
+    };
+  }
+
+  if (price === null || price <= 0) {
+    return {
+      symbol: normalizedSymbol,
+      price: null,
+      change: null,
+      changePercent: null,
+      currency: "USD",
+      provider: "fmp",
+      sourceLabel: "FMP provider",
+      isFallback: false,
+      fetchedAt: new Date().toISOString(),
+      error: "FMP returned no usable quote price.",
+      providerTrace: [buildFmpTrace(false, "invalid_price")],
+    };
+  }
+
+  const quoteData = quote ?? {};
+
+  return {
+    symbol: quoteData.symbol?.trim().toUpperCase() || normalizedSymbol,
+    price,
+    change: numberValue(quoteData.change),
+    changePercent: numberValue(quoteData.changesPercentage) ?? numberValue(quoteData.changePercent),
+    currency: "USD",
+    provider: "fmp",
+    sourceLabel: "FMP provider",
+    isFallback: false,
+    fetchedAt: quoteData.timestamp ? new Date(quoteData.timestamp * 1000).toISOString() : new Date().toISOString(),
+    providerTrace: [buildFmpTrace(true)],
+  };
+}
+
+function buildFmpTrace(success: boolean, reason?: ProviderDiagnosticReason): ProviderTraceEntry {
+  return {
+    provider: "fmp",
+    attempted: true,
+    success,
+    reason,
+    endpointName: "quote",
+    sourceLabel: "FMP provider",
+  };
 }
 
 export async function getFmpCompanyProfile(symbol: string) {
@@ -106,7 +289,7 @@ export async function getFmpFundamentals(request: FundamentalsRequest): Promise<
   const [quote, profile, ratios] = await Promise.all([
     getFmpQuote(symbol),
     getFmpCompanyProfile(symbol),
-    fetchFmp<FmpRatios>(`/ratios-ttm/${encodeURIComponent(symbol)}`),
+    fetchFmp<FmpRatios>(`/ratios-ttm/${encodeURIComponent(symbol)}`, {}, "ratios-ttm"),
   ]);
 
   const quoteData = quote.ok ? quote.data[0] : undefined;
@@ -150,7 +333,7 @@ export async function getFmpFundamentals(request: FundamentalsRequest): Promise<
 }
 
 export async function getFmpNews(symbol: string): Promise<ProviderResult<NewsArticle[]>> {
-  const result = await fetchFmp<FmpNews>("/stock_news", { tickers: normalizeSymbol(symbol), limit: "8" });
+  const result = await fetchFmp<FmpNews>("/stock_news", { tickers: normalizeSymbol(symbol), limit: "8" }, "stock_news");
   if (!result.ok) return result;
   return {
     ok: true,

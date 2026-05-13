@@ -519,6 +519,96 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.locator("body")).toContainText(/Provider status|Estado de proveedores/);
     await expect(page.getByText("AAPL").first()).toBeVisible();
     await expect(page.locator("body")).toContainText(/Provider|Proveedor|Mock|Simulado|Fallback|Futuro|Future/);
+    await expect(page.locator("body")).toContainText(/Actual provider|Proveedor efectivo/);
+    await expect(page.locator("body")).toContainText(/Configured provider|Proveedor configurado/);
+    await expect(page.locator("body")).toContainText(/Yahoo-compatible|Yahoo compatible|FMP/);
+  });
+
+  test("quote API exposes provider or fallback structure without secrets", async ({ request }) => {
+    const response = await request.get("/api/market-data/quote/AAPL");
+    expect(response.ok()).toBeTruthy();
+
+    const data = await response.json();
+    expect(data.symbol).toBe("AAPL");
+    expect(data).toHaveProperty("price");
+    expect(typeof data.provider).toBe("string");
+    expect(typeof data.isFallback).toBe("boolean");
+    expect(typeof data.sourceLabel).toBe("string");
+    expect(data.providerTrace).toBeUndefined();
+    if (process.env.FMP_API_KEY) expect(JSON.stringify(data)).not.toContain(process.env.FMP_API_KEY);
+
+    const debugResponse = await request.get("/api/market-data/quote/AAPL?debug=1");
+    expect(debugResponse.ok()).toBeTruthy();
+    const debugData = await debugResponse.json();
+    expect(Array.isArray(debugData.providerTrace)).toBeTruthy();
+    expect(debugData.providerTrace.length).toBeGreaterThan(0);
+    const fmpTrace = debugData.providerTrace.find((item: { provider: string }) => item.provider === "fmp");
+    if (fmpTrace?.reason === "plan_restricted") {
+      expect(debugData).toHaveProperty("price");
+      expect(["yahoo", "mock"]).toContain(debugData.provider);
+    }
+    if (process.env.FMP_API_KEY) expect(JSON.stringify(debugData.providerTrace)).not.toContain(process.env.FMP_API_KEY);
+
+    const batchResponse = await request.post("/api/market-data/quotes", {
+      data: { symbols: ["AAPL", "SPY"] },
+    });
+    expect(batchResponse.ok()).toBeTruthy();
+    const batchData = await batchResponse.json();
+    expect(batchData.quotes).toBeTruthy();
+    expect(batchData.quotes.AAPL).toHaveProperty("price");
+    expect(typeof batchData.quotes.AAPL.provider).toBe("string");
+    if (process.env.FMP_API_KEY) expect(JSON.stringify(batchData)).not.toContain(process.env.FMP_API_KEY);
+  });
+
+  test("provider verification API compares configured and actual quote providers", async ({ request }) => {
+    const response = await request.get("/api/providers/verify/AAPL");
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+
+    expect(data.symbol).toBe("AAPL");
+    expect(typeof data.configuredProvider).toBe("string");
+    expect(typeof data.actualProvider).toBe("string");
+    expect(Array.isArray(data.providerTrace)).toBeTruthy();
+    expect(Array.isArray(data.fallbackChain)).toBeTruthy();
+    if (process.env.FMP_API_KEY) expect(JSON.stringify(data)).not.toContain(process.env.FMP_API_KEY);
+  });
+
+  test("AAPL asset header uses quote source labels and preserves CEDEAR distinction", async ({ page, request }) => {
+    const quoteResponse = await request.get("/api/market-data/quote/AAPL");
+    const quote = await quoteResponse.json();
+
+    await page.goto("/asset/AAPL");
+    await expect(page.getByText("AAPL").first()).toBeVisible();
+    await expect(page.locator("body")).toContainText(/FMP provider|Proveedor FMP|Provider price: Yahoo-compatible|Precio proveedor: Yahoo compatible|Provider price|Precio proveedor|Mock fallback price|Precio simulado de respaldo|Precio mock/);
+
+    if ((quote.provider === "fmp" || quote.provider === "yahoo") && quote.isFallback === false && quote.price) {
+      await expect(page.locator("body")).not.toContainText("Precio mock");
+    }
+
+    await expect(page.locator("body")).toContainText("CEDEAR");
+    await expect(page.locator("body")).toContainText(/Mock local CEDEAR price|Precio local CEDEAR simulado/);
+    await expect(page.locator("body")).toContainText(/Underlying provider price|Precio subyacente proveedor|Fallback underlying price|Precio subyacente de respaldo/);
+  });
+
+  test("dashboard featured assets and search hydrate provider-supported prices", async ({ page, request }) => {
+    const quoteResponse = await request.get("/api/market-data/quote/AAPL");
+    const quote = await quoteResponse.json();
+
+    await page.goto("/");
+    await expect(page.getByText("AAPL").first()).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Yahoo-compatible|Yahoo compatible|FMP provider|Proveedor FMP|Mock|Simulado|Refreshing|Actualizando/);
+    await expect(page.locator("body")).not.toContainText(/Hydration failed/i);
+
+    if ((quote.provider === "fmp" || quote.provider === "yahoo") && quote.isFallback === false && quote.price) {
+      await expect(page.locator("body")).not.toContainText(/191\.24\s*USD|191,24\s*USD/);
+    }
+
+    const search = page.locator("#asset-search");
+    await search.fill("AAPL");
+    const searchSection = page.locator("#markets");
+    await expect(searchSection.getByText("AAPL").first()).toBeVisible();
+    await expect(searchSection).toContainText(/Open analysis|Abrir análisis|Abrir anÃ¡lisis/);
+    await expect(searchSection).toContainText(/Yahoo-compatible|Yahoo compatible|FMP provider|Proveedor FMP|Mock|Simulado/);
   });
 
   test("Spanish asset summaries use localized copy", async ({ page }) => {

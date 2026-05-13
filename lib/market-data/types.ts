@@ -1,4 +1,5 @@
 import type { Timeframe } from "@/types/chart";
+import type { ProviderTraceEntry } from "@/lib/providers/types";
 
 export type MarketDataProviderName = "mock" | "yahoo" | "crypto" | "fmp" | "finnhub" | "alpha_vantage";
 
@@ -31,4 +32,18 @@ export type MarketDataRequest = {
   symbol: string;
   timeframe: MarketDataTimeframe;
   assetClass?: MarketDataAssetClass;
+};
+
+export type MarketQuoteResponse = {
+  symbol: string;
+  price: number | null;
+  change: number | null;
+  changePercent: number | null;
+  currency: string;
+  provider: MarketDataProviderName;
+  sourceLabel: string;
+  isFallback: boolean;
+  fetchedAt: string;
+  error?: string;
+  providerTrace?: ProviderTraceEntry[];
 };

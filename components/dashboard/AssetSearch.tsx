@@ -3,15 +3,25 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { DataCoverageBadges } from "@/components/data-coverage/DataCoverageBadges";
-import { formatAssetPrice, formatDisplayCurrency, formatPercent } from "@/lib/formatters";
+import { formatAssetPrice, formatCurrencyValue, formatDisplayCurrency, formatPercent } from "@/lib/formatters";
+import { useProviderQuotes, type ProviderQuoteState } from "@/lib/hooks/useProviderQuotes";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { searchInstrumentUniverse, type InstrumentUniverseItem } from "@/lib/instrument-universe";
+import { isProviderQuoteSupported } from "@/lib/market-data/provider-symbols";
 import type { Asset } from "@/types/asset";
 import { ScoreBadge } from "../ui/ScoreBadge";
 
 type AssetSearchProps = {
   assets: Asset[];
 };
+
+function getQuoteLabel(quote: ProviderQuoteState | undefined, isSpanish: boolean) {
+  if (!quote || quote.isLoading) return isSpanish ? "Actualizando" : "Refreshing";
+  if (quote.provider === "fmp" && !quote.isFallback) return isSpanish ? "Proveedor FMP" : "FMP provider";
+  if (quote.provider === "yahoo" && !quote.isFallback) return isSpanish ? "Yahoo compatible" : "Yahoo-compatible";
+  if (quote.provider === "mock" || quote.isFallback) return isSpanish ? "Simulado" : "Mock";
+  return isSpanish ? "Proveedor" : "Provider";
+}
 
 export function AssetSearch({ assets }: AssetSearchProps) {
   const [query, setQuery] = useState("");
@@ -46,6 +56,8 @@ export function AssetSearch({ assets }: AssetSearchProps) {
   }, [query]);
   const visibleInstruments = filteredInstruments.slice(0, visibleResultLimit);
   const hiddenResultsCount = Math.max(0, filteredInstruments.length - visibleInstruments.length);
+  const quoteSymbols = useMemo(() => visibleInstruments.map((instrument) => instrument.symbol), [visibleInstruments]);
+  const quotes = useProviderQuotes(quoteSymbols);
 
   function contextLabel(instrument: InstrumentUniverseItem) {
     if (instrument.category === "cedear") return isSpanish ? "Referencia CEDEAR" : "CEDEAR reference";
@@ -123,9 +135,19 @@ export function AssetSearch({ assets }: AssetSearchProps) {
         {visibleInstruments.length ? (
           visibleInstruments.map((instrument) => {
             const asset = assetBySymbol.get(instrument.symbol);
-            const positive = (asset?.dailyChange ?? 0) >= 0;
+            const quote = quotes[instrument.symbol];
+            const hasProviderSupport = isProviderQuoteSupported(instrument.symbol);
+            const hasHydratedQuote = hasProviderSupport && quote && !quote.isLoading && typeof quote.price === "number" && Number.isFinite(quote.price);
+            const visibleChange =
+              hasHydratedQuote && typeof quote.changePercent === "number" && Number.isFinite(quote.changePercent)
+                ? quote.changePercent
+                : asset?.dailyChange ?? 0;
+            const visiblePrice = hasHydratedQuote ? quote.price : asset?.price;
+            const visibleCurrency = hasHydratedQuote ? quote.currency : asset?.quoteCurrency ?? asset?.currency;
+            const positive = visibleChange >= 0;
             const hasAssetPage = supportedAssetSymbols.has(instrument.symbol);
             const context = settlementLabel(instrument, asset);
+            const quoteLabel = hasProviderSupport ? getQuoteLabel(quote, isSpanish) : isSpanish ? "Simulado" : "Mock";
 
             const content = (
               <>
@@ -151,9 +173,16 @@ export function AssetSearch({ assets }: AssetSearchProps) {
                 <span className="flex flex-col items-start gap-2 text-left sm:items-end sm:text-right">
                   {asset ? (
                     <>
-                      <span className="block font-semibold text-white">{formatAssetPrice(asset.price, asset, language)}</span>
+                      <span className="block font-semibold text-white">
+                        {hasHydratedQuote && typeof visiblePrice === "number" && visibleCurrency
+                          ? formatCurrencyValue(visiblePrice, visibleCurrency, language)
+                          : formatAssetPrice(asset.price, asset, language)}
+                      </span>
                       <span className={positive ? "text-sm text-emerald-300" : "text-sm text-rose-300"}>
-                        {formatPercent(asset.dailyChange)}
+                        {formatPercent(visibleChange)}
+                      </span>
+                      <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-xs text-cyan-100">
+                        {quoteLabel}
                       </span>
                     </>
                   ) : (

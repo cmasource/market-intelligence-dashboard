@@ -15,6 +15,7 @@
 - Integrated market signal gauge with non-advisory defensive/neutral/constructive terminology.
 - Hydration-safe universal search with local recent-search history.
 - Interactive charts with provider/fallback market data.
+- Featured dashboard cards and visible dashboard search results hydrate provider-supported USA/crypto quotes after mount.
 - Technical analysis calculated from OHLCV candles.
 - Fundamentals layer for selected USA stocks and ETFs with fallback behavior.
 - Fixed income analytics for Argentine mock bond instruments and species.
@@ -62,6 +63,8 @@
 - CEDEARs are still a future/mock foundation.
 - CEDEAR local prices and ratios are simulated; implied CCL is informational.
 - Provider keys are optional; missing keys should show fallback or mock labels rather than breaking the demo.
+- FMP can be configured while a specific endpoint is plan-restricted; in that case Yahoo-compatible data is a valid provider fallback and should not be presented as mock.
+- Some dashboard values render server-side seed values first and then update from the provider quote chain on the client.
 - Public demo viewers should treat all analytics as product workflow examples unless explicitly marked as provider data.
 
 ## Deployment Notes

@@ -64,6 +64,18 @@ function statusClasses(status: DataCoverageStatus) {
   return "border-rose-300/25 bg-rose-300/10 text-rose-100";
 }
 
+function coverageTitle(status: DataCoverageStatus, isSpanish: boolean) {
+  if (status === "provider" || status === "real") {
+    return isSpanish
+      ? "Dato obtenido desde proveedor compatible. FMP fue consultado primero, pero se puede usar Yahoo compatible como fuente efectiva."
+      : "Data obtained from a compatible provider. FMP was attempted first, but Yahoo-compatible data may be used as the actual source.";
+  }
+
+  return isSpanish
+    ? "Indica si los datos provienen de proveedor real, fallback simulado o cobertura futura."
+    : "Shows whether data comes from a real provider, mock fallback or future coverage.";
+}
+
 export function DataCoverageBadges({
   symbol,
   category,
@@ -87,11 +99,7 @@ export function DataCoverageBadges({
         return (
           <span
             key={layer}
-            title={
-              isSpanish
-                ? "Indica si los datos provienen de proveedor real, fallback simulado o cobertura futura."
-                : "Shows whether data comes from a real provider, mock fallback or future coverage."
-            }
+            title={coverageTitle(status, isSpanish)}
             className={`rounded-full border px-2.5 py-1 text-xs font-medium ${statusClasses(status)}`}
           >
             {compact ? null : <span className="text-slate-300">{layerLabel(layer, isSpanish)}: </span>}

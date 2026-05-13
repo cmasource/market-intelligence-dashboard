@@ -24,6 +24,7 @@ The app is transparent about mixed coverage: selected USA and crypto instruments
 - Asset detail pages
 - Real/provider USA and crypto market data with fallback
 - Server-side provider chain for FMP, Finnhub, Alpha Vantage, Yahoo/RSS and mock fallback
+- Provider quote hydration for asset pages, featured dashboard cards and visible dashboard search results
 - Technical analysis from OHLCV candles
 - Integrated market signal gauge
 - USA fundamentals provider layer with fallback
@@ -69,7 +70,7 @@ Recommended workflow:
 3. Use the Next.js preset.
 4. Build command: `npm run build`.
 5. Install command: `npm install`.
-6. Environment variables: none required for the current demo.
+6. Environment variables: none required for fallback demo mode. Optional provider keys can be added for live provider data.
 7. Review the preview deployment before promoting to production.
 
 Alternative workflow:
@@ -107,3 +108,6 @@ Some data comes from public providers, while other data is simulated or marked a
 - Optional switches: `NEWS_PROVIDER`, `MARKET_DATA_PROVIDER`.
 - The demo works without keys via Yahoo-compatible, RSS and mock fallback layers.
 - `/api/providers/status` reports enabled/disabled providers without exposing secrets.
+- `/api/market-data/quote/AAPL` verifies the visible quote source used by asset headers.
+- `/api/market-data/quotes` powers dashboard quote hydration for provider-supported symbols.
+- See `docs/provider-verification.md` when provider status is active but a visible UI field still appears to be using fallback data.

@@ -48,8 +48,8 @@ export function ProviderStatusPanel() {
       </h2>
       <p className="mt-3 text-sm leading-6 text-slate-300">
         {isSpanish
-          ? "Las claves faltantes deshabilitan proveedores reales y la app vuelve a Yahoo, RSS o datos simulados sin romper la demo."
-          : "Missing keys disable real providers and the app falls back to Yahoo, RSS or mock data without breaking the demo."}
+          ? "Proveedor configurado: FMP. Si FMP falla o no devuelve datos válidos para un símbolo, la app usa Yahoo compatible como proveedor real de respaldo antes de recurrir a datos simulados."
+          : "Configured provider: FMP. If FMP fails or returns no valid data for a symbol, the app uses Yahoo-compatible data as a real-data fallback before using mock data."}
       </p>
 
       {!status ? (
@@ -61,7 +61,7 @@ export function ProviderStatusPanel() {
               <div className="flex items-start justify-between gap-3">
                 <h3 className="font-semibold text-white">{group.title}</h3>
                 <span className="rounded-full border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-xs text-emerald-100">
-                  {formatProvider(group.active)}
+                  {isSpanish ? "configurado: " : "configured: "}{formatProvider(group.active)}
                 </span>
               </div>
               <div className="mt-3 space-y-2">

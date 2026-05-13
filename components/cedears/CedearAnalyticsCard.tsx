@@ -21,6 +21,22 @@ function formatCcl(value: number | null | undefined, isSpanish: boolean) {
   }).format(value)} ARS/USD`;
 }
 
+function getUnderlyingPriceLabel(analytics: CedearAnalytics, isSpanish: boolean) {
+  if (analytics.status !== "provider_underlying") {
+    return isSpanish ? "Precio subyacente de respaldo" : "Fallback underlying price";
+  }
+
+  if (analytics.sourceLabel.toLowerCase().includes("yahoo")) {
+    return isSpanish ? "Precio subyacente proveedor: Yahoo compatible" : "Underlying provider price: Yahoo-compatible";
+  }
+
+  if (analytics.sourceLabel.toLowerCase().includes("fmp")) {
+    return isSpanish ? "Precio subyacente proveedor: FMP" : "Underlying provider price: FMP";
+  }
+
+  return isSpanish ? "Precio subyacente proveedor" : "Underlying provider price";
+}
+
 export function CedearAnalyticsCard({ symbol }: CedearAnalyticsCardProps) {
   const { language } = useLanguage();
   const isSpanish = language === "es";
@@ -69,8 +85,8 @@ export function CedearAnalyticsCard({ symbol }: CedearAnalyticsCardProps) {
     cedear: "CEDEAR",
     underlying: isSpanish ? "Activo subyacente" : "Underlying asset",
     ratio: isSpanish ? "Ratio CEDEAR" : "CEDEAR ratio",
-    localPrice: isSpanish ? "Precio local" : "Local price",
-    underlyingPrice: isSpanish ? "Precio subyacente" : "Underlying price",
+    localPrice: isSpanish ? "Precio local CEDEAR simulado" : "Mock local CEDEAR price",
+    underlyingPrice: getUnderlyingPriceLabel(analytics, isSpanish),
     impliedCcl: isSpanish ? "CCL implícito" : "Implied CCL",
     referenceCcl: isSpanish ? "CCL de referencia" : "Reference CCL",
     spread: "Spread",

@@ -79,6 +79,14 @@ Optional real-data providers:
 
 Add variables in Vercel Project Settings > Environment Variables and redeploy after changing them. Do not expose provider secrets with `NEXT_PUBLIC_`. Use `.env.example` as the placeholder template and do not commit real secrets.
 
+After redeploying, verify:
+
+- `/api/providers/status` shows the configured provider as enabled.
+- `/api/market-data/quote/AAPL` returns the actual quote source used by the asset header.
+- `/asset/AAPL` shows a provider source label when provider quote data is valid, while the CEDEAR panel keeps local CEDEAR data labeled as mock.
+
+See `docs/provider-verification.md` for the detailed troubleshooting checklist.
+
 ## Post-Deploy Checklist
 
 1. Open home.
