@@ -83,15 +83,15 @@ function descriptionForSignal(tone: MarketSignalTone, confidence: MarketSignalCo
   const descriptions: Record<MarketSignalTone, Record<MarketSignalLanguage, string>> = {
     very_defensive: {
       en: "Available data points to a defensive market reading, with weak or incomplete signals.",
-      es: "Los datos disponibles apuntan a una lectura defensiva, con senales debiles o incompletas.",
+      es: "Los datos disponibles apuntan a una lectura defensiva, con señales débiles o incompletas.",
     },
     defensive: {
       en: "Available data suggests a cautious reading, with mixed signals or pressure in key components.",
-      es: "Los datos disponibles sugieren una lectura prudente, con senales mixtas o presion en componentes clave.",
+      es: "Los datos disponibles sugieren una lectura prudente, con señales mixtas o presión en componentes clave.",
     },
     neutral: {
       en: "Available data is balanced and does not show a clear dominant market signal.",
-      es: "Los datos disponibles estan equilibrados y no muestran una senal dominante clara.",
+      es: "Los datos disponibles están equilibrados y no muestran una señal dominante clara.",
     },
     constructive: {
       en: "Available data is favorable overall, while still requiring risk and context review.",

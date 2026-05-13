@@ -143,6 +143,30 @@
 - Update README and Vercel deployment documentation for GitHub + Vercel Dashboard and CLI workflows.
 - Add public demo badge, feedback note and final disclaimer checks.
 
+## Phase 16: Analytical Credibility and Data Audit
+
+- Expand provider/fallback market data attempts to additional USA stocks and crypto assets.
+- Add `/data-audit` for real/provider/mock/future coverage transparency by instrument and layer.
+- Add `/methodology` to explain technical, market signal, fundamentals and fixed income methodology.
+- Add manual validation guides for comparing technical and fundamental outputs with external platforms.
+- Keep Argentina, CEDEAR and bond real-data integrations future-scoped until BYMA, IOL, CNV or licensed providers are enabled.
+
+## Phase 16.1: Currency and Glossary Polish
+
+- Centralize currency and unit display for USD and ARS while keeping MEP, cable/CCL and CER as separate bond context labels.
+- Remove misleading composite currency labels from local Argentine price displays.
+- Add glossary tooltips for technical, fundamental and fixed income metrics.
+- Add a public `/glossary` page and supporting documentation.
+- Add regression coverage for currency labels, glossary page rendering and tooltip visibility.
+
+## Phase 16.2: Argentine Bond Species Convention
+
+- Show AL30 and GD30 peso species with realistic-looking local ARS mock prices.
+- Show AL30D, AL30C, GD30D and GD30C with USD quote currency while rendering MEP or cable/CCL as species context.
+- Show TX26 with ARS quote currency and CER as indexation context.
+- Separate visible `marketDisplayPrice` from normalized `analyticalPrice` for fixed income metrics.
+- Keep Argentine bond prices mock/structured until BYMA, IOL or licensed-provider integration is enabled.
+
 ## Future Regional Personalization
 
 - Argentina.

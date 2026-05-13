@@ -7,6 +7,10 @@
 - Advanced screener with grouped universe, filters and coverage labels.
 - Asset pages for supported MVP symbols.
 - Preliminary profiles for future-coverage symbols in the instrument universe.
+- Data audit matrix for real/provider/mock/future coverage by instrument and analytical layer.
+- Methodology page for technical, market signal, fundamentals and fixed income explanations.
+- Financial glossary page and metric tooltips for technical, fundamentals and fixed income labels.
+- Centralized currency display for USD and ARS, with bond species context shown separately for MEP, cable/CCL and CER.
 - Dark/light appearance preference with dark as the default demo mode.
 - Integrated market signal gauge with non-advisory defensive/neutral/constructive terminology.
 - Hydration-safe universal search with local recent-search history.
@@ -18,8 +22,8 @@
 
 ## Real or Provider Data
 
-- USA/ETF market data attempts: `AAPL`, `SPY`, `QQQ`.
-- Crypto market data attempts: `BTC-USD`, `ETH-USD`.
+- USA/ETF market data attempts: `AAPL`, `SPY`, `QQQ`, `MSFT`, `NVDA`, `TSLA`, `AMZN`, `META`, `GOOGL`, `KO`.
+- Crypto market data attempts: `BTC-USD`, `ETH-USD`, `BNB-USD`, `SOL-USD`, `XRP-USD`, `ADA-USD`, `DOGE-USD`, `AVAX-USD`, `LINK-USD`, `DOT-USD`.
 - Fundamentals provider attempts: `AAPL`, `SPY`, `QQQ`.
 
 ## Mock or Fallback Data
@@ -47,11 +51,12 @@
 6. Argentina page.
 7. Crypto page.
 8. Status page.
+9. Data audit and methodology pages.
 
 ## Warnings
 
 - This is not investment advice.
-- Argentina data is still simulated.
+- Argentina data is still simulated. For bonds, visible local mock prices can differ from normalized analytical prices used for metrics.
 - CEDEARs are still a future/mock foundation.
 - Public demo viewers should treat all analytics as product workflow examples unless explicitly marked as provider data.
 

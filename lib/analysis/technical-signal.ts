@@ -38,15 +38,15 @@ export function getTechnicalSignalDescription(score: number | null | undefined, 
     },
     defensive: {
       en: "The technical bias is cautious, with mixed signals or downside pressure.",
-      es: "El sesgo tecnico es prudente, con senales mixtas o presion bajista.",
+      es: "El sesgo técnico es prudente, con señales mixtas o presión bajista.",
     },
     neutral: {
       en: "The asset shows a balanced technical reading without a clear dominant signal.",
-      es: "El activo muestra una lectura tecnica equilibrada, sin una senal dominante clara.",
+      es: "El activo muestra una lectura técnica equilibrada, sin una señal dominante clara.",
     },
     constructive: {
       en: "The asset shows favorable technical signals, although risk and context should also be considered.",
-      es: "El activo presenta senales tecnicas favorables, aunque deben evaluarse junto con riesgo y contexto.",
+      es: "El activo presenta señales técnicas favorables, aunque deben evaluarse junto con riesgo y contexto.",
     },
     very_constructive: {
       en: "The asset shows a strong technical reading, with favorable momentum and trend according to available indicators.",

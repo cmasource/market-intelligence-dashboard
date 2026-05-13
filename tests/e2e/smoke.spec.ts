@@ -16,6 +16,9 @@ const assetRoutes = [
 const realRoutes = [
   { route: "/markets", heading: /Markets|Mercados/ },
   { route: "/screener", heading: /Instrument Screener|Screener de instrumentos/ },
+  { route: "/data-audit", heading: /Data Audit|Auditoría de datos|Auditoria de datos/ },
+  { route: "/glossary", heading: /Financial Glossary|Glosario financiero/ },
+  { route: "/methodology", heading: /Methodology|Metodología|Metodologia/ },
   { route: "/argentina", heading: /Argentina Market|Mercado argentino/ },
   { route: "/crypto", heading: /Crypto Monitor|Monitor cripto/ },
   { route: "/reports", heading: /Reports|Reportes/ },
@@ -29,6 +32,7 @@ const marketDataStatus = /Real market data|Fallback mock data|Mock OHLCV data/;
 const technicalSourceStatus = /Calculated from real market data|Calculated from fallback mock data/;
 const fundamentalsSourceStatus = /Provider fundamentals|Fallback mock fundamentals/;
 const fixedIncomeSourceStatus = /Mock fixed income analytics/;
+const forbiddenCurrencyLabels = [/ARS\/USD/, /USD\/ARS/, new RegExp(["ARS", "SAR"].join(" "))];
 
 test.describe("CMA Market Intelligence smoke tests", () => {
   test.beforeEach(async ({ page }) => {
@@ -176,16 +180,16 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await page.goto("/");
 
     const searchSection = page.locator("#markets");
-    await page.getByLabel("Asset search").fill("Amazon");
-    await expect(searchSection.getByText("AMZN").first()).toBeVisible();
+    await page.getByLabel("Asset search").fill("Pampa");
+    await expect(searchSection.getByText("PAMP").first()).toBeVisible();
     await expect(searchSection).toContainText(/View preliminary profile|Ver ficha preliminar|Future coverage|Cobertura futura/);
     await expect(searchSection.locator("a").first()).toBeVisible();
   });
 
   test("future asset fallback page is graceful", async ({ page }) => {
-    await page.goto("/asset/AMZN");
+    await page.goto("/asset/PAMP");
 
-    await expect(page.getByText("AMZN").first()).toBeVisible();
+    await expect(page.getByText("PAMP").first()).toBeVisible();
     await expect(page.locator("body")).toContainText(/planned CMA Market Intelligence universe|universo previsto de CMA Market Intelligence/);
     await expect(page.locator("body")).not.toContainText(/Technical signal|Senal tecnica/);
     await expect(page.locator("body")).not.toContainText(/Market signal|Senal de mercado/);
@@ -361,6 +365,174 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.locator("body")).toContainText(/Fixed income: Mock|Renta fija: Simulado|Mock|Simulado/);
   });
 
+  test("asset pages show normalized display currencies", async ({ page }) => {
+    const expectedCurrencies = [
+      { symbol: "AAPL", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "SPY", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "QQQ", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "MSFT", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "NVDA", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "TSLA", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "AMZN", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "META", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "GOOGL", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "KO", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "BTC-USD", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "ETH-USD", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "SOL-USD", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "BNB-USD", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "GGAL", currency: "ARS", forbidden: forbiddenCurrencyLabels },
+      { symbol: "YPFD", currency: "ARS", forbidden: forbiddenCurrencyLabels },
+      { symbol: "AL30", currency: "ARS", forbidden: forbiddenCurrencyLabels },
+      { symbol: "AL30D", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "AL30C", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "GD30", currency: "ARS", forbidden: forbiddenCurrencyLabels },
+      { symbol: "GD30D", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "GD30C", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "TX26", currency: "ARS", forbidden: forbiddenCurrencyLabels },
+    ];
+
+    for (const item of expectedCurrencies) {
+      await page.goto(`/asset/${item.symbol}`);
+      await expect(page.getByText(item.symbol).first()).toBeVisible();
+      await expect(page.locator("body")).toContainText(item.currency);
+      for (const forbidden of item.forbidden) {
+        await expect(page.locator("body")).not.toContainText(forbidden);
+      }
+    }
+  });
+
+  test("Argentine bond species display quote currency separately from context", async ({ page }) => {
+    await page.goto("/asset/GD30");
+    await expect(page.locator("body")).toContainText(/92,300 ARS/);
+    await expect(page.locator("body")).not.toContainText(/61(?:\.|,)7\s*ARS/);
+    await expect(page.locator("body")).not.toContainText(/USD MEP|ARS CER|ARS SAR/);
+
+    await page.goto("/asset/AL30");
+    await expect(page.locator("body")).toContainText(/58,400 ARS/);
+    await expect(page.locator("body")).not.toContainText(/58(?:\.|,)4\s*ARS/);
+    await expect(page.locator("body")).not.toContainText(/USD MEP|ARS CER|ARS SAR/);
+
+    await page.goto("/asset/GD30D");
+    await expect(page.locator("body")).toContainText(/61\.70 USD/);
+    await expect(page.locator("body")).toContainText(/Dollar MEP species|Especie dólar MEP|Especie dolar MEP/);
+    await expect(page.locator("body")).not.toContainText(/61\.70 USD MEP|USD MEP/);
+
+    await page.goto("/asset/AL30D");
+    await expect(page.locator("body")).toContainText(/58\.40 USD/);
+    await expect(page.locator("body")).toContainText(/Dollar MEP species|Especie dólar MEP|Especie dolar MEP/);
+    await expect(page.locator("body")).not.toContainText(/58\.40 USD MEP|USD MEP/);
+
+    await page.goto("/asset/TX26");
+    await expect(page.locator("body")).toContainText(/142\.80 ARS/);
+    await expect(page.locator("body")).toContainText(/CER/);
+    await expect(page.locator("body")).not.toContainText(/ARS CER|ARS SAR/);
+  });
+
+  test("home search keeps GD30 price, change and action readable", async ({ page }) => {
+    await page.goto("/");
+
+    const searchSection = page.locator("#markets");
+    await page.getByLabel("Asset search").fill("GD30");
+    await expect(searchSection.getByText("GD30").first()).toBeVisible();
+    await expect(searchSection).toContainText(/92,300 ARS/);
+    await expect(searchSection).toContainText(/Abrir análisis|Open analysis/);
+    await expect(searchSection).toContainText(/%/);
+    await expect(searchSection).not.toContainText(/61(?:\.|,)7\s*ARS|ARS SAR|ARS CER/);
+  });
+
+  test("Spanish asset summaries use localized copy", async ({ page }) => {
+    await page.goto("/asset/AAPL");
+    await page.getByRole("button", { name: "ES", exact: true }).click();
+    await expect(page.locator("body")).toContainText("Compañía tecnológica global");
+    await expect(page.locator("body")).not.toContainText("Quality mega-cap profile");
+
+    await page.goto("/asset/GD30");
+    await page.getByRole("button", { name: "ES", exact: true }).click();
+    await expect(page.locator("body")).toContainText("Referencia soberana argentina");
+    await expect(page.locator("body")).not.toContainText("Global-law Argentine sovereign reference");
+
+    await page.goto("/asset/TX26");
+    await page.getByRole("button", { name: "ES", exact: true }).click();
+    await expect(page.locator("body")).toContainText("Bono del Tesoro argentino ajustado por CER");
+    await expect(page.locator("body")).not.toContainText("Inflation-linked Argentine Treasury exposure");
+
+    await page.goto("/asset/AL30D");
+    await page.getByRole("button", { name: "ES", exact: true }).click();
+    await expect(page.locator("body")).toContainText(/Especie dólar MEP|Especie dolar MEP/);
+    await expect(page.locator("body")).not.toContainText("Dollar MEP Species");
+  });
+
+  test("glossary page and metric tooltips are visible", async ({ page }) => {
+    await page.goto("/glossary");
+    await expect(page.getByRole("heading", { name: /Financial Glossary|Glosario financiero/ })).toBeVisible();
+    await expect(page.locator("body")).toContainText("Technical analysis");
+    await expect(page.locator("body")).toContainText("Estimated annual return");
+    for (const forbidden of forbiddenCurrencyLabels) {
+      await expect(page.locator("body")).not.toContainText(forbidden);
+    }
+
+    await page.goto("/asset/AAPL");
+    await page.getByRole("button", { name: "SMA 20" }).first().click();
+    await expect(page.getByRole("tooltip")).toContainText("Simple average of the last 20 closes");
+
+    await page.getByRole("button", { name: "P/E" }).first().click();
+    await expect(page.getByRole("tooltip")).toContainText("Relates market price to earnings per share");
+
+    await page.goto("/asset/AL30");
+    await page.getByRole("button", { name: "Clean price" }).first().click();
+    await expect(page.getByRole("tooltip")).toContainText("Bond price excluding accrued interest");
+  });
+
+  test("expanded USA provider/fallback asset routes stay available", async ({ page }) => {
+    for (const symbol of ["MSFT", "NVDA", "AMZN"]) {
+      await page.goto(`/asset/${symbol}`);
+      await expect(page.getByText(symbol).first()).toBeVisible();
+      await expect(page.locator("body")).toContainText(/Data coverage|Cobertura de datos/);
+      await expect(page.locator("body")).not.toContainText(/404|This page could not be found|Asset not found|Activo no encontrado/i);
+    }
+  });
+
+  test("expanded crypto provider/fallback asset routes stay available", async ({ page }) => {
+    for (const symbol of ["SOL-USD", "BNB-USD"]) {
+      await page.goto(`/asset/${symbol}`);
+      await expect(page.getByText(symbol).first()).toBeVisible();
+      await expect(page.locator("body")).toContainText(/Crypto|Cripto|Data coverage|Cobertura de datos/);
+      await expect(page.locator("body")).not.toContainText(/404|This page could not be found|Asset not found|Activo no encontrado/i);
+    }
+  });
+
+  test("data audit page explains provider mock and future coverage", async ({ page }) => {
+    await page.goto("/data-audit");
+
+    await expect(page.getByRole("heading", { name: /Data Audit|Auditoría de datos|Auditoria de datos/ })).toBeVisible();
+    for (const symbol of ["AAPL", "AL30", "BTC-USD"]) {
+      await expect(page.getByText(symbol).first()).toBeVisible();
+    }
+    await expect(page.locator("body")).toContainText(/Provider|Proveedor|Real/);
+    await expect(page.locator("body")).toContainText(/Mock|Simulado/);
+    await expect(page.locator("body")).toContainText(/Future|Futuro/);
+  });
+
+  test("methodology page explains analytical approach and disclaimer", async ({ page }) => {
+    await page.goto("/methodology");
+
+    await expect(page.getByRole("heading", { name: /Methodology|Metodología|Metodologia/ })).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Technical analysis methodology|Metodología de análisis técnico|Metodologia de analisis tecnico/);
+    await expect(page.locator("body")).toContainText(/Not investment advice|No es asesoramiento financiero/);
+  });
+
+  test("status and footer link to data audit and methodology", async ({ page }) => {
+    await page.goto("/status");
+    await expect(page.getByRole("link", { name: /View data audit|Ver auditor/i })).toHaveAttribute("href", "/data-audit");
+    await expect(page.getByRole("link", { name: /View methodology|Ver metodolog/i })).toHaveAttribute("href", "/methodology");
+
+    await page.goto("/");
+    const footer = page.locator("footer");
+    await expect(footer.getByRole("link", { name: /Data Audit|Auditoría|Auditoria/ })).toHaveAttribute("href", "/data-audit");
+    await expect(footer.getByRole("link", { name: /Methodology|Metodología|Metodologia/ })).toHaveAttribute("href", "/methodology");
+  });
+
   test("technical analysis source and API stay fallback-safe", async ({ page, request }) => {
     await page.goto("/asset/AAPL");
     await expect(page.locator("body")).toContainText(/Market signal|Senal de mercado/);
@@ -413,8 +585,8 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.getByText("AL30D").first()).toBeVisible();
     await expect(page.getByText("AL30C").first()).toBeVisible();
     await expect(page.locator("body")).toContainText(/Peso species|Especie en pesos/);
-    await expect(page.locator("body")).toContainText(/Dollar MEP species|Especie dolar MEP/);
-    await expect(page.locator("body")).toContainText(/Dollar cable\/CCL species|Especie dolar cable\/CCL/);
+    await expect(page.locator("body")).toContainText(/Dollar MEP species|Especie dólar MEP|Especie dolar MEP/);
+    await expect(page.locator("body")).toContainText(/Dollar cable\/CCL species|Especie dólar cable\/CCL|Especie dolar cable\/CCL/);
     await expect(page.locator("body")).toContainText(fixedIncomeSourceStatus);
     await expect(page.getByRole("heading", { name: "Fixed Income Analytics" })).toBeVisible();
     await expect(page.locator("body")).toContainText(/YTM|TIR/);
@@ -472,8 +644,8 @@ test.describe("CMA Market Intelligence smoke tests", () => {
       await expect(page.getByText(symbol).first()).toBeVisible();
     }
     await expect(page.locator("body")).toContainText(/Peso trading species|Especie en pesos/);
-    await expect(page.locator("body")).toContainText(/Dollar MEP species|Especie dolar MEP/);
-    await expect(page.locator("body")).toContainText(/Dollar cable\/CCL species|Especie dolar cable\/CCL/);
+    await expect(page.locator("body")).toContainText(/Dollar MEP species|Especie dólar MEP|Especie dolar MEP/);
+    await expect(page.locator("body")).toContainText(/Dollar cable\/CCL species|Especie dólar cable\/CCL|Especie dolar cable\/CCL/);
 
     for (const symbol of ["AL30D", "AL30C", "GD30D"]) {
       const analyticsResponse = await request.get(`/api/fixed-income/${symbol}`);

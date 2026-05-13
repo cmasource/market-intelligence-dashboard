@@ -6,9 +6,16 @@ The fixed income module adds structured bond analytics for CMA Market Intelligen
 
 ## Current Supported Instruments
 
-- `AL30`: Bonar 2030.
-- `GD30`: Global 2030.
-- `TX26`: CER-linked Argentine Treasury Bond.
+- `AL30`, `AL30D`, `AL30C`: Bonar 2030 peso, dollar MEP and dollar cable/CCL species.
+- `GD30`, `GD30D`, `GD30C`: Global 2030 peso, dollar MEP and dollar cable/CCL species.
+- `TX26`: CER-linked Argentine Treasury bond.
+
+## Price Conventions
+
+- Price lines show only price plus quote currency: `ARS` or `USD`.
+- MEP, cable/CCL and CER are market context labels, not price currencies.
+- Peso species use `marketDisplayPrice` for realistic local mock ARS prices.
+- Analytics use `analyticalPrice`, a normalized bond price compatible with current parity, yield and duration calculations.
 
 ## Calculated Metrics
 
@@ -28,7 +35,8 @@ The fixed income module adds structured bond analytics for CMA Market Intelligen
 
 - All data is structured mock data.
 - No BYMA, IOL or CNV integration is active.
-- Market price is treated as clean price unless dirty price is provided.
+- Market display prices are simulated until a licensed data source is enabled.
+- Normalized analytical prices are used for current fixed income calculations.
 - Accrued interest is simplified because precise settlement dates and coupon calendars are not available.
 - Cash flows use simplified bullet, amortizing or zero-coupon logic.
 - CER-linked treatment uses a placeholder coefficient and is not full real indexation.

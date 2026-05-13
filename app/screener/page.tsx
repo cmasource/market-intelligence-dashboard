@@ -3,6 +3,7 @@ import { ScreenerInfoBanner } from "@/components/screener/ScreenerInfoBanner";
 import { InstrumentUniverseGroups } from "@/components/screener/InstrumentUniverseGroups";
 import { ScreenerHero } from "@/components/screener/ScreenerHero";
 import { DataCoverageLegend } from "@/components/data-coverage/DataCoverageLegend";
+import { DataAuditLinkPanel } from "@/components/data-coverage/DataAuditLinkPanel";
 import { AppShell } from "@/components/layout/AppShell";
 
 type ScreenerSearchParams = {
@@ -28,6 +29,7 @@ export default async function ScreenerPage({
         <ScreenerHero />
         <ScreenerInfoBanner />
         <DataCoverageLegend />
+        <DataAuditLinkPanel />
         <InstrumentScreener initialFilters={params} />
         <InstrumentUniverseGroups />
       </div>

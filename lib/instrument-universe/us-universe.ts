@@ -1,6 +1,6 @@
 import type { InstrumentUniverseItem } from "./types";
 
-const realSupported = new Set(["AAPL", "SPY", "QQQ"]);
+const realSupported = new Set(["AAPL", "SPY", "QQQ", "MSFT", "NVDA", "TSLA", "AMZN", "META", "GOOGL", "KO"]);
 
 const usItems = [
   ["AAPL", "Apple Inc.", "NASDAQ", "Technology"],
@@ -10,6 +10,7 @@ const usItems = [
   ["AMZN", "Amazon.com Inc.", "NASDAQ", "Consumer Discretionary"],
   ["META", "Meta Platforms Inc.", "NASDAQ", "Communication Services"],
   ["GOOGL", "Alphabet Inc.", "NASDAQ", "Communication Services"],
+  ["KO", "The Coca-Cola Company", "NYSE", "Consumer Staples"],
   ["SPY", "SPDR S&P 500 ETF Trust", "NYSE_ARCA", "ETF"],
   ["QQQ", "Invesco QQQ Trust", "NASDAQ", "ETF"],
 ] as const;
@@ -43,6 +44,6 @@ export const US_INSTRUMENT_UNIVERSE: InstrumentUniverseItem[] = usItems.map(
     },
     searchableAliases: [`${symbol} USA`, `${symbol} US stock`, `${symbol} NYSE`, `${symbol} NASDAQ`],
     tags: ["usa", "stock", sector.toLowerCase()],
-    priority: realSupported.has(symbol) ? 9 : 5 - index * 0.1,
+    priority: realSupported.has(symbol) ? 9 - index * 0.05 : 5 - index * 0.1,
   }),
 );

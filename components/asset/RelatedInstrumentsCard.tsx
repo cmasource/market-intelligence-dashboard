@@ -6,6 +6,7 @@ import {
   getRelatedInstruments,
   hasRelatedInstruments,
 } from "@/lib/instrument-universe";
+import { formatDisplayCurrency } from "@/lib/formatters";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 
 type RelatedInstrumentsCardProps = {
@@ -62,7 +63,7 @@ export function RelatedInstrumentsCard({ symbol }: RelatedInstrumentsCardProps) 
               <span className="block font-semibold text-white">{instrument.symbol}</span>
               <span className="mt-1 block text-xs text-slate-300">{label}</span>
               <span className="mt-1 block text-xs text-slate-500">
-                {instrument.currency} | {instrument.market}
+                {formatDisplayCurrency(instrument.currency, language)} | {instrument.market}
               </span>
               {instrument.isPrimary ? (
                 <span className="mt-2 inline-flex rounded-full border border-emerald-300/25 bg-emerald-300/10 px-2 py-0.5 text-xs text-emerald-100">

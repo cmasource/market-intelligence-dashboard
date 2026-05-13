@@ -26,6 +26,8 @@ The app is transparent about mixed coverage: selected USA and crypto instruments
 - Technical analysis from OHLCV candles
 - Integrated market signal gauge
 - USA fundamentals provider layer with fallback
+- Data audit and methodology pages for coverage transparency
+- Centralized currency display and contextual financial glossary tooltips
 - Fixed income analytics using mock structured bond data
 - Argentina bond species: AL30, AL30D, AL30C, GD30, GD30D, GD30C and TX26
 - CEDEAR foundation
@@ -81,3 +83,12 @@ See `docs/vercel-deployment.md` for the full deployment checklist.
 This platform provides informational analysis only and does not constitute personalized financial advice or an investment recommendation.
 
 Some data comes from public providers, while other data is simulated or marked as future coverage.
+
+## Sprint 16 Transparency Notes
+
+- Expanded provider/fallback market data attempts now include `MSFT`, `NVDA`, `TSLA`, `AMZN`, `META`, `GOOGL`, `KO`, `BNB-USD`, `SOL-USD`, `XRP-USD`, `ADA-USD`, `DOGE-USD`, `AVAX-USD`, `LINK-USD` and `DOT-USD`.
+- `/data-audit` shows a coverage matrix by instrument and analytical layer.
+- `/methodology` explains the technical, market signal, fundamentals and fixed income methodology.
+- `/glossary` explains technical, fundamental and fixed income terms used in cards and tooltips.
+- Currency display is centralized to avoid visible `ARS/USD`, `USD/ARS` or SAR-typo price labels.
+- Manual validation guides live in `docs/manual-technical-validation.md` and `docs/manual-fundamental-validation.md`.

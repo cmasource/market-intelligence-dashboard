@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatNumber, formatPercent } from "@/lib/formatters";
+import { formatCurrency, formatNumber, formatPercent } from "@/lib/formatters";
+import { GlossaryLabel } from "@/components/glossary/GlossaryLabel";
 import {
   translateBondLaw,
   translateRiskLevel,
+  translateSettlementContext,
   translateSpeciesType,
   translateTradingCurrency,
 } from "@/lib/i18n/display-labels";
@@ -91,30 +93,34 @@ export function FixedIncomeComparison() {
                 </div>
                 <div>
                   <dt className="text-xs uppercase tracking-[0.14em] text-slate-500">{t("priceLabel")}</dt>
-                  <dd className="mt-1 font-semibold text-white">{formatNumber(item.price)}</dd>
+                  <dd className="mt-1 font-semibold text-white">{formatCurrency(item.price, item.quoteCurrency ?? item.displayCurrency, language)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-[0.14em] text-slate-500">{t("parity")}</dt>
+                  <dt className="text-xs uppercase tracking-[0.14em] text-slate-500">{t("settlementCurrency")}</dt>
+                  <dd className="mt-1 font-semibold text-white">{translateSettlementContext(item.settlementContext, language)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-[0.14em] text-slate-500"><GlossaryLabel termKey="parity" fallbackLabel={t("parity")} /></dt>
                   <dd className="mt-1 font-semibold text-white">{formatRate(item.parity, unavailable)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-[0.14em] text-slate-500">YTM</dt>
+                  <dt className="text-xs uppercase tracking-[0.14em] text-slate-500"><GlossaryLabel termKey="ytm" fallbackLabel="YTM" /></dt>
                   <dd className="mt-1 font-semibold text-white">{formatRate(item.estimatedYTM, unavailable)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-[0.14em] text-slate-500">{t("duration")}</dt>
+                  <dt className="text-xs uppercase tracking-[0.14em] text-slate-500"><GlossaryLabel termKey="duration" fallbackLabel={t("duration")} /></dt>
                   <dd className="mt-1 font-semibold text-white">{formatValue(item.duration, unavailable)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-[0.14em] text-slate-500">{t("modifiedDuration")}</dt>
+                  <dt className="text-xs uppercase tracking-[0.14em] text-slate-500"><GlossaryLabel termKey="modifiedDuration" fallbackLabel={t("modifiedDuration")} /></dt>
                   <dd className="mt-1 font-semibold text-white">{formatValue(item.modifiedDuration, unavailable)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-[0.14em] text-slate-500">{t("convexity")}</dt>
+                  <dt className="text-xs uppercase tracking-[0.14em] text-slate-500"><GlossaryLabel termKey="convexity" fallbackLabel={t("convexity")} /></dt>
                   <dd className="mt-1 font-semibold text-white">{formatValue(item.convexity, unavailable)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-[0.14em] text-slate-500">{t("law")}</dt>
+                  <dt className="text-xs uppercase tracking-[0.14em] text-slate-500"><GlossaryLabel termKey="law" fallbackLabel={t("law")} /></dt>
                   <dd className="mt-1 font-semibold text-white">{translateBondLaw(item.law, language)}</dd>
                 </div>
               </dl>

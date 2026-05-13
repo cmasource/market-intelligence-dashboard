@@ -1,0 +1,67 @@
+export type GlossaryCategory = "technical" | "fundamentals" | "fixed_income" | "risk" | "market";
+
+export type GlossaryTermKey =
+  | "trend"
+  | "momentum"
+  | "sma20"
+  | "sma50"
+  | "sma200"
+  | "ema12"
+  | "ema26"
+  | "rsi14"
+  | "macd"
+  | "macdSignal"
+  | "macdHistogram"
+  | "support"
+  | "resistance"
+  | "volumeTrend"
+  | "pe"
+  | "forwardPe"
+  | "pb"
+  | "ps"
+  | "peg"
+  | "eps"
+  | "bookValuePerShare"
+  | "roe"
+  | "roa"
+  | "grossMargin"
+  | "operatingMargin"
+  | "ebitdaMargin"
+  | "netMargin"
+  | "revenueGrowth"
+  | "earningsGrowth"
+  | "debtToEquity"
+  | "currentRatio"
+  | "quickRatio"
+  | "dividendYield"
+  | "beta"
+  | "fiftyTwoWeekHigh"
+  | "fiftyTwoWeekLow"
+  | "marketCap"
+  | "ytm"
+  | "tir"
+  | "currentYield"
+  | "parity"
+  | "duration"
+  | "modifiedDuration"
+  | "convexity"
+  | "accruedInterest"
+  | "cleanPrice"
+  | "dirtyPrice"
+  | "coupon"
+  | "maturityDate"
+  | "law"
+  | "cer"
+  | "dollarLinked";
+
+export type GlossaryTerm = {
+  key: GlossaryTermKey;
+  labelEn: string;
+  labelEs: string;
+  shortDefinitionEn: string;
+  shortDefinitionEs: string;
+  formula?: string;
+  category: GlossaryCategory;
+  cautionEn?: string;
+  cautionEs?: string;
+};

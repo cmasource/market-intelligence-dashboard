@@ -14,7 +14,7 @@ function getDurationRisk(modifiedDuration: number | null): RiskTone {
 }
 
 function getCurrencyRisk(instrument: FixedIncomeInstrument): RiskTone {
-  if (instrument.currency === "ARS_CER" || instrument.currency === "ARS_DOLLAR_LINKED") return "high";
+  if (instrument.indexationType === "CER" || instrument.currency === "ARS_CER" || instrument.currency === "ARS_DOLLAR_LINKED") return "high";
   if (instrument.currency === "USD") return "medium";
   if (instrument.currency === "ARS") return "high";
   return "medium";
@@ -32,7 +32,8 @@ export function buildFixedIncomeRiskProfile(
   const currencyRisk = getCurrencyRisk(instrument);
   const liquidityRisk: RiskTone = instrument.symbol === "TX26" ? "medium" : "high";
   const legalRisk: RiskTone = instrument.law === "new_york" ? "medium" : "high";
-  const inflationAdjustmentRisk: RiskTone | undefined = instrument.currency === "ARS_CER" ? "high" : undefined;
+  const inflationAdjustmentRisk: RiskTone | undefined =
+    instrument.indexationType === "CER" || instrument.currency === "ARS_CER" ? "high" : undefined;
   const overallRisk = maxRisk(durationRisk, creditRisk, currencyRisk, liquidityRisk, legalRisk, inflationAdjustmentRisk ?? "low");
 
   return {

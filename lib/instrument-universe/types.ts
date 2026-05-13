@@ -44,6 +44,8 @@ export type InstrumentDataCoverage = {
 export type InstrumentUniverseItem = {
   symbol: string;
   displayName: string;
+  displayNameEn?: string;
+  displayNameEs?: string;
   shortName?: string;
   category: InstrumentCategory;
   country: InstrumentCountry;
@@ -54,8 +56,16 @@ export type InstrumentUniverseItem = {
   isin?: string;
   cusip?: string;
   displayCurrency?: string;
+  quoteCurrency?: string;
   tradingCurrency?: string;
   settlementCurrency?: string;
+  settlementContext?: string;
+  settlementContextEn?: string;
+  settlementContextEs?: string;
+  indexationType?: string;
+  marketConventionLabel?: string;
+  marketConventionLabelEn?: string;
+  marketConventionLabelEs?: string;
   sector?: string;
   industry?: string;
   exchange?: string;

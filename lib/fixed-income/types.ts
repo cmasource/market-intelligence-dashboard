@@ -9,7 +9,7 @@ export type FixedIncomeInstrumentType =
   | "provincial_bond"
   | "unknown";
 
-export type FixedIncomeCurrency = "ARS" | "USD" | "ARS_CER" | "ARS_DOLLAR_LINKED" | "UNKNOWN";
+export type FixedIncomeCurrency = "ARS" | "USD" | "USD_MEP" | "USD_CABLE" | "ARS_CER" | "ARS_DOLLAR_LINKED" | "UNKNOWN";
 
 export type FixedIncomeLaw = "argentina" | "new_york" | "unknown";
 
@@ -20,6 +20,9 @@ export type CouponType = "fixed" | "floating" | "zero" | "cer_adjusted" | "dolla
 export type RiskTone = "low" | "medium" | "high" | "very_high";
 
 export type SpeciesType = "peso" | "dollar_mep" | "dollar_cable" | "cer" | "unknown";
+export type QuoteCurrency = "ARS" | "USD" | "UNKNOWN";
+export type SettlementContext = "pesos" | "dollar_mep" | "dollar_cable" | "cer_linked" | "unknown";
+export type IndexationType = "CER" | "none" | "unknown";
 
 export type FixedIncomeInstrument = {
   symbol: string;
@@ -29,7 +32,14 @@ export type FixedIncomeInstrument = {
   tradingCurrency: FixedIncomeCurrency;
   settlementCurrency: FixedIncomeCurrency;
   displayCurrency: FixedIncomeCurrency;
+  quoteCurrency?: QuoteCurrency;
+  settlementContext?: SettlementContext;
+  indexationType?: IndexationType;
+  marketDisplayPrice?: number;
+  analyticalPrice?: number;
   marketConventionLabel: string;
+  marketConventionLabelEn?: string;
+  marketConventionLabelEs?: string;
   name: string;
   type: FixedIncomeInstrumentType;
   issuer: string;
@@ -119,8 +129,12 @@ export type BondComparisonItem = {
   speciesType: SpeciesType;
   tradingCurrency: FixedIncomeCurrency;
   displayCurrency: FixedIncomeCurrency;
+  quoteCurrency?: QuoteCurrency;
+  settlementContext?: SettlementContext;
+  indexationType?: IndexationType;
   name: string;
   price: number;
+  analyticalPrice?: number;
   parity: number | null;
   estimatedYTM: number | null;
   duration: number | null;

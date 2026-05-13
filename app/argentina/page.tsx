@@ -46,7 +46,7 @@ export default function ArgentinaPage() {
           </h1>
           <p className="mt-4 max-w-4xl text-sm leading-6 text-slate-300">
             {isSpanish
-              ? "Esta pagina centraliza analitica especifica de Argentina: acciones, CEDEARs, bonos soberanos, instrumentos CER, referencias MEP/CCL e integraciones futuras con BYMA, IOL y CNV."
+              ? "Esta página centraliza analítica específica de Argentina: acciones, CEDEARs, bonos soberanos, instrumentos CER, referencias MEP/CCL e integraciones futuras con BYMA, IOL y CNV."
               : "This page centralizes Argentina-specific analytics: equities, CEDEARs, sovereign bonds, CER-linked instruments, MEP/CCL references and future BYMA, IOL and CNV integrations."}
           </p>
         </section>
@@ -86,7 +86,7 @@ export default function ArgentinaPage() {
           </div>
           <p className="mt-5 rounded-lg border border-amber-300/20 bg-amber-300/10 p-3 text-sm leading-6 text-amber-100">
             {isSpanish
-              ? "Este es un universo inicial simulado. Versiones futuras ampliaran la cobertura al panel lider, panel general, CEDEARs, ONs, letras, lecaps y otros instrumentos de BYMA."
+              ? "Este es un universo inicial simulado. Versiones futuras ampliarán la cobertura al panel líder, panel general, CEDEARs, ONs, letras, lecaps y otros instrumentos de BYMA."
               : "This is an initial mock universe. Future versions will expand coverage to panel lider, general panel, CEDEARs, ONs, letras, lecaps and other BYMA instruments."}
           </p>
           <Link

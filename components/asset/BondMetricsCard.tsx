@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { formatNumber, formatPercent } from "@/lib/formatters";
+import { formatCurrency, formatNumber, formatPercent } from "@/lib/formatters";
+import { GlossaryLabel } from "@/components/glossary/GlossaryLabel";
 import { getRelatedBondSpecies } from "@/lib/fixed-income";
 import {
   translateAmortizationType,
@@ -10,6 +11,7 @@ import {
   translateFixedIncomeCurrency,
   translateProviderLabel,
   translateRiskLevel,
+  translateSettlementContext,
   translateSpeciesType,
   translateTradingCurrency,
 } from "@/lib/i18n/display-labels";
@@ -27,6 +29,10 @@ type BondMetricsCardProps = {
 
 function formatNullableNumber(value: number | null | undefined, fallback: string) {
   return typeof value === "number" && Number.isFinite(value) ? formatNumber(value) : fallback;
+}
+
+function formatNullableCurrencyValue(value: number | null | undefined, currency: string, language: "en" | "es", fallback: string) {
+  return typeof value === "number" && Number.isFinite(value) ? formatCurrency(value, currency, language) : fallback;
 }
 
 function formatNullableRate(value: number | null | undefined, fallback: string) {
@@ -76,31 +82,31 @@ export function BondMetricsCard({ symbol, fallbackBondMetrics, metrics }: BondMe
   const pricingRows = useMemo(() => {
     if (analytics) {
       return [
-        { label: t("cleanPrice"), value: formatNullableNumber(analytics.cleanPrice, unavailable) },
-        { label: t("dirtyPrice"), value: formatNullableNumber(analytics.dirtyPrice, unavailable) },
-        { label: t("accruedInterest"), value: formatNullableNumber(analytics.accruedInterest, unavailable) },
-        { label: t("parity"), value: formatNullableRate(analytics.parity, unavailable) },
-        { label: t("currentYield"), value: formatNullableRate(analytics.currentYield, unavailable) },
+        { label: <GlossaryLabel termKey="cleanPrice" fallbackLabel={t("cleanPrice")} />, value: formatNullableCurrencyValue(analytics.cleanPrice, analytics.instrument.displayCurrency, language, unavailable) },
+        { label: <GlossaryLabel termKey="dirtyPrice" fallbackLabel={t("dirtyPrice")} />, value: formatNullableCurrencyValue(analytics.dirtyPrice, analytics.instrument.displayCurrency, language, unavailable) },
+        { label: <GlossaryLabel termKey="accruedInterest" fallbackLabel={t("accruedInterest")} />, value: formatNullableCurrencyValue(analytics.accruedInterest, analytics.instrument.displayCurrency, language, unavailable) },
+        { label: <GlossaryLabel termKey="parity" fallbackLabel={t("parity")} />, value: formatNullableRate(analytics.parity, unavailable) },
+        { label: <GlossaryLabel termKey="currentYield" fallbackLabel={t("currentYield")} />, value: formatNullableRate(analytics.currentYield, unavailable) },
       ];
     }
 
     return [
-      { label: t("parity"), value: fallback ? formatPercent(fallback.parity) : unavailable },
-      { label: t("coupon"), value: fallback ? formatPercent(fallback.coupon) : unavailable },
+      { label: <GlossaryLabel termKey="parity" fallbackLabel={t("parity")} />, value: fallback ? formatPercent(fallback.parity) : unavailable },
+      { label: <GlossaryLabel termKey="coupon" fallbackLabel={t("coupon")} />, value: fallback ? formatPercent(fallback.coupon) : unavailable },
     ];
-  }, [analytics, fallback, t, unavailable]);
+  }, [analytics, fallback, language, t, unavailable]);
 
   const sensitivityRows = analytics
     ? [
-        { label: "YTM / TIR", value: formatNullableRate(analytics.estimatedYTM, unavailable) },
-        { label: t("macaulayDuration"), value: formatNullableNumber(analytics.macaulayDuration, unavailable) },
-        { label: t("modifiedDuration"), value: formatNullableNumber(analytics.modifiedDuration, unavailable) },
-        { label: t("convexity"), value: formatNullableNumber(analytics.convexity, unavailable) },
+        { label: <GlossaryLabel termKey="ytm" fallbackLabel="YTM / TIR" />, value: formatNullableRate(analytics.estimatedYTM, unavailable) },
+        { label: <GlossaryLabel termKey="duration" fallbackLabel={t("macaulayDuration")} />, value: formatNullableNumber(analytics.macaulayDuration, unavailable) },
+        { label: <GlossaryLabel termKey="modifiedDuration" fallbackLabel={t("modifiedDuration")} />, value: formatNullableNumber(analytics.modifiedDuration, unavailable) },
+        { label: <GlossaryLabel termKey="convexity" fallbackLabel={t("convexity")} />, value: formatNullableNumber(analytics.convexity, unavailable) },
       ]
     : [
-        { label: "TIR", value: fallback ? formatPercent(fallback.tir) : unavailable },
-        { label: t("duration"), value: fallback ? formatNumber(fallback.duration) : unavailable },
-        { label: t("modifiedDuration"), value: fallback ? formatNumber(fallback.modifiedDuration) : unavailable },
+        { label: <GlossaryLabel termKey="tir" fallbackLabel="TIR" />, value: fallback ? formatPercent(fallback.tir) : unavailable },
+        { label: <GlossaryLabel termKey="duration" fallbackLabel={t("duration")} />, value: fallback ? formatNumber(fallback.duration) : unavailable },
+        { label: <GlossaryLabel termKey="modifiedDuration" fallbackLabel={t("modifiedDuration")} />, value: fallback ? formatNumber(fallback.modifiedDuration) : unavailable },
       ];
 
   const instrumentRows = analytics
@@ -110,15 +116,16 @@ export function BondMetricsCard({ symbol, fallbackBondMetrics, metrics }: BondMe
         { label: t("tradingSpecies"), value: translateSpeciesType(analytics.instrument.speciesType, language) },
         { label: t("tradingCurrency"), value: translateTradingCurrency(analytics.instrument.tradingCurrency, language) },
         { label: t("settlementCurrency"), value: translateFixedIncomeCurrency(analytics.instrument.settlementCurrency, language) },
+        { label: t("marketConvention"), value: translateSettlementContext(analytics.instrument.settlementContext, language) },
         { label: t("displayCurrency"), value: translateFixedIncomeCurrency(analytics.instrument.displayCurrency, language) },
-        { label: t("marketConvention"), value: translateSpeciesType(analytics.instrument.speciesType, language) },
+        { label: "Indexation", value: analytics.instrument.indexationType === "CER" ? "CER" : unavailable },
         { label: t("relatedSpecies"), value: getRelatedBondSpecies(analytics.symbol).join(", ") },
         { label: t("issuer"), value: analytics.instrument.issuer },
         { label: t("currency"), value: translateFixedIncomeCurrency(analytics.instrument.currency, language) },
-        { label: t("law"), value: translateBondLaw(analytics.instrument.law, language) },
+        { label: <GlossaryLabel termKey="law" fallbackLabel={t("law")} />, value: translateBondLaw(analytics.instrument.law, language) },
         { label: t("couponType"), value: translateCouponType(analytics.instrument.couponType, language) },
         { label: t("amortizationType"), value: translateAmortizationType(analytics.instrument.amortizationType, language) },
-        { label: t("maturityDate"), value: analytics.instrument.maturityDate },
+        { label: <GlossaryLabel termKey="maturityDate" fallbackLabel={t("maturityDate")} />, value: analytics.instrument.maturityDate },
         { label: t("couponFrequency"), value: formatNumber(analytics.instrument.couponFrequency) },
       ]
     : [

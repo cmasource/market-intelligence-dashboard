@@ -33,6 +33,11 @@ CMA Market Intelligence is a professional financial intelligence dashboard creat
 - Instrument screener with search, category, market, country, currency and data-status filters.
 - Market universe page with group cards for Argentine equities, CEDEARs, sovereign bonds and species, ETFs, USA stocks and crypto.
 - Data coverage badges showing real/provider, mock/fallback, future, not-applicable and unavailable layers.
+- Data audit and methodology pages explaining coverage status, calculation inputs and analytical limitations.
+- Centralized currency formatting for USD and ARS, with MEP, cable/CCL and CER shown as bond species or indexation context rather than price currencies.
+- Contextual glossary tooltips for technical, fundamental and fixed income metrics.
+- Local Argentine equity prices must display as ARS, not ARS/USD or USD/ARS composites.
+- Bond species display conventions must distinguish quote currency from settlement/species context.
 - Crypto monitor with future arbitrage intelligence.
 - Argentina market module for local equities, bonds, CER-linked assets and FX references.
 - AI-style market interpretation and future agent-ready structure.
@@ -47,6 +52,7 @@ CMA Market Intelligence is a professional financial intelligence dashboard creat
 - Internal bilingual support for English and Spanish.
 - Interactive charting using TradingView Lightweight Charts.
 - Real-data attempts for `AAPL`, `SPY`, `QQQ`, `BTC-USD` and `ETH-USD` through internal provider adapters.
+- Expanded provider/fallback data attempts for `MSFT`, `NVDA`, `TSLA`, `AMZN`, `META`, `GOOGL`, `KO`, `BNB-USD`, `SOL-USD`, `XRP-USD`, `ADA-USD`, `DOGE-USD`, `AVAX-USD`, `LINK-USD` and `DOT-USD`.
 - Provider fundamentals attempts for `AAPL`, `SPY` and `QQQ`.
 - Mock fixed income analytics for `AL30`, `GD30` and `TX26`.
 - Related species visibility for `AL30`, `AL30D`, `AL30C`, `GD30`, `GD30D` and `GD30C`.
@@ -60,6 +66,8 @@ CMA Market Intelligence is a professional financial intelligence dashboard creat
 - Technical signal gauge using non-advisory terminology instead of buy/sell recommendations.
 - Public demo footer with informational disclaimer, data coverage note and core navigation links.
 - Vercel deployment readiness documentation and pre-deploy validation checklist.
+- Manual technical and fundamental validation guides for comparison against external market platforms.
+- Public financial glossary page for concise metric definitions.
 - Conservative noindex/nofollow metadata for the current public demo.
 - `.env.example` placeholder for future provider, AI, news and database integrations.
 - Mock fallback data preserved for every instrument.

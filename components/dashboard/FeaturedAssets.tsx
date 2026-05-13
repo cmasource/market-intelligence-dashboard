@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { formatCurrency, formatPercent } from "@/lib/formatters";
+import { formatAssetPrice, formatPercent } from "@/lib/formatters";
 import { getAssetTypeLabel } from "@/lib/i18n/domain";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { useTheme } from "@/lib/theme/useTheme";
@@ -14,7 +14,7 @@ type FeaturedAssetsProps = {
 };
 
 export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { resolvedMode } = useTheme();
   const isLight = resolvedMode === "light";
 
@@ -28,6 +28,9 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {assets.map((asset) => {
           const isPositive = asset.dailyChange >= 0;
+          const name = language === "es" && asset.nameEs ? asset.nameEs : asset.nameEn ?? asset.name;
+          const summary = language === "es" && asset.summaryEs ? asset.summaryEs : asset.summaryEn ?? asset.summary;
+          const context = language === "es" ? asset.marketConventionLabelEs ?? asset.settlementContextEs : asset.marketConventionLabelEn ?? asset.settlementContextEn;
 
           return (
             <Link
@@ -42,7 +45,7 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-lg font-semibold text-white">{asset.symbol}</p>
-                  <p className="mt-1 text-sm text-slate-400">{asset.name}</p>
+                  <p className="mt-1 text-sm text-slate-400">{name}</p>
                 </div>
                 <span className={isPositive ? "text-sm font-semibold text-emerald-300" : "text-sm font-semibold text-rose-300"}>
                   {formatPercent(asset.dailyChange)}
@@ -54,15 +57,18 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
                 </span>
                 <span className="rounded-full border border-white/10 px-2.5 py-1 text-xs text-slate-300">{asset.market}</span>
                 <ScoreBadge riskLevel={asset.riskLevel} />
+                {context ? (
+                  <span className="rounded-full border border-violet-300/20 px-2.5 py-1 text-xs text-violet-100">{context}</span>
+                ) : null}
               </div>
               <div className="mt-5 flex items-end justify-between gap-4">
                 <div>
                   <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{t("priceLabel")}</p>
-                  <p className="mt-1 text-xl font-semibold text-white">{formatCurrency(asset.price, asset.currency)}</p>
+                  <p className="mt-1 text-xl font-semibold text-white">{formatAssetPrice(asset.price, asset, language)}</p>
                 </div>
                 <ScoreBadge score={asset.technicalScore} />
               </div>
-              <p className="mt-4 text-sm leading-6 text-slate-400">{asset.summary}</p>
+              <p className="mt-4 text-sm leading-6 text-slate-400">{summary}</p>
               <p className="mt-4 text-sm font-medium text-cyan-200 group-hover:text-white">{t("openIntelligenceProfile")}</p>
             </Link>
           );

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatCurrency, formatNumber, formatPercent, formatScore } from "@/lib/formatters";
+import { GlossaryLabel } from "@/components/glossary/GlossaryLabel";
 import type { FundamentalsResponse, FundamentalsSnapshot } from "@/lib/fundamentals-data/types";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import type { AssetType } from "@/types/asset";
@@ -28,9 +29,9 @@ function formatOptionalNumber(value: number | undefined, fallback: string) {
   return safeValue === undefined ? fallback : formatNumber(safeValue);
 }
 
-function formatOptionalCurrency(value: number | undefined, currency: string, fallback: string) {
+function formatOptionalCurrency(value: number | undefined, currency: string, fallback: string, language: "en" | "es" = "en") {
   const safeValue = ratio(value);
-  return safeValue === undefined ? fallback : formatCurrency(safeValue, currency);
+  return safeValue === undefined ? fallback : formatCurrency(safeValue, currency, language);
 }
 
 function formatOptionalPercent(value: number | undefined, fallback: string) {
@@ -72,7 +73,7 @@ export function FundamentalAnalysisCard({
   fallbackFundamentalScore,
   currency = asset?.currency ?? "USD",
 }: FundamentalAnalysisCardProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [fundamentals, setFundamentals] = useState<FundamentalsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [apiFailed, setApiFailed] = useState(false);
@@ -145,35 +146,35 @@ export function FundamentalAnalysisCard({
 
   const na = t("notAvailable");
   const valuationMetrics = [
-    ["P/E", formatOptionalNumber(snapshot.trailingPE, na)],
-    ["Forward P/E", formatOptionalNumber(snapshot.forwardPE, na)],
-    ["P/B", formatOptionalNumber(snapshot.priceToBook, na)],
-    ["P/S", formatOptionalNumber(snapshot.priceToSales, na)],
-    ["PEG", formatOptionalNumber(snapshot.pegRatio, na)],
-    ["EPS/BPA", formatOptionalCurrency(snapshot.eps, safeCurrency, na)],
-    [t("bookValuePerShare"), formatOptionalCurrency(snapshot.bookValuePerShare, safeCurrency, na)],
+    { id: "pe", label: <GlossaryLabel termKey="pe" />, value: formatOptionalNumber(snapshot.trailingPE, na) },
+    { id: "forwardPe", label: <GlossaryLabel termKey="forwardPe" />, value: formatOptionalNumber(snapshot.forwardPE, na) },
+    { id: "pb", label: <GlossaryLabel termKey="pb" />, value: formatOptionalNumber(snapshot.priceToBook, na) },
+    { id: "ps", label: <GlossaryLabel termKey="ps" />, value: formatOptionalNumber(snapshot.priceToSales, na) },
+    { id: "peg", label: <GlossaryLabel termKey="peg" />, value: formatOptionalNumber(snapshot.pegRatio, na) },
+    { id: "eps", label: <GlossaryLabel termKey="eps" />, value: formatOptionalCurrency(snapshot.eps, safeCurrency, na, language) },
+    { id: "bookValuePerShare", label: <GlossaryLabel termKey="bookValuePerShare" fallbackLabel={t("bookValuePerShare")} />, value: formatOptionalCurrency(snapshot.bookValuePerShare, safeCurrency, na, language) },
   ];
   const profitabilityMetrics = [
-    ["ROE", formatOptionalPercent(snapshot.roe, na)],
-    ["ROA", formatOptionalPercent(snapshot.roa, na)],
-    ["Gross margin", formatOptionalPercent(snapshot.grossMargin, na)],
-    ["Operating margin", formatOptionalPercent(snapshot.operatingMargin, na)],
-    [t("ebitdaMargin"), formatOptionalPercent(snapshot.ebitdaMargin, na)],
-    ["Net margin", formatOptionalPercent(snapshot.netMargin, na)],
+    { id: "roe", label: <GlossaryLabel termKey="roe" />, value: formatOptionalPercent(snapshot.roe, na) },
+    { id: "roa", label: <GlossaryLabel termKey="roa" />, value: formatOptionalPercent(snapshot.roa, na) },
+    { id: "grossMargin", label: <GlossaryLabel termKey="grossMargin" />, value: formatOptionalPercent(snapshot.grossMargin, na) },
+    { id: "operatingMargin", label: <GlossaryLabel termKey="operatingMargin" />, value: formatOptionalPercent(snapshot.operatingMargin, na) },
+    { id: "ebitdaMargin", label: <GlossaryLabel termKey="ebitdaMargin" fallbackLabel={t("ebitdaMargin")} />, value: formatOptionalPercent(snapshot.ebitdaMargin, na) },
+    { id: "netMargin", label: <GlossaryLabel termKey="netMargin" />, value: formatOptionalPercent(snapshot.netMargin, na) },
   ];
   const growthAndRiskMetrics = [
-    ["Revenue growth", formatOptionalPercent(snapshot.revenueGrowth, na)],
-    ["Earnings growth", formatOptionalPercent(snapshot.earningsGrowth, na)],
-    ["Debt/equity", formatOptionalNumber(snapshot.debtToEquity, na)],
-    ["Current ratio", formatOptionalNumber(snapshot.currentRatio, na)],
-    ["Quick ratio", formatOptionalNumber(snapshot.quickRatio, na)],
+    { id: "revenueGrowth", label: <GlossaryLabel termKey="revenueGrowth" />, value: formatOptionalPercent(snapshot.revenueGrowth, na) },
+    { id: "earningsGrowth", label: <GlossaryLabel termKey="earningsGrowth" />, value: formatOptionalPercent(snapshot.earningsGrowth, na) },
+    { id: "debtToEquity", label: <GlossaryLabel termKey="debtToEquity" />, value: formatOptionalNumber(snapshot.debtToEquity, na) },
+    { id: "currentRatio", label: <GlossaryLabel termKey="currentRatio" />, value: formatOptionalNumber(snapshot.currentRatio, na) },
+    { id: "quickRatio", label: <GlossaryLabel termKey="quickRatio" />, value: formatOptionalNumber(snapshot.quickRatio, na) },
   ];
   const marketProfileMetrics = [
-    [t("dividendYield"), formatOptionalPercent(snapshot.dividendYield, na)],
-    ["Beta", formatOptionalNumber(snapshot.beta, na)],
-    ["52W high", formatOptionalCurrency(snapshot.fiftyTwoWeekHigh, safeCurrency, na)],
-    ["52W low", formatOptionalCurrency(snapshot.fiftyTwoWeekLow, safeCurrency, na)],
-    ["Market cap", formatOptionalCurrency(snapshot.marketCap, safeCurrency, na)],
+    { id: "dividendYield", label: <GlossaryLabel termKey="dividendYield" fallbackLabel={t("dividendYield")} />, value: formatOptionalPercent(snapshot.dividendYield, na) },
+    { id: "beta", label: <GlossaryLabel termKey="beta" />, value: formatOptionalNumber(snapshot.beta, na) },
+    { id: "fiftyTwoWeekHigh", label: <GlossaryLabel termKey="fiftyTwoWeekHigh" />, value: formatOptionalCurrency(snapshot.fiftyTwoWeekHigh, safeCurrency, na, language) },
+    { id: "fiftyTwoWeekLow", label: <GlossaryLabel termKey="fiftyTwoWeekLow" />, value: formatOptionalCurrency(snapshot.fiftyTwoWeekLow, safeCurrency, na, language) },
+    { id: "marketCap", label: <GlossaryLabel termKey="marketCap" />, value: formatOptionalCurrency(snapshot.marketCap, safeCurrency, na, language) },
   ];
 
   return (
@@ -192,19 +193,19 @@ export function FundamentalAnalysisCard({
       <div className="space-y-4">
         <div>
           <h3 className="mb-2 text-sm font-semibold text-white">{t("fundamentalsValuation")}</h3>
-          <MetricGrid items={valuationMetrics.map(([label, value]) => ({ label, value }))} />
+          <MetricGrid items={valuationMetrics} />
         </div>
         <div>
           <h3 className="mb-2 text-sm font-semibold text-white">{t("fundamentalsProfitability")}</h3>
-          <MetricGrid items={profitabilityMetrics.map(([label, value]) => ({ label, value }))} />
+          <MetricGrid items={profitabilityMetrics} />
         </div>
         <div>
           <h3 className="mb-2 text-sm font-semibold text-white">{t("fundamentalsGrowthRisk")}</h3>
-          <MetricGrid items={growthAndRiskMetrics.map(([label, value]) => ({ label, value }))} />
+          <MetricGrid items={growthAndRiskMetrics} />
         </div>
         <div>
           <h3 className="mb-2 text-sm font-semibold text-white">{t("fundamentalsMarketProfile")}</h3>
-          <MetricGrid items={marketProfileMetrics.map(([label, value]) => ({ label, value }))} />
+          <MetricGrid items={marketProfileMetrics} />
         </div>
       </div>
       {fundamentals?.interpretation.bulletPoints.length ? (

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DataCoverageBadges } from "@/components/data-coverage/DataCoverageBadges";
+import { formatDisplayCurrency } from "@/lib/formatters";
 import { getCoverageGroupOptions } from "@/lib/data-coverage";
 import {
   filterInstrumentUniverse,
@@ -161,10 +162,18 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h3 className="text-xl font-semibold text-white">{instrument.symbol}</h3>
-                  <p className="mt-1 text-sm text-slate-300">{instrument.displayName}</p>
-                  <p className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-500">
-                    {formatEnum(instrument.category)} | {instrument.market} | {instrument.country} | {instrument.currency}
+                  <p className="mt-1 text-sm text-slate-300">
+                    {isSpanish && instrument.displayNameEs ? instrument.displayNameEs : instrument.displayNameEn ?? instrument.displayName}
                   </p>
+                  <p className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-500">
+                    {formatEnum(instrument.category)} | {instrument.market} | {instrument.country} |{" "}
+                    {formatDisplayCurrency(instrument.currency, language)}
+                  </p>
+                  {(isSpanish ? instrument.marketConventionLabelEs ?? instrument.settlementContextEs : instrument.marketConventionLabelEn ?? instrument.settlementContextEn) ? (
+                    <p className="mt-1 text-xs font-medium text-violet-200">
+                      {isSpanish ? instrument.marketConventionLabelEs ?? instrument.settlementContextEs : instrument.marketConventionLabelEn ?? instrument.settlementContextEn}
+                    </p>
+                  ) : null}
                   {instrument.category === "cedear" ? (
                     <p className="mt-2 text-xs font-medium text-violet-200">
                       {isSpanish ? "Referencia CEDEAR" : "CEDEAR reference"}

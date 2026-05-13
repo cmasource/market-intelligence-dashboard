@@ -10,6 +10,7 @@ import { TechnicalAnalysisCard } from "@/components/asset/TechnicalAnalysisCard"
 import { MarketSignalGauge } from "@/components/analysis/MarketSignalGauge";
 import { InteractiveAssetChart } from "@/components/charts/InteractiveAssetChart";
 import { DataCoveragePanel } from "@/components/data-coverage/DataCoveragePanel";
+import { DataTransparencyNote } from "@/components/data-coverage/DataTransparencyNote";
 import { AppShell } from "@/components/layout/AppShell";
 import Link from "next/link";
 import { getInstrumentBySymbol } from "@/lib/instrument-universe";
@@ -98,6 +99,7 @@ export default async function AssetDetailPage({
       <div className="space-y-6">
         <AssetHeader asset={asset} />
         <DataCoveragePanel symbol={asset.symbol} />
+        <DataTransparencyNote />
         <MarketSignalGauge
           technicalScore={asset.technicalScore}
           fundamentalScore={asset.fundamentalScore}

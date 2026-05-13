@@ -96,7 +96,7 @@ export default function MarketsPage() {
           <h2 className="mt-2 text-2xl font-semibold text-white">CEDEARs</h2>
           <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
             {isSpanish
-              ? "Los CEDEARs permiten exposicion local a companias y ETFs internacionales mediante instrumentos del mercado argentino. Proximamente: ratio CEDEAR, especies en dolares, activo subyacente y CCL implicito."
+              ? "Los CEDEARs permiten exposición local a compañías y ETFs internacionales mediante instrumentos del mercado argentino. Próximamente: ratio CEDEAR, especies en dólares, activo subyacente y CCL implícito."
               : "CEDEARs enable local exposure to international companies and ETFs through Argentine market instruments. Coming soon: CEDEAR ratio, dollar species, underlying asset and implied CCL."}
           </p>
           <p className="mt-2 text-xs text-violet-100">

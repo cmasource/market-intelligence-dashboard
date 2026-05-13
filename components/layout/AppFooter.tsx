@@ -9,6 +9,9 @@ const footerLinks = [
   { href: "/screener", en: "Screener", es: "Screener" },
   { href: "/argentina", en: "Argentina", es: "Argentina" },
   { href: "/crypto", en: "Crypto", es: "Cripto" },
+  { href: "/data-audit", en: "Data Audit", es: "Auditoría" },
+  { href: "/methodology", en: "Methodology", es: "Metodología" },
+  { href: "/glossary", en: "Glossary", es: "Glosario" },
   { href: "/status", en: "Status", es: "Estado" },
 ];
 

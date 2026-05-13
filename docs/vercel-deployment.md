@@ -88,12 +88,14 @@ Use `.env.example` as the placeholder template. Do not commit real secrets.
 6. Open `/argentina`.
 7. Open `/crypto`.
 8. Open `/status`.
-9. Test theme toggle.
-10. Test language toggle.
-11. Test search.
-12. Confirm footer disclaimer.
-13. Confirm no 404 on planned demo routes.
-14. Confirm no legacy or forbidden branding appears.
+9. Open `/data-audit`.
+10. Open `/methodology`.
+11. Test theme toggle.
+12. Test language toggle.
+13. Test search.
+14. Confirm footer disclaimer.
+15. Confirm no 404 on planned demo routes.
+16. Confirm no legacy or forbidden branding appears.
 
 ## Demo Caveats
 

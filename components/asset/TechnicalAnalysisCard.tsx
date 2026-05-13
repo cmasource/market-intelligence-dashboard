@@ -5,6 +5,7 @@ import { formatCurrency, formatNumber, formatScore } from "@/lib/formatters";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import type { TechnicalAnalysisResponse, TechnicalIndicatorSnapshot } from "@/lib/analysis/types";
 import { TechnicalSignalGauge } from "@/components/analysis/TechnicalSignalGauge";
+import { GlossaryLabel } from "@/components/glossary/GlossaryLabel";
 import type { Timeframe } from "@/types/chart";
 import type { TechnicalIndicators } from "@/types/technical";
 import type { Asset } from "@/types/asset";
@@ -31,9 +32,9 @@ function formatNullableNumber(value: number | null | undefined, fallback: string
   return safeValue === null ? fallback : formatNumber(safeValue);
 }
 
-function formatNullableCurrency(value: number | null | undefined, currency: string, fallback: string) {
+function formatNullableCurrency(value: number | null | undefined, currency: string, fallback: string, language: "en" | "es" = "en") {
   const safeValue = nullableNumber(value);
-  return safeValue === null ? fallback : formatCurrency(safeValue, currency);
+  return safeValue === null ? fallback : formatCurrency(safeValue, currency, language);
 }
 
 function fallbackSnapshot(asset: Asset | undefined, fallbackTechnicalData: TechnicalIndicators | undefined): TechnicalIndicatorSnapshot {
@@ -77,19 +78,23 @@ export function TechnicalAnalysisCard({
   const sourceLabel = analysis ? (analysis.isFallback ? fallbackLabel : t("technicalCalculatedFromReal")) : fallbackLabel;
   const warnings = analysis?.warnings ?? [];
   const indicators = [
-    [t("chartLastClose"), formatNullableCurrency(snapshot.lastClose, currency, t("notAvailable"))],
-    ["SMA 20", formatNullableCurrency(snapshot.sma20, currency, t("notAvailable"))],
-    ["SMA 50", formatNullableCurrency(snapshot.sma50, currency, t("notAvailable"))],
-    ["SMA 200", formatNullableCurrency(snapshot.sma200, currency, t("notAvailable"))],
-    ["EMA 12", formatNullableCurrency(snapshot.ema12, currency, t("notAvailable"))],
-    ["EMA 26", formatNullableCurrency(snapshot.ema26, currency, t("notAvailable"))],
-    ["RSI 14", formatNullableNumber(snapshot.rsi14, t("notAvailable"))],
-    ["MACD", formatNullableNumber(snapshot.macd, t("notAvailable"))],
-    ["MACD Signal", formatNullableNumber(snapshot.macdSignal, t("notAvailable"))],
-    ["MACD Histogram", formatNullableNumber(snapshot.macdHistogram, t("notAvailable"))],
-    [t("support"), formatNullableCurrency(snapshot.support, currency, t("notAvailable"))],
-    [t("resistance"), formatNullableCurrency(snapshot.resistance, currency, t("notAvailable"))],
-    [t("volumeTrend"), t(`volumeTrend${snapshot.volumeTrend[0].toUpperCase()}${snapshot.volumeTrend.slice(1)}`)],
+    { id: "lastClose", label: t("chartLastClose"), value: formatNullableCurrency(snapshot.lastClose, currency, t("notAvailable"), language) },
+    { id: "sma20", label: <GlossaryLabel termKey="sma20" />, value: formatNullableCurrency(snapshot.sma20, currency, t("notAvailable"), language) },
+    { id: "sma50", label: <GlossaryLabel termKey="sma50" />, value: formatNullableCurrency(snapshot.sma50, currency, t("notAvailable"), language) },
+    { id: "sma200", label: <GlossaryLabel termKey="sma200" />, value: formatNullableCurrency(snapshot.sma200, currency, t("notAvailable"), language) },
+    { id: "ema12", label: <GlossaryLabel termKey="ema12" />, value: formatNullableCurrency(snapshot.ema12, currency, t("notAvailable"), language) },
+    { id: "ema26", label: <GlossaryLabel termKey="ema26" />, value: formatNullableCurrency(snapshot.ema26, currency, t("notAvailable"), language) },
+    { id: "rsi14", label: <GlossaryLabel termKey="rsi14" />, value: formatNullableNumber(snapshot.rsi14, t("notAvailable")) },
+    { id: "macd", label: <GlossaryLabel termKey="macd" />, value: formatNullableNumber(snapshot.macd, t("notAvailable")) },
+    { id: "macdSignal", label: <GlossaryLabel termKey="macdSignal" />, value: formatNullableNumber(snapshot.macdSignal, t("notAvailable")) },
+    { id: "macdHistogram", label: <GlossaryLabel termKey="macdHistogram" />, value: formatNullableNumber(snapshot.macdHistogram, t("notAvailable")) },
+    { id: "support", label: <GlossaryLabel termKey="support" fallbackLabel={t("support")} />, value: formatNullableCurrency(snapshot.support, currency, t("notAvailable"), language) },
+    { id: "resistance", label: <GlossaryLabel termKey="resistance" fallbackLabel={t("resistance")} />, value: formatNullableCurrency(snapshot.resistance, currency, t("notAvailable"), language) },
+    {
+      id: "volumeTrend",
+      label: <GlossaryLabel termKey="volumeTrend" fallbackLabel={t("volumeTrend")} />,
+      value: t(`volumeTrend${snapshot.volumeTrend[0].toUpperCase()}${snapshot.volumeTrend.slice(1)}`),
+    },
   ];
 
   useEffect(() => {
@@ -143,15 +148,19 @@ export function TechnicalAnalysisCard({
       </div>
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
         <div className="rounded-lg border border-white/10 bg-slate-950/40 p-3">
-          <p className="text-xs text-slate-500">{t("trendLabel")}</p>
+          <p className="text-xs text-slate-500">
+            <GlossaryLabel termKey="trend" fallbackLabel={t("trendLabel")} />
+          </p>
           <p className="mt-1 text-sm font-semibold text-white">{snapshot.trendLabel}</p>
         </div>
         <div className="rounded-lg border border-white/10 bg-slate-950/40 p-3">
-          <p className="text-xs text-slate-500">{t("momentumLabel")}</p>
+          <p className="text-xs text-slate-500">
+            <GlossaryLabel termKey="momentum" fallbackLabel={t("momentumLabel")} />
+          </p>
           <p className="mt-1 text-sm font-semibold text-white">{snapshot.momentumLabel}</p>
         </div>
       </div>
-      <MetricGrid items={indicators.map(([label, value]) => ({ label, value }))} />
+      <MetricGrid items={indicators} />
       {analysis?.interpretation.bulletPoints.length ? (
         <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-300">
           {analysis.interpretation.bulletPoints.map((point) => (

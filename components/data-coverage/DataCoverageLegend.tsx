@@ -37,7 +37,7 @@ export function DataCoverageLegend() {
       </h2>
       <p className={`mt-3 max-w-4xl text-sm leading-6 ${isLight ? "text-slate-700" : "text-slate-300"}`}>
         {isSpanish
-          ? "Los datos reales/de proveedor estan disponibles actualmente para instrumentos seleccionados de Estados Unidos y cripto. Los instrumentos argentinos y CEDEARs usan datos simulados o cobertura futura hasta habilitar integraciones de mercado local."
+          ? "Los datos reales/de proveedor están disponibles actualmente para instrumentos seleccionados de Estados Unidos y cripto. Los instrumentos argentinos y CEDEARs usan datos simulados o cobertura futura hasta habilitar integraciones de mercado local."
           : "Real/provider data is currently available for selected USA and crypto instruments. Argentine market instruments and CEDEARs use mock or future coverage until local market data integrations are enabled."}
       </p>
       <p className={`mt-2 text-xs ${isLight ? "text-slate-600" : "text-slate-500"}`}>

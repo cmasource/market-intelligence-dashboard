@@ -10,12 +10,13 @@ import { calculatePresentValueForCashFlows, estimateFixedIncomeYTM } from "./yie
 
 function buildAnalyticsForInstrument(instrument: NonNullable<ReturnType<typeof getMockFixedIncomeInstrument>>): FixedIncomeAnalytics {
   const accruedInterest = estimateAccruedInterestFromInstrument(instrument);
+  const normalizedPrice = instrument.analyticalPrice ?? instrument.marketPrice;
   const cleanPrice =
     typeof instrument.cleanPrice === "number"
       ? instrument.cleanPrice
       : typeof instrument.dirtyPrice === "number" && accruedInterest !== null
         ? calculateCleanPrice(instrument.dirtyPrice, accruedInterest)
-        : instrument.marketPrice;
+        : normalizedPrice;
   const dirtyPrice =
     typeof instrument.dirtyPrice === "number"
       ? instrument.dirtyPrice
@@ -52,7 +53,8 @@ function buildAnalyticsForInstrument(instrument: NonNullable<ReturnType<typeof g
   });
   const warnings = [
     "Mock fixed income data; not official bond terms.",
-    "Market price is treated as clean price for this MVP unless dirty price is provided.",
+    "Visible local price may differ from the normalized analytical price used for fixed income metrics.",
+    "Normalized analytical price is treated as clean price for this MVP unless dirty price is provided.",
     "Accrued interest is simplified without settlement-date precision.",
     "Cash-flow schedules are simplified and do not represent official amortization calendars.",
     ...(instrument.couponType === "cer_adjusted" ? ["CER adjustment is simplified and not fully indexed."] : []),

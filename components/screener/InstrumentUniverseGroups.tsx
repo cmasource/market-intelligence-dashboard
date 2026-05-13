@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { formatDisplayCurrency } from "@/lib/formatters";
 import { getInstrumentUniverseGroups } from "@/lib/instrument-universe";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { mockAssets } from "@/lib/mock-data";
@@ -113,10 +114,17 @@ export function InstrumentUniverseGroups({ argentinaOnly = false }: { argentinaO
                             {contextLabel}
                           </span>
                         </div>
-                        <p className="mt-1 text-sm text-slate-300">{instrument.displayName}</p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {instrument.market} | {instrument.currency}
+                        <p className="mt-1 text-sm text-slate-300">
+                          {language === "es" && instrument.displayNameEs ? instrument.displayNameEs : instrument.displayNameEn ?? instrument.displayName}
                         </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {instrument.market} | {formatDisplayCurrency(instrument.currency, language)}
+                        </p>
+                        {(language === "es" ? instrument.marketConventionLabelEs ?? instrument.settlementContextEs : instrument.marketConventionLabelEn ?? instrument.settlementContextEn) ? (
+                          <p className="mt-1 text-xs font-medium text-violet-200">
+                            {language === "es" ? instrument.marketConventionLabelEs ?? instrument.settlementContextEs : instrument.marketConventionLabelEn ?? instrument.settlementContextEn}
+                          </p>
+                        ) : null}
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-xs text-cyan-100">

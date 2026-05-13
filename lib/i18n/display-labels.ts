@@ -1,5 +1,5 @@
 import type { Language } from "./types";
-import type { AmortizationType, CouponType, FixedIncomeCurrency, FixedIncomeLaw, RiskTone, SpeciesType } from "@/lib/fixed-income";
+import type { AmortizationType, CouponType, FixedIncomeCurrency, FixedIncomeLaw, RiskTone, SettlementContext, SpeciesType } from "@/lib/fixed-income";
 import type { AssetType, RiskLevel } from "@/types/asset";
 
 type RiskLike = RiskTone | RiskLevel;
@@ -126,9 +126,9 @@ export function translateSpeciesType(speciesType: SpeciesType, language: Languag
     },
     es: {
       peso: "Especie en pesos",
-      dollar_mep: "Especie dolar MEP",
-      dollar_cable: "Especie dolar cable/CCL",
-      cer: "Bono CER en pesos",
+      dollar_mep: "Especie dólar MEP",
+      dollar_cable: "Especie dólar cable/CCL",
+      cer: "Bono CER",
       unknown: "Especie no identificada",
     },
   };
@@ -137,14 +137,35 @@ export function translateSpeciesType(speciesType: SpeciesType, language: Languag
 }
 
 export function translateTradingCurrency(currency: FixedIncomeCurrency, language: Language = "en") {
-  if (currency === "ARS_CER") return language === "es" ? "ARS CER" : "ARS CER";
-  if (currency === "ARS_DOLLAR_LINKED") return language === "es" ? "ARS dollar-linked" : "ARS dollar-linked";
+  if (currency === "USD_MEP" || currency === "USD_CABLE") return "USD";
+  if (currency === "ARS_CER" || currency === "ARS_DOLLAR_LINKED") return "ARS";
   if (currency === "UNKNOWN") return language === "es" ? "No identificada" : "Unknown";
   return currency;
 }
 
 export function translateFixedIncomeCurrency(currency: FixedIncomeCurrency, language: Language = "en") {
   return translateTradingCurrency(currency, language);
+}
+
+export function translateSettlementContext(context: SettlementContext = "unknown", language: Language = "en") {
+  const labels: Record<Language, Record<SettlementContext, string>> = {
+    en: {
+      pesos: "Pesos",
+      dollar_mep: "Dollar MEP",
+      dollar_cable: "Dollar cable/CCL",
+      cer_linked: "CER-linked / ARS",
+      unknown: "Unknown",
+    },
+    es: {
+      pesos: "Pesos",
+      dollar_mep: "Dólar MEP",
+      dollar_cable: "Dólar cable/CCL",
+      cer_linked: "Pesos ajustados por CER",
+      unknown: "No identificado",
+    },
+  };
+
+  return labels[language][context];
 }
 
 export function translateProviderLabel(label: string, language: Language = "en") {

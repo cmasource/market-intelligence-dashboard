@@ -3,6 +3,7 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { DataCoverageLegend } from "@/components/data-coverage/DataCoverageLegend";
 import { useLanguage } from "@/lib/i18n/useLanguage";
+import Link from "next/link";
 
 const implemented = [
   "MVP dashboard",
@@ -16,6 +17,9 @@ const implemented = [
   "Technical analysis from OHLCV",
   "Fundamentals USA with fallback",
   "Fixed income analytics mock module",
+  "Expanded USA/crypto provider coverage with fallback",
+  "Data audit page",
+  "Methodology page",
   "Playwright smoke tests",
 ];
 
@@ -45,6 +49,8 @@ const demoReady = [
   "Technical analysis",
   "Fixed income mock analytics",
   "Data coverage transparency",
+  "Data audit",
+  "Methodology",
 ];
 
 const demoPending = [
@@ -85,6 +91,20 @@ export default function StatusPage() {
               ? "Demo en evolucion. Las sugerencias y el feedback se usaran para priorizar proximas mejoras."
               : "Demo in progress. Feedback will be used to prioritize upcoming improvements."}
           </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link
+              href="/data-audit"
+              className="rounded-md border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:border-cyan-200 hover:bg-cyan-300/15"
+            >
+              {isSpanish ? "Ver auditoria de datos" : "View data audit"}
+            </Link>
+            <Link
+              href="/methodology"
+              className="rounded-md border border-violet-300/30 bg-violet-300/10 px-4 py-2 text-sm font-semibold text-violet-100 transition hover:border-violet-200 hover:bg-violet-300/15"
+            >
+              {isSpanish ? "Ver metodologia" : "View methodology"}
+            </Link>
+          </div>
         </section>
         <section className="rounded-lg border border-cyan-300/20 bg-cyan-300/10 p-5">
           <h2 className="text-xl font-semibold text-white">

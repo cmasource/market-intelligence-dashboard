@@ -8,7 +8,7 @@ import { useLanguage } from "@/lib/i18n/useLanguage";
 import { SectionHeader } from "../ui/SectionHeader";
 
 export function ArgentinaMarket() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const localAssets = mockAssets.filter((asset) =>
     ["GGAL", "YPFD", "AL30", "AL30D", "AL30C", "GD30", "GD30D", "GD30C", "TX26"].includes(asset.symbol),
   );
@@ -37,7 +37,7 @@ export function ArgentinaMarket() {
                   {formatPercent(asset.dailyChange)}
                 </span>
               </div>
-              <p className="mt-4 text-lg font-semibold text-white">{formatCurrency(asset.price, asset.currency)}</p>
+              <p className="mt-4 text-lg font-semibold text-white">{formatCurrency(asset.price, asset.currency, language)}</p>
             </Link>
           ))}
         </div>

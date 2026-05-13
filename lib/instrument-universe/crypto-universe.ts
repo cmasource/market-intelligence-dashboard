@@ -1,6 +1,17 @@
 import type { InstrumentUniverseItem } from "./types";
 
-const realSupported = new Set(["BTC-USD", "ETH-USD"]);
+const realSupported = new Set([
+  "BTC-USD",
+  "ETH-USD",
+  "BNB-USD",
+  "SOL-USD",
+  "XRP-USD",
+  "ADA-USD",
+  "DOGE-USD",
+  "AVAX-USD",
+  "LINK-USD",
+  "DOT-USD",
+]);
 const cryptoNames: Record<string, string> = {
   "BTC-USD": "Bitcoin",
   "ETH-USD": "Ethereum",
@@ -55,11 +66,11 @@ export const CRYPTO_INSTRUMENT_UNIVERSE: InstrumentUniverseItem[] = [
   tags: ["crypto", "usd pair", "future top 50"],
   priority: realSupported.has(symbol) ? 8 : 4 - index * 0.1,
   descriptionEn:
-    symbol === "BTC-USD" || symbol === "ETH-USD"
+    realSupported.has(symbol)
       ? "Current live/fallback market data support."
       : "Searchable mock roadmap entry for future crypto expansion.",
   descriptionEs:
-    symbol === "BTC-USD" || symbol === "ETH-USD"
+    realSupported.has(symbol)
       ? "Soporte actual con datos reales o fallback."
       : "Entrada simulada buscable para futura expansion cripto.",
 }));

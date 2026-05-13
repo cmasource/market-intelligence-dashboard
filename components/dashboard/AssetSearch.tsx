@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { DataCoverageBadges } from "@/components/data-coverage/DataCoverageBadges";
-import { formatCurrency, formatPercent } from "@/lib/formatters";
+import { formatAssetPrice, formatDisplayCurrency, formatPercent } from "@/lib/formatters";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { searchInstrumentUniverse, type InstrumentUniverseItem } from "@/lib/instrument-universe";
 import type { Asset } from "@/types/asset";
@@ -58,6 +58,16 @@ export function AssetSearch({ assets }: AssetSearchProps) {
     return instrument.category.replaceAll("_", " ");
   }
 
+  function displayName(instrument: InstrumentUniverseItem) {
+    return language === "es" && instrument.displayNameEs ? instrument.displayNameEs : instrument.displayNameEn ?? instrument.displayName;
+  }
+
+  function settlementLabel(instrument: InstrumentUniverseItem, asset?: Asset) {
+    return language === "es"
+      ? asset?.marketConventionLabelEs ?? instrument.marketConventionLabelEs ?? asset?.settlementContextEs ?? instrument.settlementContextEs
+      : asset?.marketConventionLabelEn ?? instrument.marketConventionLabelEn ?? asset?.settlementContextEn ?? instrument.settlementContextEn;
+  }
+
   function saveRecentSymbol(symbol: string) {
     // Local-only for the demo. User-account search history can be added later.
     const nextSymbols = [symbol, ...recentSymbols.filter((item) => item !== symbol)].slice(0, 5);
@@ -109,24 +119,26 @@ export function AssetSearch({ assets }: AssetSearchProps) {
           </div>
         </div>
       ) : null}
-      <div className="mt-4 max-h-[30rem] space-y-2 overflow-y-auto pr-1">
+      <div className="mt-4 max-h-[30rem] space-y-2 overflow-y-auto pr-3">
         {visibleInstruments.length ? (
           visibleInstruments.map((instrument) => {
             const asset = assetBySymbol.get(instrument.symbol);
             const positive = (asset?.dailyChange ?? 0) >= 0;
             const hasAssetPage = supportedAssetSymbols.has(instrument.symbol);
+            const context = settlementLabel(instrument, asset);
 
             const content = (
               <>
-                <span>
+                <span className="min-w-0">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold text-white">{instrument.symbol}</span>
-                    <span className="text-sm text-slate-400">{instrument.displayName}</span>
+                    <span className="text-sm text-slate-400">{displayName(instrument)}</span>
                     {asset ? <ScoreBadge score={asset.technicalScore} /> : null}
                   </span>
                   <span className="mt-1 block text-xs text-slate-500">
-                    {contextLabel(instrument)} | {instrument.market} | {instrument.currency}
+                    {contextLabel(instrument)} | {instrument.market} | {formatDisplayCurrency(instrument.currency, language)}
                   </span>
+                  {context ? <span className="mt-1 block text-xs font-medium text-violet-200">{context}</span> : null}
                   <DataCoverageBadges
                     symbol={instrument.symbol}
                     category={instrument.category}
@@ -136,10 +148,10 @@ export function AssetSearch({ assets }: AssetSearchProps) {
                     className="mt-2"
                   />
                 </span>
-                <span className="text-left sm:text-right">
+                <span className="flex flex-col items-start gap-2 text-left sm:items-end sm:text-right">
                   {asset ? (
                     <>
-                      <span className="block font-semibold text-white">{formatCurrency(asset.price, asset.currency)}</span>
+                      <span className="block font-semibold text-white">{formatAssetPrice(asset.price, asset, language)}</span>
                       <span className={positive ? "text-sm text-emerald-300" : "text-sm text-rose-300"}>
                         {formatPercent(asset.dailyChange)}
                       </span>
@@ -149,8 +161,8 @@ export function AssetSearch({ assets }: AssetSearchProps) {
                       {isSpanish ? "Cobertura futura" : "Future coverage"}
                     </span>
                   )}
-                  <span className="mt-2 inline-flex rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-3 py-1.5 text-xs font-medium text-cyan-100">
-                    {hasAssetPage ? (isSpanish ? "Abrir analisis" : "Open analysis") : isSpanish ? "Ver ficha preliminar" : "View preliminary profile"}
+                  <span className="inline-flex rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-3 py-1.5 text-xs font-medium text-cyan-100">
+                    {hasAssetPage ? (isSpanish ? "Abrir análisis" : "Open analysis") : isSpanish ? "Ver ficha preliminar" : "View preliminary profile"}
                   </span>
                 </span>
               </>
@@ -161,7 +173,7 @@ export function AssetSearch({ assets }: AssetSearchProps) {
                 key={`${instrument.country}-${instrument.market}-${instrument.symbol}-${instrument.category}`}
                 href={`/asset/${encodeURIComponent(instrument.symbol)}`}
                 onClick={() => saveRecentSymbol(instrument.symbol)}
-                className="group grid gap-3 rounded-lg border border-white/10 bg-white/[0.035] p-3 transition hover:border-cyan-300/40 hover:bg-cyan-300/10 sm:grid-cols-[1fr_auto]"
+                className="group grid gap-4 rounded-lg border border-white/10 bg-white/[0.035] p-3 transition hover:border-cyan-300/40 hover:bg-cyan-300/10 sm:grid-cols-[minmax(0,1fr)_auto]"
               >
                 {content}
               </Link>
