@@ -1,0 +1,21 @@
+import { getNewsForSymbol } from "@/lib/news";
+
+export async function GET(
+  _request: Request,
+  context: { params: Promise<{ symbol: string }> },
+) {
+  const { symbol: rawSymbol } = await context.params;
+  const symbol = decodeURIComponent(rawSymbol ?? "").trim().toUpperCase();
+  if (!symbol) return Response.json({ error: "Symbol is required." }, { status: 400 });
+
+  try {
+    const news = await getNewsForSymbol(symbol);
+    return Response.json(news, {
+      headers: {
+        "Cache-Control": "s-maxage=180, stale-while-revalidate=600",
+      },
+    });
+  } catch {
+    return Response.json({ articles: [], provider: "mock", isFallback: true, sourceLabel: "Mock news", error: "News request failed." });
+  }
+}

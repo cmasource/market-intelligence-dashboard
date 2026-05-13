@@ -2,6 +2,7 @@
 
 import { AppShell } from "@/components/layout/AppShell";
 import { DataCoverageLegend } from "@/components/data-coverage/DataCoverageLegend";
+import { ProviderStatusPanel } from "@/components/providers/ProviderStatusPanel";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import Link from "next/link";
 
@@ -17,6 +18,8 @@ const implemented = [
   "Technical analysis from OHLCV",
   "Fundamentals USA with fallback",
   "Fixed income analytics mock module",
+  "CEDEAR ratio and implied CCL mock analytics",
+  "News MVP with provider/RSS/mock fallback",
   "Expanded USA/crypto provider coverage with fallback",
   "Data audit page",
   "Methodology page",
@@ -27,7 +30,6 @@ const pending = [
   "Real Argentina market data",
   "BYMA/IOL/CNV integration",
   "Real bond terms and calendars",
-  "CEDEAR ratio and CCL calculations",
   "Screener",
   "Watchlist",
   "Portfolio",
@@ -57,7 +59,7 @@ const demoPending = [
   "Real Argentina market data",
   "CNV/BYMA/IOL integrations",
   "CEDEAR ratios and implied CCL",
-  "Real news module",
+  "Licensed real news provider configuration",
   "User accounts and watchlists",
 ];
 
@@ -77,6 +79,7 @@ export default function StatusPage() {
           </h1>
         </section>
         <DataCoverageLegend />
+        <ProviderStatusPanel />
         <section className="rounded-lg border border-indigo-300/20 bg-indigo-300/10 p-5">
           <h2 className="text-xl font-semibold text-white">
             {isSpanish ? "Demo publica" : "Public demo"}

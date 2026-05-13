@@ -3,6 +3,7 @@ import { getMockMarketData } from "./mock-provider";
 import { getAssetClassForMarketData, getCryptoSymbol, getYahooSymbol, normalizeSymbol } from "./symbol-map";
 import type { MarketDataRequest, MarketDataResponse } from "./types";
 import { getYahooMarketData } from "./yahoo-provider";
+import { getAlphaVantageMarketData, getFinnhubCandles, getFmpHistoricalPrices } from "@/lib/providers";
 
 function fallback(request: MarketDataRequest, providerResponse?: MarketDataResponse) {
   const context = providerResponse?.error
@@ -20,6 +21,19 @@ export async function getMarketData(request: MarketDataRequest): Promise<MarketD
   const normalizedRequest = { ...request, symbol, assetClass };
 
   try {
+    if (getYahooSymbol(symbol)) {
+      const providerAttempts = [
+        () => getFmpHistoricalPrices(normalizedRequest),
+        () => getFinnhubCandles(normalizedRequest),
+        () => getAlphaVantageMarketData(normalizedRequest),
+      ];
+
+      for (const attempt of providerAttempts) {
+        const response = await attempt();
+        if (!response.error && response.candles.length > 0) return response;
+      }
+    }
+
     if (getYahooSymbol(symbol)) {
       const response = await getYahooMarketData(normalizedRequest);
       return response.candles.length > 0 ? response : fallback(normalizedRequest, response);

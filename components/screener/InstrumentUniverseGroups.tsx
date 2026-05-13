@@ -96,7 +96,9 @@ export function InstrumentUniverseGroups({ argentinaOnly = false }: { argentinaO
                 const hasAssetPage = supportedAssetSymbols.has(instrument.symbol);
                 const contextLabel =
                   instrument.category === "cedear"
-                    ? "CEDEAR reference"
+                    ? isSpanish
+                      ? "CEDEAR"
+                      : "CEDEAR"
                     : instrument.country === "US" && instrument.category === "equity"
                       ? "USA stock"
                       : formatEnum(instrument.category);
@@ -120,6 +122,13 @@ export function InstrumentUniverseGroups({ argentinaOnly = false }: { argentinaO
                         <p className="mt-1 text-xs text-slate-500">
                           {instrument.market} | {formatDisplayCurrency(instrument.currency, language)}
                         </p>
+                        {instrument.category === "cedear" ? (
+                          <p className="mt-1 text-xs font-medium text-violet-200">
+                            {isSpanish
+                              ? `Subyacente ${instrument.underlyingSymbol ?? instrument.symbol} | Exposición local argentina`
+                              : `Underlying ${instrument.underlyingSymbol ?? instrument.symbol} | Local Argentine exposure`}
+                          </p>
+                        ) : null}
                         {(language === "es" ? instrument.marketConventionLabelEs ?? instrument.settlementContextEs : instrument.marketConventionLabelEn ?? instrument.settlementContextEn) ? (
                           <p className="mt-1 text-xs font-medium text-violet-200">
                             {language === "es" ? instrument.marketConventionLabelEs ?? instrument.settlementContextEs : instrument.marketConventionLabelEn ?? instrument.settlementContextEn}
@@ -135,7 +144,13 @@ export function InstrumentUniverseGroups({ argentinaOnly = false }: { argentinaO
                             href={`/asset/${encodeURIComponent(instrument.symbol)}`}
                             className="rounded-lg border border-cyan-300/30 px-3 py-1.5 text-xs font-medium text-cyan-100 transition hover:bg-cyan-300/10"
                           >
-                            {isSpanish ? "Abrir analisis" : "Open analysis"}
+                            {instrument.category === "cedear"
+                              ? isSpanish
+                                ? "Ver contexto CEDEAR"
+                                : "View CEDEAR context"
+                              : isSpanish
+                                ? "Abrir análisis"
+                                : "Open analysis"}
                           </Link>
                         ) : (
                           <span className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-500">

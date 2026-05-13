@@ -8,6 +8,7 @@ const categories: Array<{ id: GlossaryCategory; en: string; es: string }> = [
   { id: "technical", en: "Technical analysis", es: "Análisis técnico" },
   { id: "fundamentals", en: "Fundamentals", es: "Fundamentos" },
   { id: "fixed_income", en: "Fixed income", es: "Renta fija" },
+  { id: "cedears", en: "CEDEARs", es: "CEDEARs" },
   { id: "risk", en: "Market/risk", es: "Mercado/riesgo" },
   { id: "market", en: "Market/risk", es: "Mercado/riesgo" },
 ];

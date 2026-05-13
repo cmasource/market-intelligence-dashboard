@@ -75,6 +75,7 @@ export type InstrumentUniverseItem = {
   priority?: number;
   primarySymbol?: string;
   underlyingSymbol?: string;
+  underlyingName?: string;
   relatedSymbols: string[];
   relationType?: InstrumentRelationType;
   isPrimary: boolean;

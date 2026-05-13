@@ -16,6 +16,12 @@ export default function MethodologyPage() {
         : "The platform distinguishes real data, provider data, mock data, fallback, future coverage, not applicable and unavailable layers.",
     },
     {
+      title: isSpanish ? "Cadena de proveedores reales" : "Real provider chain",
+      body: isSpanish
+        ? "La app intenta proveedores configurados por variables de entorno en este orden: FMP, Finnhub, Alpha Vantage, Yahoo/RSS y datos simulados. Si una clave falta o una llamada falla, la capa vuelve a fallback sin romper la experiencia."
+        : "The app attempts providers configured through environment variables in this order: FMP, Finnhub, Alpha Vantage, Yahoo/RSS and mock data. If a key is missing or a request fails, the layer falls back without breaking the experience.",
+    },
+    {
       title: isSpanish ? "Metodología de análisis técnico" : "Technical analysis methodology",
       body: isSpanish
         ? "Los indicadores se calculan desde velas OHLCV del proveedor cuando existen. Si el proveedor falla, se usan datos simulados de respaldo para preservar la experiencia de demo."
@@ -40,10 +46,22 @@ export default function MethodologyPage() {
         : "Argentina fixed income uses structured mock data and internal calculations for cash flows, YTM, duration, convexity and risk. BYMA/IOL/CNV are not integrated yet.",
     },
     {
+      title: isSpanish ? "Metodología CEDEAR y CCL implícito" : "CEDEAR and implied CCL methodology",
+      body: isSpanish
+        ? "Un CEDEAR es un instrumento local vinculado a un activo subyacente internacional. El ratio indica cuántos CEDEARs equivalen a una acción subyacente. En esta demo, CCL implícito = precio local ARS del CEDEAR * ratio / precio USD del subyacente. Los precios locales y ratios son simulados; el precio del subyacente puede usar proveedor o fallback. El análisis técnico y fundamental se basa en el subyacente cuando no existe integración real del CEDEAR local."
+        : "A CEDEAR is a local instrument linked to an international underlying asset. The ratio states how many CEDEARs equal one underlying share. In this demo, implied CCL = local CEDEAR ARS price * ratio / underlying USD price. Local prices and ratios are mock; the underlying price can use provider or fallback data. Technical and fundamental analysis is based on the underlying asset when local CEDEAR integration is not available.",
+    },
+    {
+      title: isSpanish ? "Noticias MVP" : "News MVP",
+      body: isSpanish
+        ? "Las noticias intentan proveedores configurados o RSS público y vuelven a titulares simulados si no hay claves o si la red falla. Solo se muestran título, fuente, fecha, enlace y resumen breve disponible."
+        : "News attempts configured providers or public RSS and falls back to mock headlines if keys are missing or the network fails. Only title, source, date, link and short available summary are shown.",
+    },
+    {
       title: isSpanish ? "Limitaciones actuales" : "Current limitations",
       body: isSpanish
-        ? "Pueden existir diferencias frente a plataformas externas por fuente de datos, ajuste de precios, zona horaria, metodología de indicadores y frecuencia de actualización."
-        : "Differences versus external platforms can come from data source, price adjustment, timezone, indicator methodology and update frequency.",
+        ? "Pueden existir diferencias frente a plataformas externas por fuente de datos, ajuste de precios, zona horaria, metodología de indicadores, frecuencia de actualización y convención de ratio CEDEAR."
+        : "Differences versus external platforms can come from data source, price adjustment, timezone, indicator methodology, update frequency and CEDEAR ratio convention.",
     },
   ];
 
@@ -57,8 +75,8 @@ export default function MethodologyPage() {
           </h1>
           <p className="mt-4 max-w-4xl text-sm leading-6 text-slate-300">
             {isSpanish
-              ? "Cómo se interpretan datos, indicadores, señales, fundamentos y renta fija dentro de la demo pública."
-              : "How data, indicators, signals, fundamentals and fixed income are interpreted inside the public demo."}
+              ? "Cómo se interpretan datos, indicadores, señales, fundamentos, renta fija y CEDEARs dentro de la demo pública."
+              : "How data, indicators, signals, fundamentals, fixed income and CEDEARs are interpreted inside the public demo."}
           </p>
         </section>
 

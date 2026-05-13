@@ -1,4 +1,4 @@
-export type FundamentalsProviderName = "mock" | "yahoo" | "unavailable";
+export type FundamentalsProviderName = "mock" | "yahoo" | "fmp" | "finnhub" | "alpha_vantage" | "unavailable";
 
 export type FundamentalsAssetClass =
   | "stock"

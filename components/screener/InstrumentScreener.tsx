@@ -176,7 +176,9 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
                   ) : null}
                   {instrument.category === "cedear" ? (
                     <p className="mt-2 text-xs font-medium text-violet-200">
-                      {isSpanish ? "Referencia CEDEAR" : "CEDEAR reference"}
+                      {isSpanish
+                        ? `CEDEAR | Subyacente ${instrument.underlyingSymbol ?? instrument.symbol} | BYMA | ARS`
+                        : `CEDEAR | Underlying ${instrument.underlyingSymbol ?? instrument.symbol} | BYMA | ARS`}
                     </p>
                   ) : instrument.country === "US" && instrument.category === "equity" ? (
                     <p className="mt-2 text-xs font-medium text-emerald-200">
@@ -221,7 +223,13 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
                     href={`/asset/${encodeURIComponent(instrument.symbol)}`}
                     className="inline-flex rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-300/15 hover:text-white"
                   >
-                    {isSpanish ? "Abrir analisis" : "Open analysis"}
+                    {instrument.category === "cedear"
+                      ? isSpanish
+                        ? "Ver contexto CEDEAR"
+                        : "View CEDEAR context"
+                      : isSpanish
+                        ? "Abrir análisis"
+                        : "Open analysis"}
                   </Link>
                 ) : (
                   <span className="inline-flex rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-500">

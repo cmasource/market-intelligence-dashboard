@@ -40,6 +40,8 @@ CMA Market Intelligence is a professional financial intelligence dashboard creat
 - Bond species display conventions must distinguish quote currency from settlement/species context.
 - Crypto monitor with future arbitrage intelligence.
 - Argentina market module for local equities, bonds, CER-linked assets and FX references.
+- CEDEAR analytics module with local ARS mock price, underlying USD context, ratio structure and implied CCL.
+- Provider architecture for market data, fundamentals and news with transparent fallback labels.
 - AI-style market interpretation and future agent-ready structure.
 - News placeholder for later data-provider integrations.
 - Reports placeholder for future market briefings and AI-generated PDFs.

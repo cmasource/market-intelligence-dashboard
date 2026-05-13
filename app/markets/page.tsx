@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { DataCoverageLegend } from "@/components/data-coverage/DataCoverageLegend";
+import { DataCoverageBadges } from "@/components/data-coverage/DataCoverageBadges";
 import { FeaturedAssets } from "@/components/dashboard/FeaturedAssets";
 import { MarketOverview } from "@/components/dashboard/MarketOverview";
 import { AppShell } from "@/components/layout/AppShell";
-import { DataCoverageBadges } from "@/components/data-coverage/DataCoverageBadges";
+import { mockCedears } from "@/lib/cedears";
 import { getInstrumentUniverseGroups } from "@/lib/instrument-universe";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { marketOverviewItems, mockAssets } from "@/lib/mock-data";
@@ -19,8 +20,6 @@ const groupLinks: Record<string, string> = {
   usa_stocks: "/screener?country=US&category=equity",
   crypto: "/screener?category=crypto",
 };
-
-const cedearExamples = ["AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "META", "GOOGL", "SPY", "QQQ"];
 
 const groupAccents: Record<string, SectionAccent> = {
   argentine_equities: "argentina",
@@ -91,31 +90,46 @@ export default function MarketsPage() {
 
         <section className="rounded-lg border border-violet-300/20 bg-violet-300/10 p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-200">
-            {isSpanish ? "Cobertura argentina futura" : "Future Argentina coverage"}
+            {isSpanish ? "Módulo argentino" : "Argentina module"}
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-white">CEDEARs</h2>
           <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
             {isSpanish
-              ? "Los CEDEARs permiten exposición local a compañías y ETFs internacionales mediante instrumentos del mercado argentino. Próximamente: ratio CEDEAR, especies en dólares, activo subyacente y CCL implícito."
-              : "CEDEARs enable local exposure to international companies and ETFs through Argentine market instruments. Coming soon: CEDEAR ratio, dollar species, underlying asset and implied CCL."}
+              ? "Los CEDEARs permiten exposición local a acciones y ETFs internacionales. En esta demo, los precios locales y ratios se modelan de forma simulada hasta integrar datos de BYMA/IOL o proveedores licenciados."
+              : "CEDEARs enable local exposure to international stocks and ETFs. In this demo, local prices and ratios are modeled as mock data until BYMA/IOL or licensed provider integrations are enabled."}
           </p>
           <p className="mt-2 text-xs text-violet-100">
             {isSpanish
-              ? "La cobertura CEDEAR actual esta modelada como simulada/futura salvo donde exista soporte global del subyacente."
-              : "Current CEDEAR coverage is modeled as mock/future coverage except where the global underlying is supported."}
+              ? "El panel CEDEAR muestra activo subyacente, ratio, precio local simulado y CCL implícito calculado con datos disponibles."
+              : "The CEDEAR panel shows underlying asset, ratio, mock local price and implied CCL calculated from available data."}
           </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link href="/screener?category=cedear" className="rounded-lg border border-violet-300/30 bg-violet-300/10 px-3 py-2 text-sm font-medium text-violet-100 transition hover:bg-violet-300/15">
+              {isSpanish ? "Ver CEDEARs en screener" : "View CEDEARs in screener"}
+            </Link>
+            <Link href="/methodology" className="rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-300 transition hover:border-violet-300/40 hover:bg-violet-300/10 hover:text-white">
+              {isSpanish ? "Metodología CEDEAR" : "CEDEAR methodology"}
+            </Link>
+            <Link href="/glossary" className="rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-300 transition hover:border-violet-300/40 hover:bg-violet-300/10 hover:text-white">
+              {isSpanish ? "Glosario" : "Glossary"}
+            </Link>
+          </div>
           <div className="mt-5 grid gap-3 md:grid-cols-3">
-            {cedearExamples.map((symbol) => (
+            {mockCedears.map((cedear) => (
               <Link
-                key={symbol}
-                href={`/screener?query=${encodeURIComponent(symbol)}&category=cedear`}
+                key={cedear.localSymbol}
+                href={`/asset/${encodeURIComponent(cedear.localSymbol)}`}
                 className="rounded-lg border border-white/10 bg-slate-950/45 p-3 transition hover:border-violet-300/40 hover:bg-violet-300/10"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold text-white">{symbol}</span>
+                  <span className="font-semibold text-white">{cedear.localSymbol}</span>
                   <span className="text-xs text-violet-200">CEDEAR</span>
                 </div>
-                <DataCoverageBadges symbol={symbol} category="cedear" country="AR" compact layers={["price", "fundamentals"]} className="mt-3" />
+                <p className="mt-2 text-xs text-slate-400">{cedear.underlyingName}</p>
+                <p className="mt-1 text-xs text-slate-400">
+                  {isSpanish ? "Precio local ARS + CCL implícito" : "Local ARS price + implied CCL"}
+                </p>
+                <DataCoverageBadges symbol={cedear.localSymbol} category="cedear" country="AR" compact layers={["price", "fundamentals"]} className="mt-3" />
               </Link>
             ))}
           </div>
@@ -130,7 +144,7 @@ export default function MarketsPage() {
         >
           {isSpanish ? "Abrir screener avanzado" : "Open advanced screener"}
           <span className="mt-2 block font-normal text-slate-300">
-            {isSpanish ? "Filtra por mercado, categoria, moneda y estado de cobertura." : "Filter by market, category, currency and coverage status."}
+            {isSpanish ? "Filtra por mercado, categoría, moneda y estado de cobertura." : "Filter by market, category, currency and coverage status."}
           </span>
         </Link>
       </div>

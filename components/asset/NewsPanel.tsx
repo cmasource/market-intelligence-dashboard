@@ -1,11 +1,16 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useLanguage } from "@/lib/i18n/useLanguage";
+import type { NewsArticle, NewsResponse } from "@/lib/news";
 import type { NewsItem } from "@/types/asset";
+import { NewsList } from "../news/NewsList";
+import { NewsSourceBadge } from "../news/NewsSourceBadge";
 import { SectionHeader } from "../ui/SectionHeader";
 
 type NewsPanelProps = {
   news: NewsItem[];
+  symbol?: string;
 };
 
 const sentimentTone: Record<NewsItem["sentiment"], string> = {
@@ -14,8 +19,21 @@ const sentimentTone: Record<NewsItem["sentiment"], string> = {
   negative: "text-rose-200 border-rose-400/30 bg-rose-500/15",
 };
 
-export function NewsPanel({ news }: NewsPanelProps) {
+function fallbackArticles(news: NewsItem[], symbol?: string): NewsArticle[] {
+  return news.map((item) => ({
+    title: item.title,
+    source: item.source,
+    url: "#",
+    summary: item.summary,
+    relatedSymbols: symbol ? [symbol] : undefined,
+    provider: "mock",
+    isFallback: true,
+  }));
+}
+
+export function NewsPanel({ news, symbol }: NewsPanelProps) {
   const { t } = useLanguage();
+  const [response, setResponse] = useState<NewsResponse | null>(null);
   const sentimentLabels: Record<NewsItem["sentiment"], string> = {
     positive: t("sentimentPositive"),
     neutral: t("sentimentNeutral"),
@@ -26,6 +44,30 @@ export function NewsPanel({ news }: NewsPanelProps) {
     medium: t("impactMedium"),
     high: t("impactHigh"),
   };
+  const fallback = fallbackArticles(news, symbol);
+
+  useEffect(() => {
+    if (!symbol) return;
+    let active = true;
+
+    async function load() {
+      try {
+        const newsResponse = await fetch(`/api/news/${encodeURIComponent(symbol ?? "")}`);
+        if (!active || !newsResponse.ok) return;
+        setResponse(await newsResponse.json());
+      } catch {
+        if (active) setResponse(null);
+      }
+    }
+
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [symbol]);
+
+  const providerResponse = response?.articles?.length ? response : null;
+  const providerArticles = providerResponse?.articles ?? null;
 
   return (
     <section className="rounded-lg border border-white/10 bg-white/[0.045] p-5 backdrop-blur">
@@ -34,6 +76,15 @@ export function NewsPanel({ news }: NewsPanelProps) {
         title={t("marketHeadlines")}
         description={t("newsDescription")}
       />
+      {providerResponse ? (
+        <>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <NewsSourceBadge provider={providerResponse.provider} isFallback={providerResponse.isFallback} />
+            <span className="text-xs text-slate-500">{providerResponse.sourceLabel}</span>
+          </div>
+          <NewsList articles={providerResponse.articles} />
+        </>
+      ) : (
       <div className="grid gap-3">
         {news.map((item) => (
           <article key={item.title} className="rounded-lg border border-white/10 bg-slate-950/45 p-4">
@@ -55,6 +106,12 @@ export function NewsPanel({ news }: NewsPanelProps) {
           </article>
         ))}
       </div>
+      )}
+      {!providerArticles && fallback.length ? (
+        <p className="mt-3 text-xs text-slate-500">
+          {fallback[0].provider === "mock" ? "Mock news if fallback" : ""}
+        </p>
+      ) : null}
     </section>
   );
 }

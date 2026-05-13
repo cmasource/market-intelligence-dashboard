@@ -33,6 +33,7 @@ const technicalSourceStatus = /Calculated from real market data|Calculated from 
 const fundamentalsSourceStatus = /Provider fundamentals|Fallback mock fundamentals/;
 const fixedIncomeSourceStatus = /Mock fixed income analytics/;
 const forbiddenCurrencyLabels = [/ARS\/USD/, /USD\/ARS/, new RegExp(["ARS", "SAR"].join(" "))];
+const forbiddenCurrencyLabelsWhenCclIsAllowed = [/USD\/ARS/, new RegExp(["ARS", "SAR"].join(" "))];
 
 test.describe("CMA Market Intelligence smoke tests", () => {
   test.beforeEach(async ({ page }) => {
@@ -367,16 +368,16 @@ test.describe("CMA Market Intelligence smoke tests", () => {
 
   test("asset pages show normalized display currencies", async ({ page }) => {
     const expectedCurrencies = [
-      { symbol: "AAPL", currency: "USD", forbidden: forbiddenCurrencyLabels },
-      { symbol: "SPY", currency: "USD", forbidden: forbiddenCurrencyLabels },
-      { symbol: "QQQ", currency: "USD", forbidden: forbiddenCurrencyLabels },
-      { symbol: "MSFT", currency: "USD", forbidden: forbiddenCurrencyLabels },
-      { symbol: "NVDA", currency: "USD", forbidden: forbiddenCurrencyLabels },
-      { symbol: "TSLA", currency: "USD", forbidden: forbiddenCurrencyLabels },
-      { symbol: "AMZN", currency: "USD", forbidden: forbiddenCurrencyLabels },
-      { symbol: "META", currency: "USD", forbidden: forbiddenCurrencyLabels },
-      { symbol: "GOOGL", currency: "USD", forbidden: forbiddenCurrencyLabels },
-      { symbol: "KO", currency: "USD", forbidden: forbiddenCurrencyLabels },
+      { symbol: "AAPL", currency: "USD", forbidden: forbiddenCurrencyLabelsWhenCclIsAllowed },
+      { symbol: "SPY", currency: "USD", forbidden: forbiddenCurrencyLabelsWhenCclIsAllowed },
+      { symbol: "QQQ", currency: "USD", forbidden: forbiddenCurrencyLabelsWhenCclIsAllowed },
+      { symbol: "MSFT", currency: "USD", forbidden: forbiddenCurrencyLabelsWhenCclIsAllowed },
+      { symbol: "NVDA", currency: "USD", forbidden: forbiddenCurrencyLabelsWhenCclIsAllowed },
+      { symbol: "TSLA", currency: "USD", forbidden: forbiddenCurrencyLabelsWhenCclIsAllowed },
+      { symbol: "AMZN", currency: "USD", forbidden: forbiddenCurrencyLabelsWhenCclIsAllowed },
+      { symbol: "META", currency: "USD", forbidden: forbiddenCurrencyLabelsWhenCclIsAllowed },
+      { symbol: "GOOGL", currency: "USD", forbidden: forbiddenCurrencyLabelsWhenCclIsAllowed },
+      { symbol: "KO", currency: "USD", forbidden: forbiddenCurrencyLabelsWhenCclIsAllowed },
       { symbol: "BTC-USD", currency: "USD", forbidden: forbiddenCurrencyLabels },
       { symbol: "ETH-USD", currency: "USD", forbidden: forbiddenCurrencyLabels },
       { symbol: "SOL-USD", currency: "USD", forbidden: forbiddenCurrencyLabels },
@@ -439,6 +440,85 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(searchSection).toContainText(/Abrir análisis|Open analysis/);
     await expect(searchSection).toContainText(/%/);
     await expect(searchSection).not.toContainText(/61(?:\.|,)7\s*ARS|ARS SAR|ARS CER/);
+  });
+
+  test("CEDEAR API returns local, underlying and implied CCL fields", async ({ request }) => {
+    const response = await request.get("/api/cedears/AAPL");
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+
+    expect(data.localSymbol).toBe("AAPL");
+    expect(data.underlyingSymbol).toBe("AAPL");
+    expect(data.ratio).toBeTruthy();
+    expect(data).toHaveProperty("impliedCcl");
+    expect(data.sourceLabel).toContain("Mock CEDEAR data");
+  });
+
+  test("provider status API is safe and hides keys", async ({ request }) => {
+    const response = await request.get("/api/providers/status");
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    const serialized = JSON.stringify(data);
+
+    expect(Array.isArray(data.marketData)).toBeTruthy();
+    expect(Array.isArray(data.fundamentals)).toBeTruthy();
+    expect(Array.isArray(data.news)).toBeTruthy();
+    expect(serialized).toContain("fmp");
+    expect(serialized).not.toMatch(/"key"\s*:/i);
+    expect(serialized).not.toMatch(/"token"\s*:/i);
+    expect(serialized).not.toMatch(/"secret"\s*:/i);
+  });
+
+  test("AAPL asset page shows CEDEAR analytics without replacing USA context", async ({ page }) => {
+    await page.goto("/asset/AAPL");
+
+    await expect(page.getByText("AAPL").first()).toBeVisible();
+    await expect(page.locator("body")).toContainText("CEDEAR");
+    await expect(page.locator("body")).toContainText(/Underlying asset|Activo subyacente/);
+    await expect(page.locator("body")).toContainText(/Implied CCL|CCL implícito|CCL implicito/);
+    await expect(page.locator("body")).toContainText(/Mock data|Datos simulados/);
+    await expect(page.locator("body")).toContainText(/underlying asset when local CEDEAR integration is not available|subyacente cuando no existe integración real del CEDEAR local/i);
+    await expect(page.locator("body")).toContainText(/ARS/);
+    await expect(page.locator("body")).toContainText(/USD/);
+    await expect(page.locator("body")).toContainText(/ARS\/USD/);
+  });
+
+  test("markets page promotes CEDEAR and implied CCL context", async ({ page }) => {
+    await page.goto("/markets");
+
+    await expect(page.locator("body")).toContainText("CEDEARs");
+    await expect(page.locator("body")).toContainText(/implied CCL|CCL implícito|CCL implicito/);
+    await expect(page.getByText("AAPL").first()).toBeVisible();
+    await expect(page.locator("body")).toContainText(/MSFT|NVDA/);
+  });
+
+  test("methodology and glossary include CEDEAR terms", async ({ page }) => {
+    await page.goto("/methodology");
+    await expect(page.locator("body")).toContainText("CEDEAR");
+    await expect(page.locator("body")).toContainText(/implied CCL|CCL implícito|CCL implicito/);
+
+    await page.goto("/glossary");
+    await expect(page.locator("body")).toContainText("CEDEAR");
+    await expect(page.locator("body")).toContainText(/Implied CCL|CCL implícito|CCL implicito/);
+    await expect(page.locator("body")).toContainText(/CEDEAR ratio|Ratio CEDEAR/);
+  });
+
+  test("news API and news panel fall back safely", async ({ page, request }) => {
+    const response = await request.get("/api/news/market");
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(Array.isArray(data.articles)).toBeTruthy();
+    expect(data).toHaveProperty("provider");
+
+    await page.goto("/asset/AAPL");
+    await expect(page.locator("body")).toContainText(/Market Headlines|Noticias|Provider news|Mock news|Noticias simuladas|Noticias fallback/);
+  });
+
+  test("data audit shows provider status and fallback labels", async ({ page }) => {
+    await page.goto("/data-audit");
+    await expect(page.locator("body")).toContainText(/Provider status|Estado de proveedores/);
+    await expect(page.getByText("AAPL").first()).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Provider|Proveedor|Mock|Simulado|Fallback|Futuro|Future/);
   });
 
   test("Spanish asset summaries use localized copy", async ({ page }) => {

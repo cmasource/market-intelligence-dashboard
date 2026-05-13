@@ -15,7 +15,7 @@ export const DATA_COVERAGE_BY_SYMBOL: Record<string, InstrumentDataCoverage> = {
     fixedIncome: "not_applicable",
     news: "future",
     aiSummary: "mock",
-    notes: ["USA market data is provider-based; CEDEAR local market coverage is modeled for future integration."],
+    notes: ["USA market data is provider-based; CEDEAR local price and ratio are mock structured values for implied CCL context."],
   },
   SPY: {
     symbol: "SPY",
@@ -69,7 +69,7 @@ for (const symbol of providerEquitySymbols) {
     fixedIncome: "not_applicable",
     news: "future",
     aiSummary: "mock",
-    notes: ["USA market data and fundamentals use provider adapters with fallback-safe behavior."],
+    notes: ["USA market data and fundamentals use provider adapters with fallback-safe behavior. CEDEAR local context, when available, uses mock local price and ratio."],
   };
 }
 

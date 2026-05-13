@@ -7,6 +7,7 @@ import {
 } from "./symbol-map";
 import type { FundamentalsRequest, FundamentalsResponse } from "./types";
 import { buildFundamentalsInterpretation } from "./fundamentals-score";
+import { getAlphaVantageFundamentals, getFinnhubFundamentals, getFmpFundamentals } from "@/lib/providers";
 
 function unavailableResponse(
   symbol: string,
@@ -37,6 +38,10 @@ function hasProviderData(response: FundamentalsResponse) {
   return Object.values(response.snapshot).some((value) => value !== undefined && value !== null);
 }
 
+function isEnabledProviderResponse(response: FundamentalsResponse) {
+  return !response.error && hasProviderData(response);
+}
+
 export async function getFundamentals(request: FundamentalsRequest): Promise<FundamentalsResponse> {
   const symbol = normalizeFundamentalsSymbol(request.symbol);
   const assetClass = request.assetClass ?? getFundamentalsAssetClass(symbol);
@@ -52,6 +57,17 @@ export async function getFundamentals(request: FundamentalsRequest): Promise<Fun
     }
 
     if (getYahooFundamentalsSymbol(symbol)) {
+      const providerAttempts = [
+        () => getFmpFundamentals(normalizedRequest),
+        () => getFinnhubFundamentals(normalizedRequest),
+        () => getAlphaVantageFundamentals(normalizedRequest),
+      ];
+
+      for (const attempt of providerAttempts) {
+        const response = await attempt();
+        if (isEnabledProviderResponse(response)) return response;
+      }
+
       const providerResponse = await getYahooFundamentals(normalizedRequest);
 
       if (providerResponse.error || !hasProviderData(providerResponse)) {

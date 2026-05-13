@@ -35,7 +35,7 @@ git push
 3. Install command: `npm install`.
 4. Build command: `npm run build`.
 5. Output directory: Next.js default.
-6. Environment variables: none required for the current demo.
+6. Environment variables: none required for fallback demo mode. Optional provider keys can be added later.
 7. Deploy Preview.
 8. Review the generated URL.
 9. Promote to Production only after manual review.
@@ -59,7 +59,7 @@ CLI deployment can work without Git, but GitHub integration is better for ongoin
 ## Vercel Assumptions
 
 - Next.js App Router application.
-- No required secrets yet.
+- No required secrets for fallback demo mode.
 - No database yet.
 - No paid APIs yet.
 - Public demo mode uses mixed provider, mock, fallback and future coverage.
@@ -67,16 +67,17 @@ CLI deployment can work without Git, but GitHub integration is better for ongoin
 
 ## Environment Variables
 
-No environment variables are required for the current demo.
+No environment variables are required for fallback demo mode.
 
-Future production integrations may require:
+Optional real-data providers:
 
-- Market data provider keys.
-- AI provider key.
-- News API key.
-- Database URL.
+- `FMP_API_KEY`
+- `FINNHUB_API_KEY`
+- `ALPHA_VANTAGE_API_KEY`
+- `NEWS_PROVIDER`
+- `MARKET_DATA_PROVIDER`
 
-Use `.env.example` as the placeholder template. Do not commit real secrets.
+Add variables in Vercel Project Settings > Environment Variables and redeploy after changing them. Do not expose provider secrets with `NEXT_PUBLIC_`. Use `.env.example` as the placeholder template and do not commit real secrets.
 
 ## Post-Deploy Checklist
 
@@ -100,7 +101,7 @@ Use `.env.example` as the placeholder template. Do not commit real secrets.
 ## Demo Caveats
 
 - Argentina data is still mock or future coverage.
-- CEDEARs are modeled but not fully real yet.
+- CEDEAR local prices and ratios are modeled but not fully real yet.
 - This public demo is noindex/nofollow for now.
 - The platform is informational and not investment advice.
 

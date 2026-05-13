@@ -8,12 +8,14 @@ import { NewsPanel } from "@/components/asset/NewsPanel";
 import { RelatedInstrumentsCard } from "@/components/asset/RelatedInstrumentsCard";
 import { TechnicalAnalysisCard } from "@/components/asset/TechnicalAnalysisCard";
 import { MarketSignalGauge } from "@/components/analysis/MarketSignalGauge";
+import { CedearAnalyticsCard } from "@/components/cedears/CedearAnalyticsCard";
 import { InteractiveAssetChart } from "@/components/charts/InteractiveAssetChart";
 import { DataCoveragePanel } from "@/components/data-coverage/DataCoveragePanel";
 import { DataTransparencyNote } from "@/components/data-coverage/DataTransparencyNote";
 import { AppShell } from "@/components/layout/AppShell";
 import Link from "next/link";
 import { getInstrumentBySymbol } from "@/lib/instrument-universe";
+import { isCedearSymbol } from "@/lib/cedears";
 import { findAsset, mockAssets } from "@/lib/mock-data";
 
 function formatCategory(category: string) {
@@ -107,6 +109,7 @@ export default async function AssetDetailPage({
           riskLevel={asset.riskLevel}
         />
         <RelatedInstrumentsCard symbol={asset.symbol} />
+        {isCedearSymbol(asset.symbol) ? <CedearAnalyticsCard symbol={asset.symbol} /> : null}
         <InteractiveAssetChart symbol={asset.symbol} name={asset.name} currency={asset.currency} />
         <div className="grid gap-6 xl:grid-cols-2">
           <TechnicalAnalysisCard asset={asset} />
@@ -121,7 +124,7 @@ export default async function AssetDetailPage({
         </div>
         {asset.bondMetrics ? <BondMetricsCard symbol={asset.symbol} fallbackBondMetrics={asset.bondMetrics} /> : null}
         <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-          <NewsPanel news={asset.news} />
+          <NewsPanel news={asset.news} symbol={asset.symbol} />
           <AISummaryCard asset={asset} />
         </div>
         <AssetDisclaimer />

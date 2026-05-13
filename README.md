@@ -23,6 +23,7 @@ The app is transparent about mixed coverage: selected USA and crypto instruments
 - Advanced instrument screener
 - Asset detail pages
 - Real/provider USA and crypto market data with fallback
+- Server-side provider chain for FMP, Finnhub, Alpha Vantage, Yahoo/RSS and mock fallback
 - Technical analysis from OHLCV candles
 - Integrated market signal gauge
 - USA fundamentals provider layer with fallback
@@ -30,7 +31,7 @@ The app is transparent about mixed coverage: selected USA and crypto instruments
 - Centralized currency display and contextual financial glossary tooltips
 - Fixed income analytics using mock structured bond data
 - Argentina bond species: AL30, AL30D, AL30C, GD30, GD30D, GD30C and TX26
-- CEDEAR foundation
+- CEDEAR analytics with mock local ARS prices, ratio structure, underlying asset context and implied CCL
 - English/Spanish language switcher
 - Dark/light theme toggle
 - Public demo footer and informational disclaimer
@@ -92,3 +93,17 @@ Some data comes from public providers, while other data is simulated or marked a
 - `/glossary` explains technical, fundamental and fixed income terms used in cards and tooltips.
 - Currency display is centralized to avoid visible `ARS/USD`, `USD/ARS` or SAR-typo price labels.
 - Manual validation guides live in `docs/manual-technical-validation.md` and `docs/manual-fundamental-validation.md`.
+
+## Sprint 17 CEDEAR Notes
+
+- CEDEAR local prices and ratios are structured mock values until BYMA/IOL or licensed-provider integration is enabled.
+- Underlying USA prices can use the existing provider/fallback market-data layer.
+- Implied CCL is calculated as `local CEDEAR ARS price * ratio / underlying USD price` using the demo ratio convention.
+- The result is informational and not an arbitrage recommendation.
+
+## Sprint 18 Provider Notes
+
+- Optional provider keys: `FMP_API_KEY`, `FINNHUB_API_KEY`, `ALPHA_VANTAGE_API_KEY`.
+- Optional switches: `NEWS_PROVIDER`, `MARKET_DATA_PROVIDER`.
+- The demo works without keys via Yahoo-compatible, RSS and mock fallback layers.
+- `/api/providers/status` reports enabled/disabled providers without exposing secrets.

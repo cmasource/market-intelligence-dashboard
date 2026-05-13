@@ -1,6 +1,6 @@
 import type { Timeframe } from "@/types/chart";
 
-export type MarketDataProviderName = "mock" | "yahoo" | "crypto";
+export type MarketDataProviderName = "mock" | "yahoo" | "crypto" | "fmp" | "finnhub" | "alpha_vantage";
 
 export type MarketDataAssetClass = "stock" | "etf" | "crypto" | "argentina" | "bond" | "unknown";
 

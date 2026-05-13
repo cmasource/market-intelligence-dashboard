@@ -1,4 +1,4 @@
-export type GlossaryCategory = "technical" | "fundamentals" | "fixed_income" | "risk" | "market";
+export type GlossaryCategory = "technical" | "fundamentals" | "fixed_income" | "cedears" | "risk" | "market";
 
 export type GlossaryTermKey =
   | "trend"
@@ -52,7 +52,14 @@ export type GlossaryTermKey =
   | "maturityDate"
   | "law"
   | "cer"
-  | "dollarLinked";
+  | "dollarLinked"
+  | "cedear"
+  | "underlyingAsset"
+  | "cedearRatio"
+  | "impliedCcl"
+  | "dollarMep"
+  | "cableCclDollar"
+  | "arbitrageSpread";
 
 export type GlossaryTerm = {
   key: GlossaryTermKey;

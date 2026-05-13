@@ -26,18 +26,18 @@ Argentina instruments can have multiple related trading symbols for the same und
 
 Each universe item can define a `primarySymbol`, an `underlyingSymbol` and a `relatedSymbols` list. This allows an asset page to show the main instrument and the related symbols a user can open directly.
 
-## CEDEAR and ADR Future Model
+## CEDEAR Model
 
-The current CEDEAR entries are placeholders. Future versions can map:
+The current CEDEAR entries model local Argentine exposure to international assets:
 
 - Local CEDEAR symbol.
-- Dollar species.
-- ADR.
-- Underlying stock.
+- Underlying stock or ETF.
 - CEDEAR ratio.
-- CCL reference.
+- Mock local ARS price.
+- Provider/fallback underlying USD price when available.
+- Implied CCL reference.
 
-Sprint 12 adds an explicit CEDEAR model foundation under `lib/instrument-universe/cedears.ts`. CEDEAR cards are now more prominent on the Markets page and in the screener, with data coverage labeled as mock/future unless a supported global underlying is being used.
+Sprint 17 adds CEDEAR analytics under `lib/cedears/`. CEDEAR cards are now more prominent on the Markets page, in the screener and on supported asset pages, with data coverage labeled as provider underlying / mock local CEDEAR.
 
 ## Data Coverage
 
@@ -52,7 +52,7 @@ The first crypto universe contains `BTC-USD`, `ETH-USD`, `BNB-USD`, `SOL-USD`, `
 - Mock relationship data only.
 - No real BYMA, IOL or CNV data.
 - No official CEDEAR ratio mapping.
-- No live CCL/MEP arbitrage calculation.
+- No live CCL/MEP arbitrage execution signal.
 - No database or persistent instrument master.
 - The screener uses structured local arrays and does not yet persist user filters.
 

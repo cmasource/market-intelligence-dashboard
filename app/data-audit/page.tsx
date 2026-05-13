@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { DataCoverageBadges } from "@/components/data-coverage/DataCoverageBadges";
+import { ProviderStatusPanel } from "@/components/providers/ProviderStatusPanel";
 import { getInstrumentContextCoverage, getCoverageStatusLabel } from "@/lib/data-coverage";
 import { instrumentUniverse } from "@/lib/instrument-universe/universe";
 import { useLanguage } from "@/lib/i18n/useLanguage";
@@ -68,6 +69,8 @@ export default function DataAuditPage() {
             </Link>
           </div>
         </section>
+
+        <ProviderStatusPanel />
 
         <section className="overflow-hidden rounded-lg border border-white/10 bg-slate-950/55">
           <div className="overflow-x-auto">

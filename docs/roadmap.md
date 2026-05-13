@@ -167,6 +167,22 @@
 - Separate visible `marketDisplayPrice` from normalized `analyticalPrice` for fixed income metrics.
 - Keep Argentine bond prices mock/structured until BYMA, IOL or licensed-provider integration is enabled.
 
+## Phase 17: CEDEAR Analytics and Implied CCL
+
+- Add CEDEAR-to-underlying relationships for initial USA stocks and ETFs.
+- Add mock local ARS prices and ratio structure for CEDEAR examples.
+- Calculate implied CCL from local price, ratio and underlying USD price.
+- Show CEDEAR context on supported asset pages without replacing USA stock analysis.
+- Keep BYMA/IOL and licensed-provider local integrations future-scoped.
+
+## Phase 18: Real Provider Architecture and News MVP
+
+- Add server-side provider configuration and status API.
+- Add FMP, Finnhub and Alpha Vantage adapter scaffolding.
+- Preserve Yahoo/RSS/mock fallback when keys are missing or providers fail.
+- Add news API and UI with provider/RSS/mock source badges.
+- Keep local Argentina and CEDEAR data clearly separated from provider-backed underlying data.
+
 ## Future Regional Personalization
 
 - Argentina.

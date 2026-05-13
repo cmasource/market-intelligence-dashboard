@@ -18,6 +18,8 @@
 - Technical analysis calculated from OHLCV candles.
 - Fundamentals layer for selected USA stocks and ETFs with fallback behavior.
 - Fixed income analytics for Argentine mock bond instruments and species.
+- CEDEAR analytics with provider/fallback underlying context, mock local ARS price, mock ratio and implied CCL.
+- Provider status and fallback-safe real-data architecture for market data, fundamentals and news.
 - Bilingual English/Spanish UI.
 
 ## Real or Provider Data
@@ -58,6 +60,8 @@
 - This is not investment advice.
 - Argentina data is still simulated. For bonds, visible local mock prices can differ from normalized analytical prices used for metrics.
 - CEDEARs are still a future/mock foundation.
+- CEDEAR local prices and ratios are simulated; implied CCL is informational.
+- Provider keys are optional; missing keys should show fallback or mock labels rather than breaking the demo.
 - Public demo viewers should treat all analytics as product workflow examples unless explicitly marked as provider data.
 
 ## Deployment Notes

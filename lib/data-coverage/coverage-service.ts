@@ -17,14 +17,14 @@ export function getInstrumentContextCoverage(symbol: string, context?: { categor
   if (context?.category === "cedear") {
     return {
       symbol: normalized,
-      price: "future",
-      chart: "future",
-      technical: "future",
-      fundamentals: "future",
+      price: "mock",
+      chart: "provider",
+      technical: "provider",
+      fundamentals: "provider",
       fixedIncome: "not_applicable",
       news: "future",
-      aiSummary: "future",
-      notes: ["CEDEAR local pricing, ratio and implied CCL are future coverage items."],
+      aiSummary: "mock",
+      notes: ["Provider underlying / mock local CEDEAR. Local price, ratio and implied CCL are modeled until BYMA/IOL or licensed-provider integration is enabled."],
     };
   }
 
