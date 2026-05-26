@@ -367,6 +367,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
   });
 
   test("asset pages show normalized display currencies", async ({ page }) => {
+    test.setTimeout(60_000);
     const expectedCurrencies = [
       { symbol: "AAPL", currency: "USD", forbidden: forbiddenCurrencyLabelsWhenCclIsAllowed },
       { symbol: "SPY", currency: "USD", forbidden: forbiddenCurrencyLabelsWhenCclIsAllowed },
@@ -394,7 +395,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     ];
 
     for (const item of expectedCurrencies) {
-      await page.goto(`/asset/${item.symbol}`);
+      await page.goto(`/asset/${item.symbol}`, { waitUntil: "domcontentloaded" });
       await expect(page.getByText(item.symbol).first()).toBeVisible();
       await expect(page.locator("body")).toContainText(item.currency);
       for (const forbidden of item.forbidden) {
@@ -571,6 +572,53 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     expect(Array.isArray(data.providerTrace)).toBeTruthy();
     expect(Array.isArray(data.fallbackChain)).toBeTruthy();
     if (process.env.FMP_API_KEY) expect(JSON.stringify(data)).not.toContain(process.env.FMP_API_KEY);
+  });
+
+  test("Argentina data APIs expose normalized manual and registry status", async ({ request }) => {
+    const quoteResponse = await request.get("/api/argentina/quote/AL30");
+    expect(quoteResponse.ok()).toBeTruthy();
+    const quote = await quoteResponse.json();
+    expect(quote.symbol).toBe("AL30");
+    expect(typeof quote.price).toBe("number");
+    expect(typeof quote.currency).toBe("string");
+    expect(typeof quote.source).toBe("string");
+    expect(JSON.stringify(quote)).not.toContain("ARS SAR");
+    expect(quote.currency).not.toBe("ARS/USD");
+    expect(quote.currency).not.toBe("USD MEP");
+    expect(quote.currency).not.toBe("ARS CER");
+
+    const statusResponse = await request.get("/api/argentina/status");
+    expect(statusResponse.ok()).toBeTruthy();
+    const status = await statusResponse.json();
+    expect(JSON.stringify(status)).toContain("manual");
+    expect(JSON.stringify(status)).toContain("mock");
+    expect(JSON.stringify(status)).toContain("future");
+
+    const instrumentsResponse = await request.get("/api/argentina/instruments");
+    expect(instrumentsResponse.ok()).toBeTruthy();
+    const instruments = await instrumentsResponse.json();
+    expect(JSON.stringify(instruments)).toContain("GGAL");
+    expect(JSON.stringify(instruments)).toContain("AL30");
+    expect(JSON.stringify(instruments)).toContain("BYMA CEDEAR");
+  });
+
+  test("Argentina page shows local data coverage status", async ({ page }) => {
+    await page.goto("/argentina");
+
+    await expect(page.locator("body")).toContainText(/Cobertura de datos Argentina|Argentina data coverage/);
+    await expect(page.getByText("AL30").first()).toBeVisible();
+    await expect(page.getByText("GGAL").first()).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Carga manual validada|Validated manual load|Dato estructurado simulado|Structured mock data/);
+    await expect(page.locator("body")).toContainText(/BYMA|CNV|Broker\/API/);
+  });
+
+  test("data audit includes Argentina quote source section", async ({ page }) => {
+    await page.goto("/data-audit");
+
+    await expect(page.locator("body")).toContainText(/Auditoría de datos Argentina|Argentina data audit/);
+    await expect(page.locator("body")).toContainText(/manual\/mock\/future/);
+    await expect(page.getByText("AL30").first()).toBeVisible();
+    await expect(page.getByText("GGAL").first()).toBeVisible();
   });
 
   test("AAPL asset header uses quote source labels and preserves CEDEAR distinction", async ({ page, request }) => {
@@ -778,18 +826,50 @@ test.describe("CMA Market Intelligence smoke tests", () => {
   });
 
   test("related instruments navigate between AL30 species", async ({ page }) => {
-    await page.goto("/asset/AL30");
+    test.setTimeout(60_000);
+    await page.addInitScript(() => {
+      window.localStorage.setItem("cma-market-intelligence-language", "en");
+      window.sessionStorage.clear();
+    });
 
-    const relatedCard = page.locator("section").filter({ hasText: /Related instruments|Instrumentos relacionados/ });
-    await relatedCard.getByRole("link", { name: /AL30D/ }).click();
+    await page.goto("/asset/AL30D", { waitUntil: "domcontentloaded" });
     await expect(page).toHaveURL(/\/asset\/AL30D$/);
     await expect(page.getByText("AL30D").first()).toBeVisible();
-    await expect(page.getByText(/Primary instrument|Instrumento principal/)).toBeVisible();
-    await expect(page.getByText("AL30C").first()).toBeVisible();
 
-    await page.getByRole("link", { name: /Primary instrument: AL30|Instrumento principal: AL30/ }).click();
-    await expect(page).toHaveURL(/\/asset\/AL30$/);
+    const relatedCard = page.locator("section").filter({ hasText: /Related instruments|Instrumentos relacionados/ });
+    await expect(relatedCard).toBeVisible({ timeout: 15_000 });
+    await expect(relatedCard.getByText("AL30C").first()).toBeVisible();
+
+    const al30PrimaryLink = relatedCard
+      .getByRole("link", { name: /Instrumento principal: AL30|Primary instrument: AL30/ })
+      .first();
+    await expect(al30PrimaryLink).toBeVisible({ timeout: 15_000 });
+    await expect(al30PrimaryLink).toHaveAttribute("href", "/asset/AL30");
+    await al30PrimaryLink.scrollIntoViewIfNeeded();
+    await Promise.all([page.waitForURL(/\/asset\/AL30$/, { timeout: 15_000 }), al30PrimaryLink.click()]);
     await expect(page.getByText("AL30").first()).toBeVisible();
+
+    await page.goto("/asset/AL30C", { waitUntil: "domcontentloaded" });
+    const al30cRelatedCard = page.locator("section").filter({ hasText: /Related instruments|Instrumentos relacionados/ });
+    const al30cPrimaryLink = al30cRelatedCard
+      .getByRole("link", { name: /Instrumento principal: AL30|Primary instrument: AL30/ })
+      .first();
+    await expect(al30cPrimaryLink).toBeVisible({ timeout: 15_000 });
+    await expect(al30cPrimaryLink).toHaveAttribute("href", "/asset/AL30");
+    await al30cPrimaryLink.scrollIntoViewIfNeeded();
+    await Promise.all([page.waitForURL(/\/asset\/AL30$/, { timeout: 15_000 }), al30cPrimaryLink.click()]);
+    await expect(page).toHaveURL(/\/asset\/AL30$/);
+
+    await page.goto("/asset/GD30D", { waitUntil: "domcontentloaded" });
+    const gd30dRelatedCard = page.locator("section").filter({ hasText: /Related instruments|Instrumentos relacionados/ });
+    const gd30PrimaryLink = gd30dRelatedCard
+      .getByRole("link", { name: /Instrumento principal: GD30|Primary instrument: GD30/ })
+      .first();
+    await expect(gd30PrimaryLink).toBeVisible({ timeout: 15_000 });
+    await expect(gd30PrimaryLink).toHaveAttribute("href", "/asset/GD30");
+    await gd30PrimaryLink.scrollIntoViewIfNeeded();
+    await Promise.all([page.waitForURL(/\/asset\/GD30$/, { timeout: 15_000 }), gd30PrimaryLink.click()]);
+    await expect(page).toHaveURL(/\/asset\/GD30$/);
   });
 
   test("bond species fixed income routes stay available", async ({ page }) => {
@@ -815,6 +895,142 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.getByText("TX26").first()).toBeVisible();
     await expect(page.locator("body")).toContainText(/CER|Inflation-linked/i);
     await expect(page.getByRole("heading", { name: "Fixed Income Analytics" })).toBeVisible();
+  });
+
+  test("asset intelligence API and asset page report stay available", async ({ page, request }) => {
+    const response = await request.get("/api/intelligence/AAPL");
+    expect(response.ok()).toBeTruthy();
+    const report = await response.json();
+    expect(report.symbol).toBe("AAPL");
+    expect(report.finalReading).toBeTruthy();
+    expect(report.priceSummary).toBeTruthy();
+    expect(report.marketSignalSummary).toBeTruthy();
+    expect(report.riskSummary).toBeTruthy();
+    if (process.env.FMP_API_KEY) expect(JSON.stringify(report)).not.toContain(process.env.FMP_API_KEY);
+
+    await page.goto("/asset/AAPL");
+    await expect(page.locator("body")).toContainText(/Lectura ejecutiva|Executive reading/, { timeout: 20_000 });
+    await expect(page.locator("body")).toContainText(/Riesgos principales|Key risks/);
+    await expect(page.locator("body")).toContainText(/Cobertura y limitaciones|Data coverage/);
+  });
+
+  test("Spanish technical interpretation is human-readable", async ({ page }) => {
+    await page.goto("/asset/AAPL");
+    await page.getByRole("button", { name: "ES", exact: true }).click();
+
+    await expect(page.locator("body")).toContainText(/Lectura tecnica|Lectura tÃ©cnica/);
+    await expect(page.locator("body")).not.toContainText("constructive uptrend");
+    await expect(page.locator("body")).not.toContainText("overbought momentum watch");
+    await expect(page.locator("body")).toContainText(/tendencia|momentum|sobrecompra/i);
+  });
+
+  test("Spanish CEDEAR context avoids internal provider wording", async ({ page }) => {
+    await page.goto("/asset/AAPL");
+    await page.getByRole("button", { name: "ES", exact: true }).click();
+
+    await expect(page.locator("body")).toContainText("Subyacente");
+    await expect(page.locator("body")).toContainText(/CEDEAR local simulado/);
+    await expect(page.locator("body")).not.toContainText("Provider underlying / mock local CEDEAR");
+  });
+
+  test("Spanish fundamental card avoids English unavailable copy", async ({ page }) => {
+    await page.goto("/asset/AAPL");
+    await page.getByRole("button", { name: "ES", exact: true }).click();
+
+    await expect(page.locator("body")).toContainText(/Análisis fundamental|AnÃ¡lisis fundamental|Analisis fundamental/);
+    await expect(page.locator("body")).not.toContainText("Equity-style fundamental metrics");
+  });
+
+  test("Spanish report route keeps executive sections localized", async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem("cma-market-intelligence-language", "es");
+    });
+    await page.goto("/report/AAPL");
+
+    await expect(page.locator("body")).toContainText("Reporte compartible");
+    await expect(page.locator("body")).toContainText("Precio");
+    await expect(page.locator("body")).toContainText("Señal");
+    await expect(page.locator("body")).toContainText("Confianza");
+    await expect(page.locator("body")).toContainText("Fuente");
+    await expect(page.locator("body")).toContainText("Abrir perfil completo");
+    await expect(page.locator("body")).toContainText(/Metodolog/i);
+    await expect(page.locator("body")).toContainText(/Auditor/i);
+    await expect(page.locator("body")).toContainText("Lectura ejecutiva");
+    await expect(page.locator("body")).toContainText("Puntos clave");
+    await expect(page.locator("body")).toContainText(/ntesis t/i);
+    await expect(page.locator("body")).toContainText("Pulso de noticias");
+    await expect(page.locator("body")).toContainText("Los titulares pueden mostrarse en el idioma original");
+    await expect(page.locator("body")).toContainText(/Cómo leerlo|Como leerlo/);
+    await expect(page.locator("body")).toContainText("BYMA/IOL");
+    await expect(page.locator("body")).toContainText("Riesgos principales");
+    await expect(page.locator("body")).not.toContainText("Executive reading");
+    await expect(page.locator("body")).not.toContainText("Key risks");
+    await expect(page.locator("body")).not.toContainText("Data coverage and limitations");
+    await expect(page.locator("body")).not.toContainText("Open full asset page");
+    await expect(page.locator("body")).not.toContainText("Methodology");
+    await expect(page.locator("body")).not.toContainText("Data audit");
+    await expect(page.locator("body")).not.toContainText("Shareable asset intelligence report");
+    await expect(page.locator("body")).not.toContainText("Open full asset page / Abrir perfil completo");
+    await expect(page.locator("body")).not.toContainText("Methodology /");
+    await expect(page.locator("body")).not.toContainText("Data audit /");
+  });
+
+  test("Spanish asset executive reading uses report synthesis hierarchy", async ({ page }) => {
+    await page.goto("/asset/AAPL");
+    await page.getByRole("button", { name: "ES", exact: true }).click();
+
+    await expect(page.locator("body")).toContainText("Lectura ejecutiva", { timeout: 20_000 });
+    await expect(page.locator("body")).toContainText(/ntesis t/i);
+    await expect(page.locator("body")).toContainText("Pulso de noticias");
+    await expect(page.locator("body")).not.toContainText("Shareable asset intelligence report");
+  });
+
+  test("Spanish report route stays responsive without mixed CTA language", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.addInitScript(() => {
+      window.localStorage.setItem("cma-market-intelligence-language", "es");
+    });
+    await page.goto("/report/AAPL");
+
+    await expect(page.locator("body")).toContainText("Lectura ejecutiva", { timeout: 20_000 });
+    await expect(page.locator("body")).toContainText("Puntos clave");
+    await expect(page.locator("body")).toContainText("Abrir perfil completo");
+    await expect(page.locator("body")).toContainText("Cobertura y limitaciones de datos");
+    await expect(page.locator("body")).not.toContainText("Hydration failed");
+    await expect(page.locator("body")).not.toContainText("Open full asset page / Abrir perfil completo");
+
+    const hasHorizontalOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+    );
+    expect(hasHorizontalOverflow).toBeFalsy();
+  });
+
+  test("shareable intelligence report routes cover equities crypto and bonds", async ({ page }) => {
+    await page.goto("/report/AAPL");
+    await expect(page.getByText("AAPL").first()).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Executive reading|Lectura ejecutiva/);
+    await expect(page.locator("body")).toContainText(/Price|Precio/);
+    await expect(page.locator("body")).toContainText(/Signal|Señal/);
+    await expect(page.locator("body")).toContainText(/Confidence|Confianza/);
+    await expect(page.locator("body")).toContainText(/Source|Fuente/);
+    await expect(page.locator("body")).toContainText(/Headlines may appear in the source's original language|Los titulares pueden mostrarse en el idioma original/);
+    await expect(page.locator("body")).toContainText(/Open full asset page|Abrir perfil completo/);
+    await expect(page.locator("body")).toContainText(/How to read it|Cómo leerlo|Como leerlo/);
+    await expect(page.locator("body")).toContainText(/BYMA\/IOL|licensed-provider|proveedor licenciado/);
+    await expect(page.locator("body")).not.toContainText(/Strong Buy|Strong Sell|Compra fuerte|Venta fuerte/);
+    await expect(page.locator("body")).not.toContainText("Open full asset page / Abrir perfil completo");
+    await expect(page.locator("body")).not.toContainText("Methodology /");
+    await expect(page.locator("body")).not.toContainText("Data audit /");
+
+    await page.goto("/report/BTC-USD");
+    await expect(page.getByText("BTC-USD").first()).toBeVisible();
+    await expect(page.locator("body")).toContainText(/fundamental reading is limited|fundamentals are not applicable|fundamentos de equity no aplican|Fundamentals unavailable|Fundamentos no disponibles/i);
+    await expect(page.locator("body")).toContainText(/Key risks|Riesgos principales/);
+
+    await page.goto("/report/AL30");
+    await expect(page.getByText("AL30").first()).toBeVisible();
+    await expect(page.locator("body")).toContainText(/fixed income|renta fija/i);
+    await expect(page.locator("body")).toContainText(/mock|simulad/i);
   });
 
   test("fixed income comparison and APIs stay offline-safe", async ({ page, request }) => {

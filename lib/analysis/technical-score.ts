@@ -1,4 +1,7 @@
 import type { TechnicalIndicatorSnapshot, TechnicalInterpretation } from "./types";
+import { translateMomentumLabel, translateTrendLabel } from "@/lib/i18n/interpretation-labels";
+
+type Language = "en" | "es";
 
 function clampScore(score: number) {
   return Math.max(0, Math.min(100, Math.round(score)));
@@ -90,24 +93,47 @@ export function calculateTechnicalScore(snapshot: TechnicalIndicatorSnapshot): n
 export function buildTechnicalInterpretation(
   snapshot: TechnicalIndicatorSnapshot,
   score: number,
+  language: Language = "en",
 ): TechnicalInterpretation {
   const tone: TechnicalInterpretation["tone"] =
     score >= 75 ? "positive" : score >= 55 ? "neutral" : score >= 35 ? "warning" : "negative";
   const label =
-    score >= 75 ? "Strong technical profile" : score >= 55 ? "Constructive technical profile" : score >= 35 ? "Fragile technical profile" : "Weak technical profile";
+    language === "es"
+      ? score >= 75
+        ? "Perfil tecnico fuerte"
+        : score >= 55
+          ? "Perfil tecnico constructivo"
+          : score >= 35
+            ? "Perfil tecnico fragil"
+            : "Perfil tecnico debil"
+      : score >= 75
+        ? "Strong technical profile"
+        : score >= 55
+          ? "Constructive technical profile"
+          : score >= 35
+            ? "Fragile technical profile"
+            : "Weak technical profile";
+  const trend = translateTrendLabel(snapshot.trendLabel, language);
+  const momentum = translateMomentumLabel(snapshot.momentumLabel, language);
 
   return {
     label,
     tone,
     summary:
-      "This technical view is calculated from available OHLCV candles and should be treated as decision support, not as a trading recommendation.",
+      language === "es"
+        ? "Esta lectura tecnica se calcula con velas OHLCV disponibles y debe usarse como apoyo informativo, no como recomendacion de operacion."
+        : "This technical view is calculated from available OHLCV candles and should be treated as decision support, not as a trading recommendation.",
     bulletPoints: [
-      `Trend: ${snapshot.trendLabel}.`,
-      `Momentum: ${snapshot.momentumLabel}.`,
-      `Volume confirmation: ${snapshot.volumeTrend}.`,
+      language === "es" ? `Tendencia: ${trend}.` : `Trend: ${trend}.`,
+      language === "es" ? `Momentum: ${momentum}.` : `Momentum: ${momentum}.`,
+      language === "es" ? `Confirmacion de volumen: ${snapshot.volumeTrend}.` : `Volume confirmation: ${snapshot.volumeTrend}.`,
       score >= 75
-        ? "The setup shows multiple confirmations, but risk management and market context remain necessary."
-        : "The setup needs confirmation from price, volume and broader market context.",
+        ? language === "es"
+          ? "La lectura muestra multiples confirmaciones, pero el riesgo y el contexto de mercado siguen siendo necesarios."
+          : "The setup shows multiple confirmations, but risk management and market context remain necessary."
+        : language === "es"
+          ? "La lectura necesita confirmacion de precio, volumen y contexto general de mercado."
+          : "The setup needs confirmation from price, volume and broader market context.",
     ],
   };
 }

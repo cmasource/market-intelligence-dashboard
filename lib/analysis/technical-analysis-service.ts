@@ -41,6 +41,7 @@ function analyzeMarketData(
   marketData: MarketDataResponse,
   timeframe: Timeframe,
   extraWarnings: string[] = [],
+  language: "en" | "es" = "en",
 ): TechnicalAnalysisResponse {
   const closes = marketData.candles.map((candle) => candle.close).filter(Number.isFinite);
   const volumes = marketData.candles.map((candle) => candle.volume).filter(Number.isFinite);
@@ -80,7 +81,7 @@ function analyzeMarketData(
     candlesCount: marketData.candles.length,
     snapshot,
     technicalScore,
-    interpretation: buildTechnicalInterpretation(snapshot, technicalScore),
+    interpretation: buildTechnicalInterpretation(snapshot, technicalScore, language),
     warnings,
     analysisWarnings: warnings,
     providerTrace: [
@@ -95,29 +96,29 @@ function analyzeMarketData(
   };
 }
 
-export function getFallbackTechnicalAnalysis(symbol: string, timeframe: Timeframe, warnings: string[] = []) {
+export function getFallbackTechnicalAnalysis(symbol: string, timeframe: Timeframe, warnings: string[] = [], language: "en" | "es" = "en") {
   const fallbackMarketData = getMockMarketData(
     { symbol, timeframe },
     warnings.length ? `Technical analysis fallback: ${warnings.join(" | ")}` : "Technical analysis fallback.",
   );
 
-  return analyzeMarketData(fallbackMarketData, timeframe, warnings);
+  return analyzeMarketData(fallbackMarketData, timeframe, warnings, language);
 }
 
-export async function getTechnicalAnalysis(symbol: string, timeframe: Timeframe): Promise<TechnicalAnalysisResponse> {
+export async function getTechnicalAnalysis(symbol: string, timeframe: Timeframe, language: "en" | "es" = "en"): Promise<TechnicalAnalysisResponse> {
   try {
     const marketData = await getMarketData({ symbol, timeframe });
 
     if (!marketData.candles.length) {
       return getFallbackTechnicalAnalysis(symbol, timeframe, [
         marketData.error ?? `${marketData.provider} returned no candles for technical analysis.`,
-      ]);
+      ], language);
     }
 
-    return analyzeMarketData(marketData, timeframe, marketData.error ? [marketData.error] : []);
+    return analyzeMarketData(marketData, timeframe, marketData.error ? [marketData.error] : [], language);
   } catch (error) {
     return getFallbackTechnicalAnalysis(symbol, timeframe, [
       error instanceof Error ? error.message : "Technical analysis failed.",
-    ]);
+    ], language);
   }
 }

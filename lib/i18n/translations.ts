@@ -382,7 +382,7 @@ export const translations: Record<Language, Record<string, string>> = {
     technicalCalculatedFromFallback: "Calculado con datos simulados de respaldo",
     technicalApiFallback: "API no disponible; mostrando datos técnicos de respaldo.",
     technicalAnalysisFallbackSummary:
-      "Esta vista tecnica usa velas OHLCV disponibles cuando es posible y mantiene caracter informativo.",
+      "Esta lectura tecnica se calcula con velas OHLCV disponibles y debe usarse como apoyo informativo, no como recomendacion de operacion.",
     trendLabel: "Tendencia",
     momentumLabel: "Momentum",
     notAvailable: "N/D",
@@ -408,7 +408,7 @@ export const translations: Record<Language, Record<string, string>> = {
     bondFundamentalsNotApplicable: "Las metricas de bonos se gestionan desde renta fija, no desde fundamentos de equity.",
     equityRatiosNotApplicable: "Ratios de equity no aplicables",
     equityRatiosNotApplicableText:
-      "Los ratios fundamentales tradicionales de acciones no aplican de la misma forma a cripto, bonos, letras o referencias FX en este modelo MVP.",
+      "Las metricas fundamentales de tipo accionario no estan disponibles o no aplican para este instrumento.",
     fixedIncome: "Renta fija",
     fixedIncomeAnalyticsTitle: "Analitica de renta fija",
     fixedIncomeAnalyticsDescription: "Compara instrumentos argentinos simulados de renta fija por TIR, duration, paridad y riesgo.",

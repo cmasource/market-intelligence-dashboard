@@ -5,6 +5,8 @@ import { formatCurrency, formatNumber, formatPercent, formatScore } from "@/lib/
 import { GlossaryLabel } from "@/components/glossary/GlossaryLabel";
 import type { FundamentalsResponse, FundamentalsSnapshot } from "@/lib/fundamentals-data/types";
 import { useLanguage } from "@/lib/i18n/useLanguage";
+import { translateProviderLabel } from "@/lib/i18n/interpretation-labels";
+import { buildHumanFundamentalSummary } from "@/lib/intelligence/interpretation";
 import type { AssetType } from "@/types/asset";
 import type { Asset } from "@/types/asset";
 import type { FundamentalMetrics } from "@/types/fundamentals";
@@ -65,6 +67,25 @@ function hasAnyFundamental(snapshot: FundamentalsSnapshot) {
   return Object.values(snapshot).some((value) => value !== undefined && value !== null);
 }
 
+function unavailableFields(snapshot: FundamentalsSnapshot) {
+  const fields: Array<keyof FundamentalsSnapshot> = [
+    "trailingPE",
+    "forwardPE",
+    "priceToBook",
+    "priceToSales",
+    "roe",
+    "roa",
+    "grossMargin",
+    "ebitdaMargin",
+    "netMargin",
+    "debtToEquity",
+    "currentRatio",
+    "quickRatio",
+  ];
+
+  return fields.filter((field) => snapshot[field] === undefined || snapshot[field] === null);
+}
+
 export function FundamentalAnalysisCard({
   asset,
   symbol = asset?.symbol ?? "",
@@ -92,6 +113,25 @@ export function FundamentalAnalysisCard({
           : t("fundamentalsNotApplicable");
   const isNotApplicable = fundamentals?.provider === "unavailable" || (!hasAnyFundamental(snapshot) && !loading);
   const safeCurrency = snapshot.currency ?? (currency.includes("/") || currency.includes("CER") ? "USD" : currency);
+  const humanSummary = buildHumanFundamentalSummary({
+    fundamentalScore: score,
+    pe: snapshot.trailingPE ?? null,
+    forwardPe: snapshot.forwardPE ?? null,
+    pb: snapshot.priceToBook ?? null,
+    ps: snapshot.priceToSales ?? null,
+    roe: snapshot.roe ?? null,
+    roa: snapshot.roa ?? null,
+    grossMargin: snapshot.grossMargin ?? null,
+    ebitdaMargin: snapshot.ebitdaMargin ?? null,
+    netMargin: snapshot.netMargin ?? null,
+    debtToEquity: snapshot.debtToEquity ?? null,
+    currentRatio: snapshot.currentRatio ?? null,
+    quickRatio: snapshot.quickRatio ?? null,
+    dividendYield: snapshot.dividendYield ?? null,
+    beta: snapshot.beta ?? null,
+    sourceLabel,
+    unavailableFields: unavailableFields(snapshot),
+  }, language);
 
   useEffect(() => {
     if (!symbol) return undefined;
@@ -127,8 +167,8 @@ export function FundamentalAnalysisCard({
       <section className="rounded-lg border border-white/10 bg-white/[0.045] p-5 backdrop-blur">
         <SectionHeader
           eyebrow={t("fundamentalAnalysis")}
-          title={fundamentals?.interpretation.label ?? t("equityRatiosNotApplicable")}
-          description={fundamentals?.interpretation.summary ?? t("equityRatiosNotApplicableText")}
+          title={language === "es" ? t("equityRatiosNotApplicable") : fundamentals?.interpretation.label ?? t("equityRatiosNotApplicable")}
+          description={t("equityRatiosNotApplicableText")}
         />
         <div className="mb-4 inline-flex rounded-full border border-white/10 bg-white/[0.045] px-3 py-1 text-xs text-slate-300">
           {sourceLabel}
@@ -138,7 +178,9 @@ export function FundamentalAnalysisCard({
             ? t("cryptoFundamentalsNotApplicable")
             : assetType?.includes("bond")
               ? t("bondFundamentalsNotApplicable")
-              : t("fundamentalInterpretationUnavailable")}
+              : language === "es"
+                ? "Las metricas fundamentales de tipo accionario no estan disponibles o no aplican para este instrumento."
+                : t("fundamentalInterpretationUnavailable")}
         </p>
       </section>
     );
@@ -182,15 +224,16 @@ export function FundamentalAnalysisCard({
       <SectionHeader
         eyebrow={t("fundamentalAnalysis")}
         title={score === null ? t("fundamentalScoreUnavailable") : t("fundamentalScore", { score: formatScore(score) })}
-        description={fundamentals?.interpretation.summary ?? t("fundamentalFallbackSummary")}
+        description={humanSummary.shortSummary}
       />
       <div className="mb-4 flex flex-wrap gap-2 text-xs">
         <span className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 font-medium text-cyan-100">
-          {loading ? t("fundamentalsLoading") : sourceLabel}
+          {loading ? t("fundamentalsLoading") : translateProviderLabel(sourceLabel, language)}
         </span>
         {apiFailed ? <span className="text-amber-100">{t("fundamentalsApiFallback")}</span> : null}
       </div>
       <div className="space-y-4">
+        <p className="text-sm leading-6 text-slate-300">{humanSummary.expandedSummary}</p>
         <div>
           <h3 className="mb-2 text-sm font-semibold text-white">{t("fundamentalsValuation")}</h3>
           <MetricGrid items={valuationMetrics} />
@@ -208,9 +251,9 @@ export function FundamentalAnalysisCard({
           <MetricGrid items={marketProfileMetrics} />
         </div>
       </div>
-      {fundamentals?.interpretation.bulletPoints.length ? (
+      {humanSummary.bulletPoints.length ? (
         <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-300">
-          {fundamentals.interpretation.bulletPoints.map((point) => (
+          {humanSummary.bulletPoints.map((point) => (
             <li key={point}>- {point}</li>
           ))}
         </ul>

@@ -23,6 +23,7 @@ The app is transparent about mixed coverage: selected USA and crypto instruments
 - Advanced instrument screener
 - Asset detail pages
 - Real/provider USA and crypto market data with fallback
+- Argentina data layer with validated manual quote loads, structured mock fallback and future BYMA/CNV/provider status
 - Server-side provider chain for FMP, Finnhub, Alpha Vantage, Yahoo/RSS and mock fallback
 - Provider quote hydration for asset pages, featured dashboard cards and visible dashboard search results
 - Technical analysis from OHLCV candles
@@ -33,6 +34,7 @@ The app is transparent about mixed coverage: selected USA and crypto instruments
 - Fixed income analytics using mock structured bond data
 - Argentina bond species: AL30, AL30D, AL30C, GD30, GD30D, GD30C and TX26
 - CEDEAR analytics with mock local ARS prices, ratio structure, underlying asset context and implied CCL
+- Asset Intelligence Reports on asset pages and shareable `/report/[symbol]` demo routes
 - English/Spanish language switcher
 - Dark/light theme toggle
 - Public demo footer and informational disclaimer
@@ -57,6 +59,7 @@ Run the full pre-demo checklist:
 ```bash
 npm run lint
 npm run validate:finance
+npm run validate:argentina
 npm run build
 npm run test:e2e
 ```
@@ -111,3 +114,11 @@ Some data comes from public providers, while other data is simulated or marked a
 - `/api/market-data/quote/AAPL` verifies the visible quote source used by asset headers.
 - `/api/market-data/quotes` powers dashboard quote hydration for provider-supported symbols.
 - See `docs/provider-verification.md` when provider status is active but a visible UI field still appears to be using fallback data.
+
+## Sprint 20 Argentina Data Layer
+
+- Manual local quotes can be curated in `data/argentina-quotes.manual.json`.
+- `data/argentina-quotes.sample.csv` documents the import columns for manual workflows.
+- `/api/argentina/quote/[symbol]`, `/api/argentina/quotes`, `/api/argentina/status` and `/api/argentina/instruments` expose normalized Argentina data.
+- Manual loads are not real-time. BYMA, CNV, IOL, PPI and licensed providers remain future integration paths.
+- Do not scrape unauthorized broker pages or store secrets in data files.

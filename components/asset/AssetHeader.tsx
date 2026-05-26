@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatAssetPrice, formatCurrencyValue, formatDisplayCurrency, formatPercent } from "@/lib/formatters";
+import type { ArgentinaQuote } from "@/lib/argentina";
 import { getAssetTypeLabel } from "@/lib/i18n/domain";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { isProviderQuoteSupported } from "@/lib/market-data/provider-symbols";
@@ -13,8 +14,8 @@ type AssetHeaderProps = {
   asset: Asset;
 };
 
-function getSourceLabel(quote: MarketQuoteResponse | null, fallbackLabel: string, language: "en" | "es") {
-  if (!quote) return fallbackLabel;
+function getSourceLabel(quote: MarketQuoteResponse | null, language: "en" | "es") {
+  if (!quote) return language === "es" ? "Precio simulado de respaldo" : "Mock fallback price";
   if (quote.isFallback || quote.provider === "mock") {
     return language === "es" ? "Precio simulado de respaldo" : "Mock fallback price";
   }
@@ -25,18 +26,35 @@ function getSourceLabel(quote: MarketQuoteResponse | null, fallbackLabel: string
   return language === "es" ? "Precio proveedor" : "Provider price";
 }
 
+function getArgentinaSourceLabel(quote: ArgentinaQuote | null, language: "en" | "es") {
+  if (!quote) return language === "es" ? "Dato estructurado simulado" : "Structured mock data";
+  if (quote.source === "manual") return language === "es" ? "Carga manual validada" : "Validated manual load";
+  if (quote.source === "mock") return language === "es" ? "Dato estructurado simulado" : "Structured mock data";
+  if (quote.source === "byma_future") return language === "es" ? "Integración BYMA futura" : "Future BYMA integration";
+  return quote.sourceLabel;
+}
+
 export function AssetHeader({ asset }: AssetHeaderProps) {
   const { t, language } = useLanguage();
   const [providerQuote, setProviderQuote] = useState<MarketQuoteResponse | null>(null);
+  const [argentinaQuote, setArgentinaQuote] = useState<ArgentinaQuote | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
-  const canUseProviderQuote = isProviderQuoteSupported(asset.symbol);
+  const canUseArgentinaQuote = Boolean(asset.argentinaContext);
+  const canUseProviderQuote = !canUseArgentinaQuote && isProviderQuoteSupported(asset.symbol);
   const visiblePrice =
+    canUseArgentinaQuote && typeof argentinaQuote?.price === "number" && Number.isFinite(argentinaQuote.price)
+      ? argentinaQuote.price
+      :
     canUseProviderQuote && typeof providerQuote?.price === "number" && Number.isFinite(providerQuote.price)
       ? providerQuote.price
       : asset.price;
   const visibleCurrency =
+    canUseArgentinaQuote && argentinaQuote?.currency ? argentinaQuote.currency :
     canUseProviderQuote && providerQuote?.currency ? providerQuote.currency : asset.quoteCurrency ?? asset.currency;
   const visibleChange =
+    canUseArgentinaQuote && typeof argentinaQuote?.changePercent === "number" && Number.isFinite(argentinaQuote.changePercent)
+      ? argentinaQuote.changePercent
+      :
     canUseProviderQuote && typeof providerQuote?.changePercent === "number" && Number.isFinite(providerQuote.changePercent)
       ? providerQuote.changePercent
       : asset.dailyChange;
@@ -44,8 +62,8 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
   const name = language === "es" && asset.nameEs ? asset.nameEs : asset.nameEn ?? asset.name;
   const summary = language === "es" && asset.summaryEs ? asset.summaryEs : asset.summaryEn ?? asset.summary;
   const context = language === "es" ? asset.marketConventionLabelEs ?? asset.settlementContextEs : asset.marketConventionLabelEn ?? asset.settlementContextEn;
-  const sourceLabel = getSourceLabel(providerQuote, t("mockPrice"), language);
-  const formattedPrice = canUseProviderQuote && providerQuote?.price
+  const sourceLabel = canUseArgentinaQuote ? getArgentinaSourceLabel(argentinaQuote, language) : getSourceLabel(providerQuote, language);
+  const formattedPrice = (canUseProviderQuote && providerQuote?.price) || (canUseArgentinaQuote && argentinaQuote?.price)
     ? formatCurrencyValue(visiblePrice, visibleCurrency, language)
     : formatAssetPrice(visiblePrice, asset, language);
 
@@ -76,6 +94,29 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
 
     return () => controller.abort();
   }, [asset.symbol, canUseProviderQuote]);
+
+  useEffect(() => {
+    if (!canUseArgentinaQuote) return undefined;
+    const controller = new AbortController();
+
+    async function loadArgentinaQuote() {
+      try {
+        const response = await fetch(`/api/argentina/quote/${encodeURIComponent(asset.symbol)}`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error(`Argentina quote API returned HTTP ${response.status}.`);
+        const quote = (await response.json()) as ArgentinaQuote;
+        if (!controller.signal.aborted) setArgentinaQuote(quote);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setArgentinaQuote(null);
+        setQuoteError(error instanceof Error ? error.message : "Argentina quote request failed.");
+      }
+    }
+
+    void loadArgentinaQuote();
+    return () => controller.abort();
+  }, [asset.symbol, canUseArgentinaQuote]);
 
   return (
     <section className="rounded-lg border border-cyan-300/20 bg-slate-900/70 p-5 shadow-2xl shadow-cyan-950/20 backdrop-blur">

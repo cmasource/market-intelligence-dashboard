@@ -24,7 +24,7 @@ export function getInstrumentContextCoverage(symbol: string, context?: { categor
       fixedIncome: "not_applicable",
       news: "future",
       aiSummary: "mock",
-      notes: ["Provider underlying / mock local CEDEAR. Local price, ratio and implied CCL are modeled until BYMA/IOL or licensed-provider integration is enabled."],
+      notes: ["Provider underlying with simulated local CEDEAR. Local price, ratio and implied CCL are modeled until BYMA/IOL or licensed-provider integration is enabled."],
     };
   }
 

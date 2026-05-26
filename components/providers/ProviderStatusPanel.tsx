@@ -8,6 +8,13 @@ function formatProvider(provider: string) {
   return provider.replaceAll("_", " ");
 }
 
+function formatProviderReason(reason: string | undefined, isSpanish: boolean) {
+  if (!reason) return isSpanish ? "inactivo" : "disabled";
+  if (!isSpanish) return reason.replaceAll("_", " ");
+  if (reason === "plan_restricted") return "limitado por plan";
+  return reason.replaceAll("_", " ");
+}
+
 export function ProviderStatusPanel() {
   const { language } = useLanguage();
   const isSpanish = language === "es";
@@ -69,7 +76,7 @@ export function ProviderStatusPanel() {
                   <div key={`${group.title}-${item.provider}`} className="flex items-start justify-between gap-2 text-xs">
                     <span className="capitalize text-slate-300">{formatProvider(item.provider)}</span>
                     <span className={item.enabled ? "text-emerald-200" : "text-amber-200"}>
-                      {item.enabled ? (isSpanish ? "activo" : "enabled") : item.reason ?? (isSpanish ? "inactivo" : "disabled")}
+                      {item.enabled ? (isSpanish ? "activo" : "enabled") : formatProviderReason(item.reason, isSpanish)}
                     </span>
                   </div>
                 ))}

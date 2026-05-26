@@ -17,6 +17,7 @@ export default defineConfig({
   },
   webServer: {
     command: `npm run dev -- -p ${port}`,
+    env: { NODE_OPTIONS: "--use-system-ca" },
     url: `http://localhost:${port}`,
     reuseExistingServer: true,
     timeout: 120_000,

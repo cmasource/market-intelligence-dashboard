@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { formatCurrency, formatNumber, formatScore } from "@/lib/formatters";
 import { useLanguage } from "@/lib/i18n/useLanguage";
+import { translateMomentumLabel, translateProviderLabel, translateTrendLabel } from "@/lib/i18n/interpretation-labels";
+import { buildHumanTechnicalSummary } from "@/lib/intelligence/interpretation";
 import type { TechnicalAnalysisResponse, TechnicalIndicatorSnapshot } from "@/lib/analysis/types";
 import { TechnicalSignalGauge } from "@/components/analysis/TechnicalSignalGauge";
 import { GlossaryLabel } from "@/components/glossary/GlossaryLabel";
@@ -77,6 +79,21 @@ export function TechnicalAnalysisCard({
   const fallbackLabel = t("technicalCalculatedFromFallback");
   const sourceLabel = analysis ? (analysis.isFallback ? fallbackLabel : t("technicalCalculatedFromReal")) : fallbackLabel;
   const warnings = analysis?.warnings ?? [];
+  const humanSummary = buildHumanTechnicalSummary({
+    technicalScore: score,
+    trend: snapshot.trendLabel,
+    momentum: snapshot.momentumLabel,
+    rsi: snapshot.rsi14,
+    sma20: snapshot.sma20,
+    sma50: snapshot.sma50,
+    sma200: snapshot.sma200,
+    macd: snapshot.macd,
+    macdSignal: snapshot.macdSignal,
+    support: snapshot.support,
+    resistance: snapshot.resistance,
+    latestClose: snapshot.lastClose,
+    sourceLabel,
+  }, language);
   const indicators = [
     { id: "lastClose", label: t("chartLastClose"), value: formatNullableCurrency(snapshot.lastClose, currency, t("notAvailable"), language) },
     { id: "sma20", label: <GlossaryLabel termKey="sma20" />, value: formatNullableCurrency(snapshot.sma20, currency, t("notAvailable"), language) },
@@ -108,7 +125,7 @@ export function TechnicalAnalysisCard({
 
       try {
         const response = await fetch(
-          `/api/analysis/technical/${encodeURIComponent(symbol)}?timeframe=${encodeURIComponent(initialTimeframe)}`,
+          `/api/analysis/technical/${encodeURIComponent(symbol)}?timeframe=${encodeURIComponent(initialTimeframe)}&language=${language}`,
           { signal: controller.signal },
         );
 
@@ -125,18 +142,18 @@ export function TechnicalAnalysisCard({
     loadAnalysis();
 
     return () => controller.abort();
-  }, [initialTimeframe, symbol]);
+  }, [initialTimeframe, language, symbol]);
 
   return (
     <section className="rounded-lg border border-white/10 bg-white/[0.045] p-5 backdrop-blur">
       <SectionHeader
         eyebrow={t("technicalAnalysis")}
         title={t("technicalScore", { score: formatScore(score) })}
-        description={analysis?.interpretation.summary ?? t("technicalAnalysisFallbackSummary")}
+        description={humanSummary.shortSummary}
       />
       <div className="mb-4 flex flex-wrap gap-2 text-xs">
         <span className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 font-medium text-cyan-100">
-          {loading ? t("technicalLoading") : sourceLabel}
+          {loading ? t("technicalLoading") : translateProviderLabel(sourceLabel, language)}
         </span>
         <span className="rounded-full border border-white/10 bg-white/[0.045] px-3 py-1 text-slate-300">
           {initialTimeframe}
@@ -144,33 +161,34 @@ export function TechnicalAnalysisCard({
         {apiFailed ? <span className="text-amber-100">{t("technicalApiFallback")}</span> : null}
       </div>
       <div className="mb-4">
-        <TechnicalSignalGauge score={score} language={language} sourceLabel={loading ? t("technicalLoading") : sourceLabel} />
+        <TechnicalSignalGauge score={score} language={language} sourceLabel={loading ? t("technicalLoading") : translateProviderLabel(sourceLabel, language)} />
       </div>
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
         <div className="rounded-lg border border-white/10 bg-slate-950/40 p-3">
           <p className="text-xs text-slate-500">
             <GlossaryLabel termKey="trend" fallbackLabel={t("trendLabel")} />
           </p>
-          <p className="mt-1 text-sm font-semibold text-white">{snapshot.trendLabel}</p>
+          <p className="mt-1 text-sm font-semibold text-white">{translateTrendLabel(snapshot.trendLabel, language)}</p>
         </div>
         <div className="rounded-lg border border-white/10 bg-slate-950/40 p-3">
           <p className="text-xs text-slate-500">
             <GlossaryLabel termKey="momentum" fallbackLabel={t("momentumLabel")} />
           </p>
-          <p className="mt-1 text-sm font-semibold text-white">{snapshot.momentumLabel}</p>
+          <p className="mt-1 text-sm font-semibold text-white">{translateMomentumLabel(snapshot.momentumLabel, language)}</p>
         </div>
       </div>
+      <p className="mb-4 text-sm leading-6 text-slate-300">{humanSummary.expandedSummary}</p>
       <MetricGrid items={indicators} />
-      {analysis?.interpretation.bulletPoints.length ? (
+      {humanSummary.bulletPoints.length ? (
         <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-300">
-          {analysis.interpretation.bulletPoints.map((point) => (
+          {humanSummary.bulletPoints.map((point) => (
             <li key={point}>- {point}</li>
           ))}
         </ul>
       ) : null}
-      {warnings.length ? (
+      {humanSummary.warnings.length || warnings.length ? (
         <div className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/10 p-3 text-xs leading-5 text-amber-100">
-          {warnings.map((warning) => (
+          {[...humanSummary.warnings, ...warnings].map((warning) => (
             <p key={warning}>{warning}</p>
           ))}
         </div>

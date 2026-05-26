@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { DataCoverageBadges } from "@/components/data-coverage/DataCoverageBadges";
 import { formatAssetPrice, formatCurrencyValue, formatDisplayCurrency, formatPercent } from "@/lib/formatters";
+import { useArgentinaQuotes, type ArgentinaQuoteState } from "@/lib/hooks/useArgentinaQuotes";
 import { useProviderQuotes, type ProviderQuoteState } from "@/lib/hooks/useProviderQuotes";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { searchInstrumentUniverse, type InstrumentUniverseItem } from "@/lib/instrument-universe";
@@ -21,6 +22,14 @@ function getQuoteLabel(quote: ProviderQuoteState | undefined, isSpanish: boolean
   if (quote.provider === "yahoo" && !quote.isFallback) return isSpanish ? "Yahoo compatible" : "Yahoo-compatible";
   if (quote.provider === "mock" || quote.isFallback) return isSpanish ? "Simulado" : "Mock";
   return isSpanish ? "Proveedor" : "Provider";
+}
+
+function getArgentinaQuoteLabel(quote: ArgentinaQuoteState | undefined, isSpanish: boolean) {
+  if (!quote || quote.isLoading) return isSpanish ? "Actualizando" : "Refreshing";
+  if (quote.source === "manual") return isSpanish ? "Carga manual validada" : "Validated manual load";
+  if (quote.source === "mock") return isSpanish ? "Dato estructurado simulado" : "Structured mock data";
+  if (quote.source === "byma_future") return isSpanish ? "Integración BYMA futura" : "Future BYMA integration";
+  return isSpanish ? "No disponible" : "Unavailable";
 }
 
 export function AssetSearch({ assets }: AssetSearchProps) {
@@ -58,6 +67,11 @@ export function AssetSearch({ assets }: AssetSearchProps) {
   const hiddenResultsCount = Math.max(0, filteredInstruments.length - visibleInstruments.length);
   const quoteSymbols = useMemo(() => visibleInstruments.map((instrument) => instrument.symbol), [visibleInstruments]);
   const quotes = useProviderQuotes(quoteSymbols);
+  const argentinaSymbols = useMemo(
+    () => visibleInstruments.filter((instrument) => instrument.country === "AR").map((instrument) => instrument.symbol),
+    [visibleInstruments],
+  );
+  const argentinaQuotes = useArgentinaQuotes(argentinaSymbols);
 
   function contextLabel(instrument: InstrumentUniverseItem) {
     if (instrument.category === "cedear") return isSpanish ? "Referencia CEDEAR" : "CEDEAR reference";
@@ -136,18 +150,27 @@ export function AssetSearch({ assets }: AssetSearchProps) {
           visibleInstruments.map((instrument) => {
             const asset = assetBySymbol.get(instrument.symbol);
             const quote = quotes[instrument.symbol];
-            const hasProviderSupport = isProviderQuoteSupported(instrument.symbol);
+            const argentinaQuote = argentinaQuotes[instrument.symbol];
+            const hasArgentinaQuote =
+              instrument.country === "AR" && argentinaQuote && !argentinaQuote.isLoading && typeof argentinaQuote.price === "number";
+            const hasProviderSupport = instrument.country !== "AR" && isProviderQuoteSupported(instrument.symbol);
             const hasHydratedQuote = hasProviderSupport && quote && !quote.isLoading && typeof quote.price === "number" && Number.isFinite(quote.price);
             const visibleChange =
-              hasHydratedQuote && typeof quote.changePercent === "number" && Number.isFinite(quote.changePercent)
+              hasArgentinaQuote && typeof argentinaQuote.changePercent === "number" && Number.isFinite(argentinaQuote.changePercent)
+                ? argentinaQuote.changePercent
+                : hasHydratedQuote && typeof quote.changePercent === "number" && Number.isFinite(quote.changePercent)
                 ? quote.changePercent
                 : asset?.dailyChange ?? 0;
-            const visiblePrice = hasHydratedQuote ? quote.price : asset?.price;
-            const visibleCurrency = hasHydratedQuote ? quote.currency : asset?.quoteCurrency ?? asset?.currency;
+            const visiblePrice = hasArgentinaQuote ? argentinaQuote.price : hasHydratedQuote ? quote.price : asset?.price;
+            const visibleCurrency = hasArgentinaQuote ? argentinaQuote.currency : hasHydratedQuote ? quote.currency : asset?.quoteCurrency ?? asset?.currency;
             const positive = visibleChange >= 0;
             const hasAssetPage = supportedAssetSymbols.has(instrument.symbol);
             const context = settlementLabel(instrument, asset);
-            const quoteLabel = hasProviderSupport ? getQuoteLabel(quote, isSpanish) : isSpanish ? "Simulado" : "Mock";
+            const quoteLabel = instrument.country === "AR"
+              ? getArgentinaQuoteLabel(argentinaQuote, isSpanish)
+              : hasProviderSupport
+                ? getQuoteLabel(quote, isSpanish)
+                : isSpanish ? "Simulado" : "Mock";
 
             const content = (
               <>

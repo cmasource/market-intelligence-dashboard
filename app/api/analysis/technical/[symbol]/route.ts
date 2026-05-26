@@ -17,6 +17,7 @@ export async function GET(
   const url = new URL(request.url);
   const timeframe = url.searchParams.get("timeframe");
   const debug = url.searchParams.get("debug") === "1";
+  const language = url.searchParams.get("language") === "es" ? "es" : "en";
 
   if (!symbol) return Response.json({ error: "Symbol is required." }, { status: 400 });
 
@@ -25,7 +26,7 @@ export async function GET(
   }
 
   try {
-    const analysis = await getTechnicalAnalysis(symbol, timeframe);
+    const analysis = await getTechnicalAnalysis(symbol, timeframe, language);
     const responseBody = debug ? analysis : { ...analysis, providerTrace: undefined, analysisWarnings: undefined };
 
     return Response.json(responseBody, {
@@ -36,7 +37,7 @@ export async function GET(
   } catch (error) {
     const fallback = getFallbackTechnicalAnalysis(symbol, timeframe, [
       error instanceof Error ? error.message : "Technical analysis request failed.",
-    ]);
+    ], language);
     const responseBody = debug ? fallback : { ...fallback, providerTrace: undefined, analysisWarnings: undefined };
 
     return Response.json(responseBody, {

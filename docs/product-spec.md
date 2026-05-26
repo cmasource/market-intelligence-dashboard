@@ -42,9 +42,13 @@ CMA Market Intelligence is a professional financial intelligence dashboard creat
 - Argentina market module for local equities, bonds, CER-linked assets and FX references.
 - CEDEAR analytics module with local ARS mock price, underlying USD context, ratio structure and implied CCL.
 - Provider architecture for market data, fundamentals and news with transparent fallback labels.
+- Argentina data layer with a normalized local instrument registry, manual quote imports, structured mock fallback and future BYMA/CNV/broker integration status.
+- Asset Intelligence Report layer that combines price, market signal, technicals, fundamentals, news, risks, CEDEAR context, fixed income context and data coverage into a concise non-advisory executive reading.
+- Human-readable interpretation builders for technical and fundamental readings, with localized Spanish explanations for trend, momentum, valuation, profitability, missing data and provider context.
 - AI-style market interpretation and future agent-ready structure.
 - News placeholder for later data-provider integrations.
-- Reports placeholder for future market briefings and AI-generated PDFs.
+- Shareable `/report/[symbol]` pages for public demos, plus reports placeholder for future market briefings and AI-generated PDFs.
+- Shareable report mode for `/report/[symbol]` with a compact summary strip, concise key points, CEDEAR reading guidance, news source-language note, grouped risk presentation and precise data limitations.
 
 ## MVP Scope
 
@@ -65,7 +69,7 @@ CMA Market Intelligence is a professional financial intelligence dashboard creat
 - Local recent-search history for the home search experience.
 - Appearance preference toggle for dark and light modes, with dark as the default.
 - Integrated market signal gauge that combines technical and fundamental inputs when available.
-- Technical signal gauge using non-advisory terminology instead of buy/sell recommendations.
+- Technical signal gauge using non-advisory defensive/neutral/constructive terminology.
 - Public demo footer with informational disclaimer, data coverage note and core navigation links.
 - Vercel deployment readiness documentation and pre-deploy validation checklist.
 - Manual technical and fundamental validation guides for comparison against external market platforms.
@@ -73,6 +77,7 @@ CMA Market Intelligence is a professional financial intelligence dashboard creat
 - Conservative noindex/nofollow metadata for the current public demo.
 - `.env.example` placeholder for future provider, AI, news and database integrations.
 - Mock fallback data preserved for every instrument.
+- Manual Argentina quote validation through `npm run validate:argentina`.
 - No authenticated external APIs.
 - No authentication.
 - No database.
@@ -87,6 +92,8 @@ CMA Market Intelligence is a professional financial intelligence dashboard creat
 - Users can manually switch language with the EN / ES switcher.
 - The selected language persists in `localStorage`.
 - No external i18n library is used.
+- Indicator acronyms that are standard in finance remain unchanged across languages, including RSI, MACD, SMA, P/E, EBITDA, ROE and ROA.
+- Interpretive text, warnings, source descriptions and CEDEAR context should be localized in Spanish mode and written as educational context, not as direct recommendations.
 
 ## Future Regional Personalization
 

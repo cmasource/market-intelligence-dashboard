@@ -12,6 +12,7 @@ import { CedearAnalyticsCard } from "@/components/cedears/CedearAnalyticsCard";
 import { InteractiveAssetChart } from "@/components/charts/InteractiveAssetChart";
 import { DataCoveragePanel } from "@/components/data-coverage/DataCoveragePanel";
 import { DataTransparencyNote } from "@/components/data-coverage/DataTransparencyNote";
+import { AssetIntelligenceReport } from "@/components/intelligence/AssetIntelligenceReport";
 import { AppShell } from "@/components/layout/AppShell";
 import Link from "next/link";
 import { getInstrumentBySymbol } from "@/lib/instrument-universe";
@@ -64,6 +65,7 @@ export default async function AssetDetailPage({
               </div>
             </section>
             <DataCoveragePanel symbol={instrument.symbol} />
+            <AssetIntelligenceReport symbol={instrument.symbol} />
             <RelatedInstrumentsCard symbol={instrument.symbol} />
             <section className="rounded-lg border border-white/10 bg-slate-950/55 p-5">
               <h2 className="text-xl font-semibold text-white">Preliminary profile</h2>
@@ -102,6 +104,7 @@ export default async function AssetDetailPage({
         <AssetHeader asset={asset} />
         <DataCoveragePanel symbol={asset.symbol} />
         <DataTransparencyNote />
+        <AssetIntelligenceReport symbol={asset.symbol} />
         <MarketSignalGauge
           technicalScore={asset.technicalScore}
           fundamentalScore={asset.fundamentalScore}

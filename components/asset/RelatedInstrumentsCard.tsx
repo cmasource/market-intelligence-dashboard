@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   getPrimaryInstrument,
   getRelatedInstruments,
@@ -18,6 +17,10 @@ export function RelatedInstrumentsCard({ symbol }: RelatedInstrumentsCardProps) 
   const relatedInstruments = getRelatedInstruments(symbol);
   const primaryInstrument = getPrimaryInstrument(symbol);
   const normalizedSymbol = symbol.toUpperCase();
+  const primaryHref =
+    primaryInstrument && primaryInstrument.symbol !== normalizedSymbol
+      ? `/asset/${encodeURIComponent(primaryInstrument.symbol)}`
+      : null;
 
   if (!hasRelatedInstruments(symbol)) return null;
 
@@ -34,13 +37,14 @@ export function RelatedInstrumentsCard({ symbol }: RelatedInstrumentsCardProps) 
             {isSpanish ? "Especies y simbolos vinculados" : "Linked symbols and trading species"}
           </h2>
         </div>
-        {primaryInstrument ? (
-          <Link
-            href={`/asset/${encodeURIComponent(primaryInstrument.symbol)}`}
+        {primaryInstrument && primaryHref ? (
+          <a
+            href={primaryHref}
+            data-testid="related-primary-instrument-link"
             className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-cyan-100 transition hover:border-cyan-300/40 hover:bg-cyan-300/10"
           >
             {isSpanish ? "Instrumento principal" : "Primary instrument"}: {primaryInstrument.symbol}
-          </Link>
+          </a>
         ) : null}
       </div>
 
@@ -48,18 +52,11 @@ export function RelatedInstrumentsCard({ symbol }: RelatedInstrumentsCardProps) 
         {relatedInstruments.map((instrument) => {
           const isCurrent = instrument.symbol === normalizedSymbol;
           const label = language === "es" ? instrument.labelEs : instrument.labelEn;
-
-          return (
-            <Link
-              key={instrument.symbol}
-              href={instrument.href}
-              aria-current={isCurrent ? "page" : undefined}
-              className={
-                isCurrent
-                  ? "rounded-lg border border-cyan-200/60 bg-cyan-300/15 px-4 py-3 text-sm shadow-lg shadow-cyan-950/20"
-                  : "rounded-lg border border-white/10 bg-slate-950/45 px-4 py-3 text-sm transition hover:border-cyan-300/40 hover:bg-cyan-300/10"
-              }
-            >
+          const className = isCurrent
+            ? "rounded-lg border border-cyan-200/60 bg-cyan-300/15 px-4 py-3 text-sm shadow-lg shadow-cyan-950/20"
+            : "rounded-lg border border-white/10 bg-slate-950/45 px-4 py-3 text-sm transition hover:border-cyan-300/40 hover:bg-cyan-300/10";
+          const content = (
+            <>
               <span className="block font-semibold text-white">{instrument.symbol}</span>
               <span className="mt-1 block text-xs text-slate-300">{label}</span>
               <span className="mt-1 block text-xs text-slate-500">
@@ -70,7 +67,21 @@ export function RelatedInstrumentsCard({ symbol }: RelatedInstrumentsCardProps) 
                   {isSpanish ? "Principal" : "Primary"}
                 </span>
               ) : null}
-            </Link>
+            </>
+          );
+
+          if (isCurrent) {
+            return (
+              <div key={instrument.symbol} aria-current="page" className={className}>
+                {content}
+              </div>
+            );
+          }
+
+          return (
+            <a key={instrument.symbol} href={instrument.href} className={className}>
+              {content}
+            </a>
           );
         })}
       </div>

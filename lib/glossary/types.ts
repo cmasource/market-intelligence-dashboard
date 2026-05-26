@@ -59,7 +59,12 @@ export type GlossaryTermKey =
   | "impliedCcl"
   | "dollarMep"
   | "cableCclDollar"
-  | "arbitrageSpread";
+  | "arbitrageSpread"
+  | "executiveReading"
+  | "marketSignal"
+  | "dataConfidence"
+  | "newsPulse"
+  | "riskSummary";
 
 export type GlossaryTerm = {
   key: GlossaryTermKey;

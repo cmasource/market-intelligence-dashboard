@@ -59,6 +59,17 @@
 
 ## Phase 7: Fundamentals Data Layer
 
+## Phase 19: Asset Intelligence Reports
+
+- Add a high-value executive report layer for public demos.
+- Combine price, technicals, fundamentals, news, risks, CEDEAR context, fixed income context and data coverage.
+- Add shareable `/report/[symbol]` routes.
+- Keep language non-advisory and avoid direct investment recommendation wording.
+- Sprint 19.1 improves Spanish localization and replaces compressed internal phrases with human-readable technical, fundamental and CEDEAR explanations.
+- Sprint 19.2 reorganizes the executive reading layout, makes `/report/[symbol]` a cleaner shareable executive summary, keeps `/asset/[symbol]` as the full working profile, and finishes Spanish cleanup for visible report-mode copy and CTA labels.
+- Sprint 19.3 adds report mode polish: compact summary strip, shorter key points, reduced repetition, clearer CEDEAR guidance, news source-language note, grouped risk presentation and sharper data-limitations copy.
+- Future work: exportable reports, richer provider diagnostics and deeper local Argentina data once licensed integrations are available.
+
 - Add provider abstraction for fundamentals under `lib/fundamentals-data`.
 - Support provider fundamentals attempts for `AAPL`, `SPY` and `QQQ`.
 - Preserve mock fallback fundamentals for USA and Argentina equity-like assets.
@@ -182,6 +193,15 @@
 - Preserve Yahoo/RSS/mock fallback when keys are missing or providers fail.
 - Add news API and UI with provider/RSS/mock source badges.
 - Keep local Argentina and CEDEAR data clearly separated from provider-backed underlying data.
+
+## Phase 20: Argentina Data Layer
+
+- Add normalized Argentina instrument registry and quote types.
+- Add validated manual quote loads from committed JSON.
+- Add Argentina quote, batch quote, status and instruments APIs.
+- Show manual/mock/future Argentina source status in the Argentina page and data audit.
+- Document future BYMA, CNV, broker and licensed-provider integration paths.
+- Keep broker scraping and unauthorized private endpoints out of scope.
 
 ## Future Regional Personalization
 

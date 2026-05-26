@@ -501,6 +501,48 @@ export const glossaryTerms: Record<GlossaryTermKey, GlossaryTerm> = {
     formula: "Spread = implied reference / benchmark - 1",
     category: "market",
   },
+  executiveReading: {
+    key: "executiveReading",
+    labelEn: "Executive reading",
+    labelEs: "Lectura ejecutiva",
+    shortDefinitionEn: "Concise non-advisory synthesis of price, technicals, fundamentals, news, risks and data coverage.",
+    shortDefinitionEs: "Sintesis informativa de precio, tecnico, fundamentos, noticias, riesgos y cobertura de datos.",
+    category: "market",
+    cautionEn: "It is not an investment recommendation.",
+    cautionEs: "No es una recomendacion de inversion.",
+  },
+  marketSignal: {
+    key: "marketSignal",
+    labelEn: "Market signal",
+    labelEs: "Senal de mercado",
+    shortDefinitionEn: "Integrated score that combines available analytical layers into a non-advisory reading.",
+    shortDefinitionEs: "Score integrado que combina capas analiticas disponibles en una lectura informativa.",
+    category: "market",
+  },
+  dataConfidence: {
+    key: "dataConfidence",
+    labelEn: "Data confidence",
+    labelEs: "Confianza de datos",
+    shortDefinitionEn: "Qualitative indication of how complete and reliable the available data layers are.",
+    shortDefinitionEs: "Indicacion cualitativa sobre completitud y confiabilidad de las capas de datos disponibles.",
+    category: "risk",
+  },
+  newsPulse: {
+    key: "newsPulse",
+    labelEn: "News pulse",
+    labelEs: "Pulso de noticias",
+    shortDefinitionEn: "Short view of recent headlines used as context for the asset report.",
+    shortDefinitionEs: "Vista breve de titulares recientes usados como contexto del reporte del activo.",
+    category: "market",
+  },
+  riskSummary: {
+    key: "riskSummary",
+    labelEn: "Risk summary",
+    labelEs: "Resumen de riesgos",
+    shortDefinitionEn: "Compact list of the main risks and limitations relevant to the instrument.",
+    shortDefinitionEs: "Lista compacta de riesgos y limitaciones principales del instrumento.",
+    category: "risk",
+  },
 };
 
 export function getGlossaryTerm(key: GlossaryTermKey) {

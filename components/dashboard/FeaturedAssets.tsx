@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { formatAssetPrice, formatCurrencyValue, formatPercent } from "@/lib/formatters";
+import { isArgentinaInstrument } from "@/lib/argentina";
+import { useArgentinaQuotes, type ArgentinaQuoteState } from "@/lib/hooks/useArgentinaQuotes";
 import { useProviderQuotes, type ProviderQuoteState } from "@/lib/hooks/useProviderQuotes";
 import { getAssetTypeLabel } from "@/lib/i18n/domain";
 import { useLanguage } from "@/lib/i18n/useLanguage";
@@ -24,6 +26,14 @@ function getQuoteLabel(quote: ProviderQuoteState | undefined, isSpanish: boolean
   return isSpanish ? "Proveedor" : "Provider";
 }
 
+function getArgentinaQuoteLabel(quote: ArgentinaQuoteState | undefined, isSpanish: boolean) {
+  if (!quote || quote.isLoading) return isSpanish ? "Actualizando" : "Refreshing";
+  if (quote.source === "manual") return isSpanish ? "Carga manual validada" : "Validated manual load";
+  if (quote.source === "mock") return isSpanish ? "Dato estructurado simulado" : "Structured mock data";
+  if (quote.source === "byma_future") return isSpanish ? "Integración BYMA futura" : "Future BYMA integration";
+  return isSpanish ? "No disponible" : "Unavailable";
+}
+
 export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
   const { t, language } = useLanguage();
   const { resolvedMode } = useTheme();
@@ -31,6 +41,11 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
   const isSpanish = language === "es";
   const quoteSymbols = useMemo(() => assets.map((asset) => asset.symbol), [assets]);
   const quotes = useProviderQuotes(quoteSymbols);
+  const argentinaSymbols = useMemo(
+    () => assets.filter((asset) => asset.argentinaContext && isArgentinaInstrument(asset.symbol)).map((asset) => asset.symbol),
+    [assets],
+  );
+  const argentinaQuotes = useArgentinaQuotes(argentinaSymbols);
 
   return (
     <section>
@@ -42,25 +57,32 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {assets.map((asset) => {
           const quote = quotes[asset.symbol];
+          const argentinaQuote = argentinaQuotes[asset.symbol];
+          const hasArgentinaQuote = asset.argentinaContext && argentinaQuote && !argentinaQuote.isLoading && typeof argentinaQuote.price === "number";
           const hasProviderSupport = isProviderQuoteSupported(asset.symbol);
-          const hasHydratedQuote = hasProviderSupport && quote && !quote.isLoading && typeof quote.price === "number" && Number.isFinite(quote.price);
-          const visiblePrice = hasHydratedQuote ? quote.price : asset.price;
+          const hasHydratedQuote = !hasArgentinaQuote && hasProviderSupport && quote && !quote.isLoading && typeof quote.price === "number" && Number.isFinite(quote.price);
+          const visiblePrice = hasArgentinaQuote ? argentinaQuote.price : hasHydratedQuote ? quote.price : asset.price;
           const visibleChange =
-            hasHydratedQuote && typeof quote.changePercent === "number" && Number.isFinite(quote.changePercent)
-              ? quote.changePercent
-              : asset.dailyChange;
-          const visibleCurrency = hasHydratedQuote ? quote.currency : asset.quoteCurrency ?? asset.currency;
+            hasArgentinaQuote && typeof argentinaQuote.changePercent === "number" && Number.isFinite(argentinaQuote.changePercent)
+              ? argentinaQuote.changePercent
+              : hasHydratedQuote && typeof quote.changePercent === "number" && Number.isFinite(quote.changePercent)
+                ? quote.changePercent
+                : asset.dailyChange;
+          const visibleCurrency = hasArgentinaQuote ? argentinaQuote.currency : hasHydratedQuote ? quote.currency : asset.quoteCurrency ?? asset.currency;
           const isPositive = visibleChange >= 0;
           const name = language === "es" && asset.nameEs ? asset.nameEs : asset.nameEn ?? asset.name;
           const summary = language === "es" && asset.summaryEs ? asset.summaryEs : asset.summaryEn ?? asset.summary;
           const context = language === "es" ? asset.marketConventionLabelEs ?? asset.settlementContextEs : asset.marketConventionLabelEn ?? asset.settlementContextEn;
-          const sourceLabel = hasProviderSupport ? getQuoteLabel(quote, isSpanish) : isSpanish ? "Simulado" : "Mock";
+          const sourceLabel = hasArgentinaQuote || asset.argentinaContext
+            ? getArgentinaQuoteLabel(argentinaQuote, isSpanish)
+            : hasProviderSupport
+              ? getQuoteLabel(quote, isSpanish)
+              : isSpanish ? "Simulado" : "Mock";
 
           return (
-            <Link
+            <article
               key={asset.symbol}
-              href={`/asset/${encodeURIComponent(asset.symbol)}`}
-              className={`group rounded-lg border p-4 backdrop-blur transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10 ${
+              className={`rounded-lg border p-4 backdrop-blur transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10 ${
                 isLight
                   ? "border-slate-300 bg-white/90 shadow-xl shadow-slate-900/10"
                   : "border-white/10 bg-white/[0.045] shadow-2xl shadow-black/10"
@@ -92,7 +114,7 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
                 <div>
                   <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{t("priceLabel")}</p>
                   <p className="mt-1 text-xl font-semibold text-white">
-                    {hasHydratedQuote
+                    {hasHydratedQuote || hasArgentinaQuote
                       ? formatCurrencyValue(typeof visiblePrice === "number" ? visiblePrice : asset.price, visibleCurrency, language)
                       : formatAssetPrice(asset.price, asset, language)}
                   </p>
@@ -100,8 +122,16 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
                 <ScoreBadge score={asset.technicalScore} />
               </div>
               <p className="mt-4 text-sm leading-6 text-slate-400">{summary}</p>
-              <p className="mt-4 text-sm font-medium text-cyan-200 group-hover:text-white">{t("openIntelligenceProfile")}</p>
-            </Link>
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-sm font-medium">
+                <Link href={`/asset/${encodeURIComponent(asset.symbol)}`} className="text-cyan-200 hover:text-white">
+                  {t("openIntelligenceProfile")}
+                </Link>
+                <span className="text-slate-500">|</span>
+                <Link href={`/report/${encodeURIComponent(asset.symbol)}`} className="text-cyan-200 hover:text-white">
+                  {isSpanish ? "Ver reporte" : "View report"}
+                </Link>
+              </div>
+            </article>
           );
         })}
       </div>

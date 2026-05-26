@@ -37,6 +37,32 @@ function getUnderlyingPriceLabel(analytics: CedearAnalytics, isSpanish: boolean)
   return isSpanish ? "Precio subyacente proveedor" : "Underlying provider price";
 }
 
+function cedearInterpretation(analytics: CedearAnalytics, isSpanish: boolean) {
+  if (!isSpanish) return analytics.interpretation;
+
+  return {
+    label: "Subyacente con proveedor / CEDEAR local simulado",
+    summary:
+      "El CCL implicito se calcula usando el precio local del CEDEAR, el ratio y el precio en dolares del subyacente. En esta demo, el precio local del CEDEAR y el ratio son simulados hasta contar con integracion real de BYMA/IOL o proveedor licenciado.",
+    bulletPoints: [
+      "El precio local del CEDEAR es simulado hasta habilitar integracion con BYMA/IOL.",
+      "El ratio CEDEAR es estructurado/simulado hasta contar con fuente oficial.",
+      "El CCL implicito es informativo y depende de la convencion de precio y ratio.",
+    ],
+  };
+}
+
+function cedearWarnings(warnings: string[] | undefined, isSpanish: boolean) {
+  if (!isSpanish) return warnings ?? [];
+
+  return [
+    "El precio local del CEDEAR es simulado hasta habilitar integracion con BYMA/IOL.",
+    "El ratio CEDEAR es estructurado/simulado hasta contar con fuente oficial.",
+    "El CCL implicito es informativo y depende de la convencion de precio y ratio.",
+    "El analisis tecnico y fundamental se basa en el subyacente cuando no existe integracion real del CEDEAR local.",
+  ];
+}
+
 export function CedearAnalyticsCard({ symbol }: CedearAnalyticsCardProps) {
   const { language } = useLanguage();
   const isSpanish = language === "es";
@@ -104,6 +130,8 @@ export function CedearAnalyticsCard({ symbol }: CedearAnalyticsCardProps) {
     { label: labels.referenceCcl, value: formatCcl(analytics.referenceCcl, isSpanish) },
     { label: labels.spread, value: analytics.cclSpread === null || analytics.cclSpread === undefined ? "N/A" : formatPercent(analytics.cclSpread) },
   ];
+  const interpretation = cedearInterpretation(analytics, isSpanish);
+  const warnings = cedearWarnings(analytics.warnings, isSpanish);
 
   return (
     <section className="rounded-lg border border-violet-300/20 bg-slate-950/55 p-5 backdrop-blur">
@@ -137,10 +165,10 @@ export function CedearAnalyticsCard({ symbol }: CedearAnalyticsCardProps) {
       </div>
 
       <div className="mt-5 rounded-lg border border-white/10 bg-white/[0.035] p-4">
-        <p className="text-sm font-semibold text-white">{analytics.interpretation.label}</p>
-        <p className="mt-2 text-sm leading-6 text-slate-300">{analytics.interpretation.summary}</p>
+        <p className="text-sm font-semibold text-white">{interpretation.label}</p>
+        <p className="mt-2 text-sm leading-6 text-slate-300">{interpretation.summary}</p>
         <ul className="mt-3 space-y-2 text-sm text-slate-400">
-          {analytics.interpretation.bulletPoints.map((point) => (
+          {interpretation.bulletPoints.map((point) => (
             <li key={point}>- {point}</li>
           ))}
         </ul>
@@ -148,19 +176,19 @@ export function CedearAnalyticsCard({ symbol }: CedearAnalyticsCardProps) {
 
       <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_1.2fr]">
         <p className="rounded-lg border border-white/10 bg-white/[0.035] p-3 text-xs leading-5 text-slate-400">
-          {analytics.sourceLabel}
+          {isSpanish ? "Subyacente con proveedor / CEDEAR local simulado; CCL calculado con datos disponibles" : analytics.sourceLabel}
         </p>
-        {analytics.warnings?.length ? (
+        {warnings.length ? (
           <div className="rounded-lg border border-amber-300/20 bg-amber-300/10 p-3 text-xs leading-5 text-amber-100">
-            {analytics.warnings.map((warning) => (
+            {warnings.map((warning) => (
           <p key={warning}>- {warning}</p>
             ))}
-            <p>
+            {!isSpanish ? <p>
               -{" "}
               {isSpanish
                 ? "El análisis técnico y fundamental se basa en el subyacente cuando no existe integración real del CEDEAR local."
                 : "Technical and fundamental analysis is based on the underlying asset when local CEDEAR integration is not available."}
-            </p>
+            </p> : null}
           </div>
         ) : null}
       </div>
