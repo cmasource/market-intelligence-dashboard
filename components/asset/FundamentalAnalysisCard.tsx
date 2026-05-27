@@ -64,7 +64,32 @@ function fallbackSnapshot(
 }
 
 function hasAnyFundamental(snapshot: FundamentalsSnapshot) {
-  return Object.values(snapshot).some((value) => value !== undefined && value !== null);
+  return [
+    snapshot.marketPrice,
+    snapshot.marketCap,
+    snapshot.trailingPE,
+    snapshot.forwardPE,
+    snapshot.priceToBook,
+    snapshot.priceToSales,
+    snapshot.pegRatio,
+    snapshot.eps,
+    snapshot.bookValuePerShare,
+    snapshot.roe,
+    snapshot.roa,
+    snapshot.grossMargin,
+    snapshot.operatingMargin,
+    snapshot.ebitdaMargin,
+    snapshot.netMargin,
+    snapshot.revenueGrowth,
+    snapshot.earningsGrowth,
+    snapshot.debtToEquity,
+    snapshot.currentRatio,
+    snapshot.quickRatio,
+    snapshot.dividendYield,
+    snapshot.beta,
+    snapshot.fiftyTwoWeekHigh,
+    snapshot.fiftyTwoWeekLow,
+  ].some((value) => value !== undefined && value !== null);
 }
 
 function unavailableFields(snapshot: FundamentalsSnapshot) {
@@ -112,6 +137,16 @@ export function FundamentalAnalysisCard({
           ? t("fundamentalsFallback")
           : t("fundamentalsNotApplicable");
   const isNotApplicable = fundamentals?.provider === "unavailable" || (!hasAnyFundamental(snapshot) && !loading);
+  const missingFieldList = fundamentals?.missingFields ?? unavailableFields(snapshot);
+  const hasPartialCoverage = hasAnyFundamental(snapshot) && missingFieldList.length >= 6;
+  const coveragePercent =
+    typeof fundamentals?.coverageRatio === "number" ? Math.round(fundamentals.coverageRatio * 100) : null;
+  const coverageNote = language === "es"
+    ? "Algunos indicadores no están disponibles desde el proveedor actual."
+    : "Some indicators are not available from the current provider.";
+  const coverageDetailNote = language === "es"
+    ? "Los datos disponibles se muestran primero; los campos N/D dependen de la cobertura del proveedor."
+    : "Available data is shown first; N/A fields depend on provider coverage.";
   const safeCurrency = snapshot.currency ?? (currency.includes("/") || currency.includes("CER") ? "USD" : currency);
   const humanSummary = buildHumanFundamentalSummary({
     fundamentalScore: score,
@@ -130,7 +165,7 @@ export function FundamentalAnalysisCard({
     dividendYield: snapshot.dividendYield ?? null,
     beta: snapshot.beta ?? null,
     sourceLabel,
-    unavailableFields: unavailableFields(snapshot),
+    unavailableFields: missingFieldList,
   }, language);
 
   useEffect(() => {
@@ -218,6 +253,17 @@ export function FundamentalAnalysisCard({
     { id: "fiftyTwoWeekLow", label: <GlossaryLabel termKey="fiftyTwoWeekLow" />, value: formatOptionalCurrency(snapshot.fiftyTwoWeekLow, safeCurrency, na, language) },
     { id: "marketCap", label: <GlossaryLabel termKey="marketCap" />, value: formatOptionalCurrency(snapshot.marketCap, safeCurrency, na, language) },
   ];
+  const renderMetricSection = (title: string, items: typeof valuationMetrics) => {
+    const visibleItems = hasPartialCoverage ? items.filter((item) => item.value !== na) : items;
+    if (visibleItems.length === 0) return null;
+
+    return (
+      <div>
+        <h3 className="mb-2 text-sm font-semibold text-white">{title}</h3>
+        <MetricGrid items={visibleItems} />
+      </div>
+    );
+  };
 
   return (
     <section className="rounded-lg border border-white/10 bg-white/[0.045] p-5 backdrop-blur">
@@ -231,25 +277,37 @@ export function FundamentalAnalysisCard({
           {loading ? t("fundamentalsLoading") : translateProviderLabel(sourceLabel, language)}
         </span>
         {apiFailed ? <span className="text-amber-100">{t("fundamentalsApiFallback")}</span> : null}
+        {hasPartialCoverage ? (
+          <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 font-medium text-amber-100">
+            {language === "es" ? "Cobertura fundamental parcial" : "Partial fundamental coverage"}
+          </span>
+        ) : null}
       </div>
       <div className="space-y-4">
+        {hasPartialCoverage ? (
+          <div className="rounded-lg border border-amber-300/20 bg-amber-300/10 p-3 text-sm leading-6 text-amber-50">
+            <p>{coverageNote}</p>
+            <p className="mt-1 text-amber-100/85">
+              {coverageDetailNote}
+              {coveragePercent !== null ? ` ${language === "es" ? "Cobertura estimada" : "Estimated coverage"}: ${coveragePercent}%.` : ""}
+            </p>
+          </div>
+        ) : null}
         <p className="text-sm leading-6 text-slate-300">{humanSummary.expandedSummary}</p>
-        <div>
-          <h3 className="mb-2 text-sm font-semibold text-white">{t("fundamentalsValuation")}</h3>
-          <MetricGrid items={valuationMetrics} />
-        </div>
-        <div>
-          <h3 className="mb-2 text-sm font-semibold text-white">{t("fundamentalsProfitability")}</h3>
-          <MetricGrid items={profitabilityMetrics} />
-        </div>
-        <div>
-          <h3 className="mb-2 text-sm font-semibold text-white">{t("fundamentalsGrowthRisk")}</h3>
-          <MetricGrid items={growthAndRiskMetrics} />
-        </div>
-        <div>
-          <h3 className="mb-2 text-sm font-semibold text-white">{t("fundamentalsMarketProfile")}</h3>
-          <MetricGrid items={marketProfileMetrics} />
-        </div>
+        {renderMetricSection(t("fundamentalsValuation"), valuationMetrics)}
+        {renderMetricSection(t("fundamentalsProfitability"), profitabilityMetrics)}
+        {renderMetricSection(t("fundamentalsGrowthRisk"), growthAndRiskMetrics)}
+        {renderMetricSection(t("fundamentalsMarketProfile"), marketProfileMetrics)}
+        {hasPartialCoverage ? (
+          <details className="rounded-lg border border-white/10 bg-slate-950/35 p-3 text-sm text-slate-400">
+            <summary className="cursor-pointer font-medium text-slate-200">
+              {language === "es" ? "Campos no disponibles desde el proveedor actual" : "Fields unavailable from the current provider"}
+            </summary>
+            <p className="mt-2 leading-6">
+              {missingFieldList.map((field) => String(field)).join(", ")}
+            </p>
+          </details>
+        ) : null}
       </div>
       {humanSummary.bulletPoints.length ? (
         <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-300">

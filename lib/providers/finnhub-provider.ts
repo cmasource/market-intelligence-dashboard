@@ -4,6 +4,7 @@ import type { FundamentalsRequest, FundamentalsResponse, FundamentalsSnapshot } 
 import { getAssetClassForMarketData, normalizeSymbol } from "@/lib/market-data/symbol-map";
 import type { MarketDataCandle, MarketDataRequest, MarketDataResponse } from "@/lib/market-data/types";
 import type { NewsArticle } from "@/lib/news/types";
+import { sanitizeNewsText } from "@/lib/news/sanitize-news";
 import type { ProviderResult } from "./types";
 
 const baseUrl = "https://finnhub.io/api/v1";
@@ -33,6 +34,27 @@ type FinnhubCandles = { s?: string; t?: number[]; o?: number[]; h?: number[]; l?
 type FinnhubProfile = { name?: string; marketCapitalization?: number; currency?: string; shareOutstanding?: number };
 type FinnhubMetrics = { metric?: Record<string, number | undefined> };
 type FinnhubNews = Array<{ headline?: string; source?: string; url?: string; datetime?: number; summary?: string; related?: string }>;
+
+function hasFundamentalMetric(snapshot: FundamentalsSnapshot) {
+  return [
+    snapshot.marketPrice,
+    snapshot.marketCap,
+    snapshot.trailingPE,
+    snapshot.forwardPE,
+    snapshot.priceToBook,
+    snapshot.priceToSales,
+    snapshot.eps,
+    snapshot.roe,
+    snapshot.roa,
+    snapshot.grossMargin,
+    snapshot.operatingMargin,
+    snapshot.netMargin,
+    snapshot.dividendYield,
+    snapshot.beta,
+    snapshot.fiftyTwoWeekHigh,
+    snapshot.fiftyTwoWeekLow,
+  ].some((value) => value !== undefined && value !== null);
+}
 
 export function getFinnhubQuote(symbol: string) {
   return fetchFinnhub<FinnhubQuote>("/quote", { symbol: normalizeSymbol(symbol) });
@@ -117,6 +139,7 @@ export async function getFinnhubFundamentals(request: FundamentalsRequest): Prom
   };
   const score = calculateFundamentalScore(snapshot);
   const errors = [quote, profile, metrics].filter((item) => !item.ok).map((item) => item.error);
+  const hasUsableMetric = hasFundamentalMetric(snapshot);
   return {
     symbol,
     provider: "finnhub",
@@ -128,7 +151,7 @@ export async function getFinnhubFundamentals(request: FundamentalsRequest): Prom
     fundamentalScore: score,
     interpretation: buildFundamentalsInterpretation(snapshot, score),
     warnings: errors.length ? errors : undefined,
-    error: Object.values(snapshot).some((value) => value !== undefined && value !== null) ? undefined : errors[0] ?? "Finnhub returned no usable fundamentals.",
+    error: hasUsableMetric ? undefined : errors[0] ?? "Finnhub returned no usable fundamentals.",
   };
 }
 
@@ -145,11 +168,11 @@ export async function getFinnhubCompanyNews(symbol: string): Promise<ProviderRes
     ok: true,
     provider: "finnhub",
     data: result.data.slice(0, 8).map((item) => ({
-      title: item.headline ?? "Market update",
-      source: item.source ?? "Finnhub",
+      title: sanitizeNewsText(item.headline, 180) || "Market update",
+      source: sanitizeNewsText(item.source, 80) || "Finnhub",
       url: item.url ?? "#",
       publishedAt: item.datetime ? new Date(item.datetime * 1000).toISOString() : undefined,
-      summary: item.summary,
+      summary: sanitizeNewsText(item.summary, 240),
       relatedSymbols: [normalizeSymbol(symbol)],
       provider: "finnhub",
       isFallback: false,

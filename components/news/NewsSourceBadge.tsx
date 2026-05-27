@@ -10,10 +10,14 @@ export function NewsSourceBadge({ provider, isFallback }: Pick<NewsArticle, "pro
     ? isSpanish
       ? provider === "mock"
         ? "Noticias simuladas"
-        : "Noticias fallback"
+        : provider === "rss"
+          ? "Noticias RSS"
+          : "Noticias fallback"
       : provider === "mock"
         ? "Mock news"
-        : "Fallback news"
+        : provider === "rss"
+          ? "RSS news"
+          : "Fallback news"
     : isSpanish
       ? "Noticias reales/proveedor"
       : "Provider news";

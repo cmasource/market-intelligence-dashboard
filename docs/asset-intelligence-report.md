@@ -45,3 +45,9 @@ Key points are intentionally short and non-repetitive. The executive reading giv
 CEDEAR context includes a "How to read it" note for Argentine users: use the underlying asset for trend and fundamentals, use the CEDEAR for local price/liquidity/implied CCL context, and do not treat simulated CCL as live operating data until BYMA/IOL or licensed-provider integration is enabled.
 
 News headlines may appear in the original language of the source. The UI labels that behavior so the report can remain localized without rewriting sourced headlines.
+
+## Sprint 20.1 Public Demo Polish
+
+Fundamental summaries now treat provider coverage as partial when several fields are unavailable. A provider-supported equity can show available metrics while clearly labeling missing values as unavailable from the current provider instead of looking broken.
+
+News titles and snippets are sanitized before rendering: common HTML entities are decoded, tags are stripped, and whitespace is normalized. The report layout also uses slightly more spacing between the summary strip, executive reading, key points, analytics cards, news, risks and data limitations so public-demo pages are easier to scan.

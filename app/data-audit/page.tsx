@@ -12,6 +12,13 @@ import { formatCurrencyValue } from "@/lib/formatters";
 import type { ArgentinaInstrument, ArgentinaQuote, ArgentinaSourceStatus } from "@/lib/argentina";
 import type { ProviderVerificationResult } from "@/lib/providers";
 
+type FundamentalsAuditSnapshot = {
+  provider?: string;
+  sourceLabel?: string;
+  coverageRatio?: number;
+  missingFields?: string[];
+};
+
 const auditSymbols = new Set([
   "AAPL",
   "MSFT",
@@ -154,6 +161,7 @@ export default function DataAuditPage() {
   const [argentinaQuotes, setArgentinaQuotes] = useState<Record<string, ArgentinaQuote>>({});
   const [argentinaInstruments, setArgentinaInstruments] = useState<ArgentinaInstrument[]>([]);
   const [argentinaSources, setArgentinaSources] = useState<ArgentinaSourceStatus[]>([]);
+  const [fundamentalsAudit, setFundamentalsAudit] = useState<FundamentalsAuditSnapshot | null>(null);
   const auditItems = instrumentUniverse.filter(
     (instrument) =>
       auditSymbols.has(instrument.symbol) ||
@@ -198,6 +206,25 @@ export default function DataAuditPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadFundamentalsAudit() {
+      try {
+        const response = await fetch("/api/analysis/fundamentals/AAPL?debug=1");
+        if (!active || !response.ok) return;
+        setFundamentalsAudit((await response.json()) as FundamentalsAuditSnapshot);
+      } catch {
+        if (active) setFundamentalsAudit(null);
+      }
+    }
+
+    void loadFundamentalsAudit();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const argentinaAuditItems = argentinaAuditSymbols
     .map((symbol) => argentinaInstruments.find((instrument) => instrument.symbol === symbol))
     .filter((instrument): instrument is ArgentinaInstrument => Boolean(instrument));
@@ -233,6 +260,61 @@ export default function DataAuditPage() {
         </section>
 
         <ProviderStatusPanel />
+
+        <section className="rounded-lg border border-emerald-300/20 bg-slate-950/55 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200">
+            {isSpanish ? "Paridad produccion/local" : "Production/local parity"}
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            {isSpanish ? "Diagnostico de despliegue y proveedores" : "Deployment and provider diagnostics"}
+          </h2>
+          <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
+            {isSpanish
+              ? "Usar estos endpoints para comparar localhost contra Vercel sin exponer secretos."
+              : "Use these endpoints to compare localhost against Vercel without exposing secrets."}
+          </p>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <Link href="/api/diagnostics/runtime" className="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-sm text-cyan-100">
+              /api/diagnostics/runtime
+            </Link>
+            <Link href="/api/analysis/fundamentals/AAPL?debug=1" className="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-sm text-cyan-100">
+              /api/analysis/fundamentals/AAPL?debug=1
+            </Link>
+            <Link href="/api/news/AAPL" className="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-sm text-cyan-100">
+              /api/news/AAPL
+            </Link>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-sm text-slate-300">
+              <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                {isSpanish ? "Fundamentales AAPL" : "AAPL fundamentals"}
+              </p>
+              <p className="mt-2">
+                {fundamentalsAudit?.coverageRatio !== undefined
+                  ? `${Math.round(fundamentalsAudit.coverageRatio * 100)}% ${isSpanish ? "cobertura" : "coverage"}`
+                  : "N/D"}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">{fundamentalsAudit?.sourceLabel ?? fundamentalsAudit?.provider ?? "N/D"}</p>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-sm text-slate-300">
+              <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                {isSpanish ? "Noticias" : "News"}
+              </p>
+              <p className="mt-2">{isSpanish ? "RSS/proveedor/mock segun disponibilidad" : "RSS/provider/mock depending on availability"}</p>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-sm text-slate-300">
+              <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                {isSpanish ? "Sanitizacion" : "Sanitization"}
+              </p>
+              <p className="mt-2">
+                {isSpanish ? "Aplicada en servicio, API y UI de noticias." : "Applied in news service, API and UI."}
+              </p>
+            </div>
+          </div>
+          <Link href="/methodology" className="mt-4 inline-flex text-sm font-medium text-emerald-100">
+            {isSpanish ? "Ver metodologia y checklist operativo" : "View methodology and operating checklist"}
+          </Link>
+        </section>
 
         <section className="rounded-lg border border-violet-300/20 bg-slate-950/55 p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-200">

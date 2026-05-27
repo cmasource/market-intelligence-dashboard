@@ -1,17 +1,9 @@
 import type { NewsArticle, NewsResponse } from "./types";
-
-function decodeXml(value: string) {
-  return value
-    .replaceAll("&amp;", "&")
-    .replaceAll("&lt;", "<")
-    .replaceAll("&gt;", ">")
-    .replaceAll("&quot;", "\"")
-    .replaceAll("&#39;", "'");
-}
+import { sanitizeNewsText } from "./sanitize-news";
 
 function tag(item: string, name: string) {
   const match = item.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)<\\/${name}>`, "i"));
-  return match?.[1] ? decodeXml(match[1].replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "").trim()) : undefined;
+  return match?.[1] ? sanitizeNewsText(match[1].replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "")) : undefined;
 }
 
 export async function getGoogleNewsRss(query: string, limit = 6): Promise<NewsResponse> {
@@ -27,11 +19,11 @@ export async function getGoogleNewsRss(query: string, limit = 6): Promise<NewsRe
     const xml = await response.text();
     const items = xml.match(/<item>[\s\S]*?<\/item>/gi) ?? [];
     const articles: NewsArticle[] = items.slice(0, limit).map((item) => ({
-      title: tag(item, "title") ?? "Market headline",
-      source: tag(item, "source") ?? "Google News RSS",
+      title: sanitizeNewsText(tag(item, "title"), 180) || "Market headline",
+      source: sanitizeNewsText(tag(item, "source"), 80) || "Google News RSS",
       url: tag(item, "link") ?? "#",
       publishedAt: tag(item, "pubDate"),
-      summary: tag(item, "description")?.replace(/<[^>]*>/g, "").slice(0, 240),
+      summary: sanitizeNewsText(tag(item, "description"), 240),
       relatedSymbols: [query.toUpperCase()],
       provider: "rss",
       isFallback: true,

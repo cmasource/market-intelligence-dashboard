@@ -4,6 +4,7 @@ import type { FundamentalsRequest, FundamentalsResponse, FundamentalsSnapshot } 
 import { getAssetClassForMarketData, normalizeSymbol } from "@/lib/market-data/symbol-map";
 import type { MarketDataCandle, MarketDataRequest, MarketDataResponse, MarketQuoteResponse } from "@/lib/market-data/types";
 import type { NewsArticle } from "@/lib/news/types";
+import { sanitizeNewsText } from "@/lib/news/sanitize-news";
 import type { ProviderDiagnosticReason, ProviderResult, ProviderTraceEntry } from "./types";
 
 const baseUrl = "https://financialmodelingprep.com/api/v3";
@@ -107,7 +108,56 @@ type FmpRatios = Array<{
   dividendYielTTM?: number;
   dividendYieldTTM?: number;
 }>;
+type FmpKeyMetrics = Array<{
+  marketCapTTM?: number;
+  enterpriseValueTTM?: number;
+  peRatioTTM?: number;
+  forwardPERatioTTM?: number;
+  pbRatioTTM?: number;
+  priceToSalesRatioTTM?: number;
+  pegRatioTTM?: number;
+  netIncomePerShareTTM?: number;
+  bookValuePerShareTTM?: number;
+  debtToEquityTTM?: number;
+  currentRatioTTM?: number;
+  dividendYieldTTM?: number;
+}>;
+type FmpGrowth = Array<{
+  revenueGrowth?: number;
+  epsgrowth?: number;
+  epsGrowth?: number;
+}>;
 type FmpNews = Array<{ title?: string; site?: string; url?: string; publishedDate?: string; text?: string; symbol?: string }>;
+
+function hasFundamentalMetric(snapshot: FundamentalsSnapshot) {
+  return [
+    snapshot.marketPrice,
+    snapshot.marketCap,
+    snapshot.enterpriseValue,
+    snapshot.trailingPE,
+    snapshot.forwardPE,
+    snapshot.priceToBook,
+    snapshot.priceToSales,
+    snapshot.pegRatio,
+    snapshot.eps,
+    snapshot.bookValuePerShare,
+    snapshot.roe,
+    snapshot.roa,
+    snapshot.grossMargin,
+    snapshot.operatingMargin,
+    snapshot.ebitdaMargin,
+    snapshot.netMargin,
+    snapshot.revenueGrowth,
+    snapshot.earningsGrowth,
+    snapshot.debtToEquity,
+    snapshot.currentRatio,
+    snapshot.quickRatio,
+    snapshot.dividendYield,
+    snapshot.beta,
+    snapshot.fiftyTwoWeekHigh,
+    snapshot.fiftyTwoWeekLow,
+  ].some((value) => value !== undefined && value !== null);
+}
 
 function normalizeFmpCandles(data: FmpHistorical): MarketDataCandle[] {
   return (data.historical ?? [])
@@ -286,28 +336,40 @@ export async function getFmpCompanyProfile(symbol: string) {
 
 export async function getFmpFundamentals(request: FundamentalsRequest): Promise<FundamentalsResponse> {
   const symbol = normalizeFundamentalsSymbol(request.symbol);
-  const [quote, profile, ratios] = await Promise.all([
+  const [quote, profile, ratios, keyMetrics, growth] = await Promise.all([
     getFmpQuote(symbol),
     getFmpCompanyProfile(symbol),
     fetchFmp<FmpRatios>(`/ratios-ttm/${encodeURIComponent(symbol)}`, {}, "ratios-ttm"),
+    fetchFmp<FmpKeyMetrics>(`/key-metrics-ttm/${encodeURIComponent(symbol)}`, {}, "key-metrics-ttm"),
+    fetchFmp<FmpGrowth>(`/financial-growth/${encodeURIComponent(symbol)}`, { limit: "1" }, "financial-growth"),
   ]);
 
   const quoteData = quote.ok ? quote.data[0] : undefined;
   const profileData = profile.ok ? profile.data[0] : undefined;
   const ratioData = ratios.ok ? ratios.data[0] : undefined;
+  const keyMetricData = keyMetrics.ok ? keyMetrics.data[0] : undefined;
+  const growthData = growth.ok ? growth.data[0] : undefined;
   const snapshot: FundamentalsSnapshot = {
     marketPrice: quoteData?.price ?? profileData?.price,
-    marketCap: quoteData?.marketCap ?? profileData?.mktCap,
-    trailingPE: quoteData?.pe ?? ratioData?.priceEarningsRatioTTM,
-    priceToBook: ratioData?.priceToBookRatioTTM,
-    priceToSales: ratioData?.priceToSalesRatioTTM,
+    marketCap: quoteData?.marketCap ?? profileData?.mktCap ?? keyMetricData?.marketCapTTM,
+    enterpriseValue: keyMetricData?.enterpriseValueTTM,
+    trailingPE: quoteData?.pe ?? ratioData?.priceEarningsRatioTTM ?? keyMetricData?.peRatioTTM,
+    forwardPE: keyMetricData?.forwardPERatioTTM,
+    priceToBook: ratioData?.priceToBookRatioTTM ?? keyMetricData?.pbRatioTTM,
+    priceToSales: ratioData?.priceToSalesRatioTTM ?? keyMetricData?.priceToSalesRatioTTM,
+    pegRatio: keyMetricData?.pegRatioTTM,
     eps: quoteData?.eps,
+    bookValuePerShare: keyMetricData?.bookValuePerShareTTM,
     roe: ratioData?.returnOnEquityTTM,
     roa: ratioData?.returnOnAssetsTTM,
     grossMargin: ratioData?.grossProfitMarginTTM,
     operatingMargin: ratioData?.operatingProfitMarginTTM,
     netMargin: ratioData?.netProfitMarginTTM,
-    dividendYield: ratioData?.dividendYieldTTM ?? ratioData?.dividendYielTTM,
+    revenueGrowth: growthData?.revenueGrowth,
+    earningsGrowth: growthData?.epsGrowth ?? growthData?.epsgrowth,
+    debtToEquity: keyMetricData?.debtToEquityTTM,
+    currentRatio: keyMetricData?.currentRatioTTM,
+    dividendYield: ratioData?.dividendYieldTTM ?? ratioData?.dividendYielTTM ?? keyMetricData?.dividendYieldTTM,
     beta: profileData?.beta,
     fiftyTwoWeekHigh: quoteData?.yearHigh,
     fiftyTwoWeekLow: quoteData?.yearLow,
@@ -315,7 +377,8 @@ export async function getFmpFundamentals(request: FundamentalsRequest): Promise<
     period: "FMP latest",
   };
   const score = calculateFundamentalScore(snapshot);
-  const errors = [quote, profile, ratios].filter((item) => !item.ok).map((item) => item.error);
+  const errors = [quote, profile, ratios, keyMetrics, growth].filter((item) => !item.ok).map((item) => item.error);
+  const hasUsableMetric = hasFundamentalMetric(snapshot);
 
   return {
     symbol,
@@ -328,7 +391,7 @@ export async function getFmpFundamentals(request: FundamentalsRequest): Promise<
     fundamentalScore: score,
     interpretation: buildFundamentalsInterpretation(snapshot, score),
     warnings: errors.length ? errors : undefined,
-    error: Object.values(snapshot).some((value) => value !== undefined && value !== null) ? undefined : errors[0] ?? "FMP returned no usable fundamentals.",
+    error: hasUsableMetric ? undefined : errors[0] ?? "FMP returned no usable fundamentals.",
   };
 }
 
@@ -339,11 +402,11 @@ export async function getFmpNews(symbol: string): Promise<ProviderResult<NewsArt
     ok: true,
     provider: "fmp",
     data: result.data.map((item) => ({
-      title: item.title ?? "Market update",
-      source: item.site ?? "FMP",
+      title: sanitizeNewsText(item.title, 180) || "Market update",
+      source: sanitizeNewsText(item.site, 80) || "FMP",
       url: item.url ?? "#",
       publishedAt: item.publishedDate,
-      summary: item.text?.slice(0, 240),
+      summary: sanitizeNewsText(item.text, 240),
       relatedSymbols: item.symbol ? [item.symbol] : [normalizeSymbol(symbol)],
       provider: "fmp",
       isFallback: false,

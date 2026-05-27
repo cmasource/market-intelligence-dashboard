@@ -510,9 +510,21 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     const data = await response.json();
     expect(Array.isArray(data.articles)).toBeTruthy();
     expect(data).toHaveProperty("provider");
+    const symbolNewsResponse = await request.get("/api/news/AAPL");
+    expect(symbolNewsResponse.ok()).toBeTruthy();
+    const symbolNews = await symbolNewsResponse.json();
+    expect(Array.isArray(symbolNews.articles)).toBeTruthy();
+    expect(symbolNews.articles.length).toBeGreaterThan(0);
+    const encodedNewsPayload = JSON.stringify(symbolNews.articles);
+    expect(encodedNewsPayload).not.toContain("&nbsp;");
+    expect(encodedNewsPayload).not.toContain("&amp;");
+    expect(encodedNewsPayload).not.toContain("&#39;");
+    expect(encodedNewsPayload).not.toMatch(new RegExp("</?[a-z][\\s\\S]*>", "i"));
 
     await page.goto("/asset/AAPL");
     await expect(page.locator("body")).toContainText(/Market Headlines|Noticias|Provider news|Mock news|Noticias simuladas|Noticias fallback/);
+    await expect(page.locator("body")).toContainText(/Open article|Abrir noticia/);
+    await expect(page.locator("body")).not.toContainText("&nbsp;");
   });
 
   test("data audit shows provider status and fallback labels", async ({ page }) => {
@@ -523,6 +535,24 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.locator("body")).toContainText(/Actual provider|Proveedor efectivo/);
     await expect(page.locator("body")).toContainText(/Configured provider|Proveedor configurado/);
     await expect(page.locator("body")).toContainText(/Yahoo-compatible|Yahoo compatible|FMP/);
+    await expect(page.locator("body")).toContainText(/Production\/local parity|Paridad produccion\/local/);
+    await expect(page.locator("body")).toContainText(/Sanitization|Sanitizacion/);
+  });
+
+  test("runtime diagnostics expose safe provider parity metadata", async ({ request }) => {
+    const response = await request.get("/api/diagnostics/runtime");
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    const payload = JSON.stringify(data);
+
+    expect(data.app).toBe("CMA Market Intelligence");
+    expect(typeof data.configuredMarketProvider).toBe("string");
+    expect(typeof data.configuredNewsProvider).toBe("string");
+    expect(typeof data.fmpEnabled).toBe("boolean");
+    expect(typeof data.yahooFallbackEnabled).toBe("boolean");
+    expect(typeof data.mockFallbackEnabled).toBe("boolean");
+    expect(payload).not.toMatch(/api[_-]?key/i);
+    if (process.env.FMP_API_KEY) expect(payload).not.toContain(process.env.FMP_API_KEY);
   });
 
   test("quote API exposes provider or fallback structure without secrets", async ({ request }) => {
@@ -787,6 +817,8 @@ test.describe("CMA Market Intelligence smoke tests", () => {
   test("fundamentals source and API stay fallback-safe", async ({ page, request }) => {
     await page.goto("/asset/AAPL");
     await expect(page.locator("body")).toContainText(fundamentalsSourceStatus);
+    await expect(page.locator("body")).toContainText(/P\/E|ROE|EPS|Cobertura fundamental parcial|Partial fundamental coverage/);
+    await expect(page.locator("body")).not.toContainText(/N\/D\\s*N\/D\\s*N\/D\\s*N\/D\\s*N\/D\\s*N\/D/);
 
     const response = await request.get("/api/fundamentals/AAPL");
     expect(response.ok()).toBeTruthy();
@@ -794,8 +826,24 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     const data = await response.json();
     expect(data.symbol).toBe("AAPL");
     expect(data.snapshot).toBeTruthy();
+    expect(data.metrics).toBeTruthy();
+    expect(data.providerTrace).toBeUndefined();
     expect(typeof data.provider).toBe("string");
     expect(typeof data.isFallback).toBe("boolean");
+    expect(typeof data.coverageRatio).toBe("number");
+    expect(Array.isArray(data.missingFields)).toBeTruthy();
+    if (process.env.FMP_API_KEY) expect(JSON.stringify(data)).not.toContain(process.env.FMP_API_KEY);
+
+    const debugResponse = await request.get("/api/analysis/fundamentals/AAPL?debug=1");
+    expect(debugResponse.ok()).toBeTruthy();
+    const debugData = await debugResponse.json();
+    expect(debugData.symbol).toBe("AAPL");
+    expect(debugData.sourceLabel).toBeTruthy();
+    expect(debugData.metrics).toBeTruthy();
+    expect(typeof debugData.coverageRatio).toBe("number");
+    expect(Array.isArray(debugData.missingFields)).toBeTruthy();
+    expect(Array.isArray(debugData.providerTrace)).toBeTruthy();
+    if (process.env.FMP_API_KEY) expect(JSON.stringify(debugData)).not.toContain(process.env.FMP_API_KEY);
   });
 
   test("non-equity fundamentals stay clear", async ({ page }) => {

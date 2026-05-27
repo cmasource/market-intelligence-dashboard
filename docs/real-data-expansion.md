@@ -39,3 +39,7 @@ The verified Sprint 18.4 behavior for AAPL is:
 - Mock fallback remains the last resort.
 
 Asset pages, featured dashboard cards and visible dashboard search results all use the same provider quote chain for supported USA/crypto symbols. They may initially render the static server seed and then update client-side after mount. Argentine local equities, CEDEAR local prices and fixed income instruments remain structured mock/local data until a licensed local provider is integrated.
+
+Sprint 20.1 tightens fundamentals coverage rules. Provider responses must include actual financial metrics before they stop the fallback chain; metadata-only responses no longer produce N/D-heavy cards. Debug mode at `/api/fundamentals/[symbol]?debug=1` exposes non-secret provider trace and missing-field context.
+
+News previews are sanitized before public rendering so encoded entities and basic HTML tags do not appear in the demo UI.

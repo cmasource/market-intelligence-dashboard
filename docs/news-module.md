@@ -12,6 +12,8 @@ The news module provides a small market-news MVP for CMA Market Intelligence.
 
 The UI shows title, source, provider/fallback badge, date, link and a short available summary. It does not reproduce full articles.
 
+Sprint 20.1 sanitizes news preview text before display. Common HTML entities such as `&nbsp;`, `&amp;` and numeric entities are decoded, basic tags are stripped, and repeated whitespace is normalized. Headlines may still appear in the original language of the source.
+
 ## Limitations
 
-News quality depends on provider availability and key limits. RSS and mock news are fallback layers, not licensed market news feeds.
+News quality depends on provider availability and key limits. RSS and mock news are fallback layers, not licensed market news feeds. RSS-derived headlines are labeled as RSS/fallback, not as mock.

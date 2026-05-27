@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import type { NewsArticle, NewsResponse } from "@/lib/news";
+import { sanitizeNewsText } from "@/lib/news/sanitize-news";
 import type { NewsItem } from "@/types/asset";
 import { NewsList } from "../news/NewsList";
 import { NewsSourceBadge } from "../news/NewsSourceBadge";
@@ -21,10 +22,10 @@ const sentimentTone: Record<NewsItem["sentiment"], string> = {
 
 function fallbackArticles(news: NewsItem[], symbol?: string): NewsArticle[] {
   return news.map((item) => ({
-    title: item.title,
-    source: item.source,
+    title: sanitizeNewsText(item.title, 180),
+    source: sanitizeNewsText(item.source, 80),
     url: "#",
-    summary: item.summary,
+    summary: sanitizeNewsText(item.summary, 240),
     relatedSymbols: symbol ? [symbol] : undefined,
     provider: "mock",
     isFallback: true,
@@ -90,8 +91,8 @@ export function NewsPanel({ news, symbol }: NewsPanelProps) {
           <article key={item.title} className="rounded-lg border border-white/10 bg-slate-950/45 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h3 className="font-semibold text-white">{item.title}</h3>
-                <p className="mt-1 text-xs text-slate-500">{item.source}</p>
+                <h3 className="font-semibold text-white">{sanitizeNewsText(item.title, 180)}</h3>
+                <p className="mt-1 text-xs text-slate-500">{sanitizeNewsText(item.source, 80)}</p>
               </div>
               <div className="flex gap-2">
                 <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${sentimentTone[item.sentiment]}`}>
@@ -102,7 +103,7 @@ export function NewsPanel({ news, symbol }: NewsPanelProps) {
                 </span>
               </div>
             </div>
-            <p className="mt-3 text-sm leading-6 text-slate-400">{item.summary}</p>
+            <p className="mt-3 text-sm leading-6 text-slate-400">{sanitizeNewsText(item.summary, 240)}</p>
           </article>
         ))}
       </div>

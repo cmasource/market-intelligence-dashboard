@@ -9,7 +9,9 @@ export async function GET(
   const symbol = normalizeFundamentalsSymbol(decodeURIComponent(rawSymbol ?? ""));
   const debug = new URL(request.url).searchParams.get("debug") === "1";
 
-  if (!symbol) return Response.json({ error: "Symbol is required." }, { status: 400 });
+  if (!symbol) {
+    return Response.json({ error: "Symbol is required." }, { status: 400 });
+  }
 
   try {
     const fundamentals = await getFundamentals({ symbol });
@@ -19,12 +21,25 @@ export async function GET(
       coverageRatio: fundamentals.coverageRatio,
       ...(!debug ? { providerTrace: undefined } : {}),
     };
+
     return Response.json(responseBody, {
       headers: {
         "Cache-Control": "s-maxage=300, stale-while-revalidate=900",
       },
     });
-  } catch {
-    return Response.json({ error: "Fundamentals request failed." }, { status: 500 });
+  } catch (error) {
+    return Response.json(
+      {
+        symbol,
+        provider: "unavailable",
+        sourceLabel: "Unavailable",
+        isFallback: false,
+        metrics: {},
+        missingFields: [],
+        coverageRatio: 0,
+        error: error instanceof Error ? error.message : "Unexpected fundamentals error.",
+      },
+      { status: 500 },
+    );
   }
 }

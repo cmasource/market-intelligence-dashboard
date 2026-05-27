@@ -7,6 +7,7 @@ import { getFundamentals } from "@/lib/fundamentals-data";
 import { getInstrumentBySymbol } from "@/lib/instrument-universe";
 import { getMarketQuote } from "@/lib/market-data";
 import { getNewsForSymbol } from "@/lib/news";
+import { sanitizeNewsText } from "@/lib/news/sanitize-news";
 import { formatCurrencyValue, formatNumber, formatPercent } from "@/lib/formatters";
 import { translateProviderLabel } from "@/lib/i18n/interpretation-labels";
 import { findAsset } from "@/lib/mock-data";
@@ -41,7 +42,7 @@ function isBondType(type: string | undefined) {
 }
 
 function safeHeadline(title: string) {
-  return title
+  return sanitizeNewsText(title, 180)
     .replace(/strong buy/gi, "constructive rating")
     .replace(/strong sell/gi, "defensive rating")
     .replace(/compra fuerte/gi, "lectura constructiva")
@@ -242,7 +243,7 @@ export async function getAssetIntelligenceReport(
     latestHeadlines:
       news?.articles.slice(0, 3).map((article) => ({
         title: safeHeadline(article.title),
-        source: article.source,
+        source: sanitizeNewsText(article.source, 80),
         url: article.url,
         publishedAt: article.publishedAt,
       })) ?? [],

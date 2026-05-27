@@ -54,6 +54,14 @@ export type FundamentalsInterpretation = {
   bulletPoints: string[];
 };
 
+export type FundamentalsProviderTraceEntry = {
+  provider: FundamentalsProviderName;
+  attempted: boolean;
+  success: boolean;
+  sourceLabel: string;
+  error?: string;
+};
+
 export type FundamentalsResponse = {
   symbol: string;
   provider: FundamentalsProviderName;
@@ -64,6 +72,9 @@ export type FundamentalsResponse = {
   snapshot: FundamentalsSnapshot;
   fundamentalScore?: number | null;
   interpretation: FundamentalsInterpretation;
+  missingFields?: string[];
+  coverageRatio?: number;
+  providerTrace?: FundamentalsProviderTraceEntry[];
   warnings?: string[];
   error?: string;
 };

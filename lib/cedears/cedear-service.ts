@@ -10,7 +10,12 @@ function latestClose(candles: Awaited<ReturnType<typeof getMarketData>>["candles
 
 async function getUnderlyingPrice(instrument: CedearInstrument) {
   try {
-    const response = await getMarketData({ symbol: instrument.underlyingSymbol, timeframe: "1D" });
+    const response = await Promise.race([
+      getMarketData({ symbol: instrument.underlyingSymbol, timeframe: "1D" }),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("CEDEAR underlying provider timeout.")), 4_000);
+      }),
+    ]);
     return {
       price: latestClose(response.candles) ?? instrument.underlyingPrice ?? null,
       usedProvider: !response.isFallback && response.provider !== "mock",

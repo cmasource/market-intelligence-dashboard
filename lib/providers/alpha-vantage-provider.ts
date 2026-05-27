@@ -4,6 +4,7 @@ import type { FundamentalsRequest, FundamentalsResponse, FundamentalsSnapshot } 
 import { getAssetClassForMarketData, normalizeSymbol } from "@/lib/market-data/symbol-map";
 import type { MarketDataCandle, MarketDataRequest, MarketDataResponse } from "@/lib/market-data/types";
 import type { NewsArticle } from "@/lib/news/types";
+import { sanitizeNewsText } from "@/lib/news/sanitize-news";
 import type { ProviderResult } from "./types";
 
 const baseUrl = "https://www.alphavantage.co/query";
@@ -38,6 +39,31 @@ type AlphaNews = { feed?: Array<{ title?: string; source?: string; url?: string;
 function numberValue(value: string | undefined) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function decimalValue(value: string | undefined) {
+  const parsed = numberValue(value);
+  if (parsed === undefined) return undefined;
+  return Math.abs(parsed) > 1.5 ? parsed / 100 : parsed;
+}
+
+function hasFundamentalMetric(snapshot: FundamentalsSnapshot) {
+  return [
+    snapshot.marketCap,
+    snapshot.trailingPE,
+    snapshot.forwardPE,
+    snapshot.priceToBook,
+    snapshot.priceToSales,
+    snapshot.eps,
+    snapshot.roe,
+    snapshot.roa,
+    snapshot.operatingMargin,
+    snapshot.netMargin,
+    snapshot.dividendYield,
+    snapshot.beta,
+    snapshot.fiftyTwoWeekHigh,
+    snapshot.fiftyTwoWeekLow,
+  ].some((value) => value !== undefined && value !== null);
 }
 
 export function getAlphaVantageQuote(symbol: string) {
@@ -89,12 +115,11 @@ export async function getAlphaVantageFundamentals(request: FundamentalsRequest):
     priceToBook: numberValue(data.PriceToBookRatio),
     priceToSales: numberValue(data.PriceToSalesRatioTTM),
     eps: numberValue(data.EPS),
-    roe: numberValue(data.ReturnOnEquityTTM),
-    roa: numberValue(data.ReturnOnAssetsTTM),
-    operatingMargin: numberValue(data.OperatingMarginTTM),
-    ebitdaMargin: numberValue(data.EBITDA),
-    netMargin: numberValue(data.ProfitMargin),
-    dividendYield: numberValue(data.DividendYield),
+    roe: decimalValue(data.ReturnOnEquityTTM),
+    roa: decimalValue(data.ReturnOnAssetsTTM),
+    operatingMargin: decimalValue(data.OperatingMarginTTM),
+    netMargin: decimalValue(data.ProfitMargin),
+    dividendYield: decimalValue(data.DividendYield),
     beta: numberValue(data.Beta),
     fiftyTwoWeekHigh: numberValue(data["52WeekHigh"]),
     fiftyTwoWeekLow: numberValue(data["52WeekLow"]),
@@ -102,6 +127,7 @@ export async function getAlphaVantageFundamentals(request: FundamentalsRequest):
     period: "Alpha Vantage latest",
   };
   const score = calculateFundamentalScore(snapshot);
+  const hasUsableMetric = hasFundamentalMetric(snapshot);
   return {
     symbol,
     provider: "alpha_vantage",
@@ -112,7 +138,7 @@ export async function getAlphaVantageFundamentals(request: FundamentalsRequest):
     snapshot,
     fundamentalScore: score,
     interpretation: buildFundamentalsInterpretation(snapshot, score),
-    ...(!overview.ok ? { error: overview.error, warnings: [overview.error] } : {}),
+    ...(!hasUsableMetric ? { error: overview.ok ? "Alpha Vantage returned no usable fundamentals." : overview.error, warnings: [overview.ok ? "Alpha Vantage returned no usable fundamentals." : overview.error] } : {}),
   };
 }
 
@@ -123,11 +149,11 @@ export async function getAlphaVantageNews(symbol: string): Promise<ProviderResul
     ok: true,
     provider: "alpha_vantage",
     data: (result.data.feed ?? []).map((item) => ({
-      title: item.title ?? "Market update",
-      source: item.source ?? "Alpha Vantage",
+      title: sanitizeNewsText(item.title, 180) || "Market update",
+      source: sanitizeNewsText(item.source, 80) || "Alpha Vantage",
       url: item.url ?? "#",
       publishedAt: item.time_published,
-      summary: item.summary,
+      summary: sanitizeNewsText(item.summary, 240),
       relatedSymbols: item.ticker_sentiment?.map((ticker) => ticker.ticker ?? "").filter(Boolean),
       provider: "alpha_vantage",
       isFallback: false,

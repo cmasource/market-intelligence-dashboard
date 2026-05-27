@@ -1,4 +1,5 @@
 import { getNewsForSymbol } from "@/lib/news";
+import { sanitizeNewsArticle } from "@/lib/news/sanitize-news";
 
 export async function GET(
   _request: Request,
@@ -10,7 +11,7 @@ export async function GET(
 
   try {
     const news = await getNewsForSymbol(symbol);
-    return Response.json(news, {
+    return Response.json({ ...news, articles: news.articles.map(sanitizeNewsArticle) }, {
       headers: {
         "Cache-Control": "s-maxage=180, stale-while-revalidate=600",
       },

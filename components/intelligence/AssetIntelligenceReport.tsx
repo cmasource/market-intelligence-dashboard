@@ -34,7 +34,7 @@ function formatNullableNumber(value: number | null, language: "en" | "es") {
 }
 
 function cardClass(extra = "") {
-  return `rounded-lg border border-white/10 bg-slate-950/45 p-4 ${extra}`.trim();
+  return `rounded-lg border border-white/10 bg-slate-950/45 p-5 shadow-sm shadow-slate-950/20 ${extra}`.trim();
 }
 
 function sectionTitleClass() {
@@ -175,11 +175,11 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
     <section
       className={
         isReportMode
-          ? "space-y-4"
+          ? "space-y-5"
           : "rounded-lg border border-cyan-300/20 bg-slate-900/70 p-5 shadow-2xl shadow-cyan-950/15 backdrop-blur"
       }
     >
-      <div className="grid gap-2 rounded-lg border border-cyan-300/20 bg-slate-950/55 p-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 rounded-lg border border-cyan-300/20 bg-slate-950/60 p-4 shadow-lg shadow-cyan-950/10 sm:grid-cols-2 lg:grid-cols-4">
         {summaryStrip.map((item) => (
           <div key={item.label} className="rounded-md bg-white/[0.035] px-3 py-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{item.label}</p>
@@ -188,7 +188,7 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
         ))}
       </div>
 
-      <div className="rounded-lg border border-cyan-300/20 bg-slate-900/80 p-5 shadow-xl shadow-cyan-950/10">
+      <div className="rounded-lg border border-cyan-300/20 bg-slate-900/80 p-6 shadow-xl shadow-cyan-950/10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-4xl">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
@@ -212,9 +212,9 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
       </div>
 
       {finalTakeaways.length ? (
-        <div className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
+        <div className="rounded-lg border border-white/10 bg-white/[0.035] p-5">
           <h3 className={sectionTitleClass()}>{labels.keyTakeaways}</h3>
-          <ul className="mt-3 grid list-disc gap-2 pl-5 text-sm leading-6 text-slate-300 md:grid-cols-2">
+          <ul className="mt-4 grid list-disc gap-3 pl-5 text-sm leading-6 text-slate-300 md:grid-cols-2">
             {finalTakeaways.map((point, index) => (
               <li key={`${point}-${index}`} className="pl-1">
                 {point}
@@ -225,7 +225,7 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
       ) : null}
 
       {!isReportMode ? (
-        <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
           <div className={cardClass()}>
             <h3 className="font-semibold text-white">{labels.currentPrice}</h3>
             <p className="mt-2 text-2xl font-semibold text-white">{displayPrice}</p>
@@ -257,7 +257,7 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
         <div className={cardClass()}>
           <h3 className="font-semibold text-white">{labels.technicalSynthesis}</h3>
           <p className="mt-2 text-sm leading-6 text-slate-300">{technicalShort}</p>
@@ -304,14 +304,14 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
             </div>
             {sourceBadge(translateProviderLabel(report.newsSummary.sourceLabel, language))}
           </div>
-          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {report.newsSummary.latestHeadlines.slice(0, isReportMode ? 3 : 4).map((headline) => (
-              <article key={`${headline.title}-${headline.source}`} className="rounded-lg border border-white/10 bg-white/[0.035] p-3">
+              <article key={`${headline.title}-${headline.source}`} className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
                 <p className="text-sm font-medium leading-5 text-slate-200">{headline.title}</p>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
                   <span>{headline.source}</span>
                   {headline.url ? (
-                    <a href={headline.url} target="_blank" rel="noreferrer" className="font-medium text-cyan-100 hover:text-white">
+                    <a href={headline.url} target="_blank" rel="noopener noreferrer" className="font-medium text-cyan-100 hover:text-white">
                       {labels.openNews}
                     </a>
                   ) : null}
@@ -322,7 +322,7 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
         </div>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
         {report.cedearSummary ? (
           <div className={cardClass()}>
             <h3 className="font-semibold text-white">{labels.cedear}</h3>
@@ -369,8 +369,8 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
         ) : null}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-lg border border-amber-300/20 bg-amber-300/10 p-4">
+      <div className="grid gap-5 lg:grid-cols-2">
+        <div className="rounded-lg border border-amber-300/20 bg-amber-300/10 p-5">
           <h3 className="font-semibold text-white">{labels.risks}</h3>
           <div className="mt-3 grid gap-2">
             {report.riskSummary.keyRisks.map((risk, index) => (
@@ -384,7 +384,7 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
           </div>
         </div>
 
-        <div className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
+        <div className="rounded-lg border border-white/10 bg-white/[0.035] p-5">
           <h3 className="font-semibold text-white">{labels.coverage}</h3>
           <div className="mt-3 flex flex-wrap gap-2">
             {[

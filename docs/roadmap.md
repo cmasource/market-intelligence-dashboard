@@ -203,6 +203,14 @@
 - Document future BYMA, CNV, broker and licensed-provider integration paths.
 - Keep broker scraping and unauthorized private endpoints out of scope.
 
+## Phase 20.1: Public Demo Quality Polish
+
+- Treat fundamentals as partial when provider plans or fallback layers do not expose every field.
+- Add fundamentals debug output with metrics, missing fields and non-secret provider trace.
+- Sanitize news titles and snippets before rendering public previews.
+- Refine report spacing and card hierarchy for shareable demo pages.
+- Keep the AL30/GD30 related-instrument navigation test stable in the full Playwright suite.
+
 ## Future Regional Personalization
 
 - Argentina.

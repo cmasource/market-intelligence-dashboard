@@ -46,8 +46,11 @@ Sprint 18.2 wires visible asset prices to the provider quote path instead of rel
 - Plan restriction: FMP can return HTTP 403 with `reason: "plan_restricted"` for the quote endpoint. This is not an API-key leak or a crash; the app should use Yahoo-compatible data as the effective provider.
 - Invalid symbol mapping: verify the symbol is supported by the provider chain and `lib/market-data/symbol-map.ts`.
 - Fallback activated: inspect `providerTrace` in `/api/market-data/quote/AAPL?debug=1`.
+- Fundamental coverage: inspect `/api/fundamentals/AAPL?debug=1`. The response includes `metrics`, `missingFields` and a non-secret `providerTrace` so partial provider coverage can be distinguished from a mapping issue or a true unavailable field.
 - Stale deployment: confirm the Vercel deployment has the latest build and environment variables.
 
 Provider status means a provider is configured. A visible UI field uses that provider only when the field is wired to the provider data path and the provider returns valid data.
 
 FMP can be configured and active while a specific endpoint still falls back. For quotes, the current chain is FMP quote, Yahoo-compatible market data, then mock fallback. Yahoo-compatible data is a valid provider fallback, not a mock value.
+
+For fundamentals, provider responses are considered usable only when actual financial metrics are present. Metadata-only responses such as currency or period do not stop the fallback chain.

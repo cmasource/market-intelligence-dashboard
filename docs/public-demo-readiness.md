@@ -79,6 +79,7 @@
 - Public demo viewers should treat all analytics as product workflow examples unless explicitly marked as provider data.
 - Interpretive summaries are educational context only. They explain indicators in plain language and do not provide direct recommendations.
 - The reorganized executive reading is designed for clarity in public demos: broad conclusion first, then technical, fundamental and news synthesis, followed by risks and limitations.
+- Sprint 20.1 adds additional public-demo polish: partial fundamentals are labeled clearly, news previews are sanitized, and report cards use more breathing room without changing the non-advisory scope.
 
 ## Deployment Notes
 

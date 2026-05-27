@@ -1,14 +1,15 @@
 import { findAsset } from "@/lib/mock-data";
 import type { NewsArticle, NewsResponse } from "./types";
+import { sanitizeNewsText } from "./sanitize-news";
 
 export function getMockNewsForSymbol(symbol: string, limit = 6): NewsResponse {
   const normalized = symbol.trim().toUpperCase();
   const asset = findAsset(normalized);
   const articles: NewsArticle[] = (asset?.news ?? []).slice(0, limit).map((item) => ({
-    title: item.title,
-    source: item.source,
-    url: "#",
-    summary: item.summary,
+    title: sanitizeNewsText(item.title, 180),
+    source: sanitizeNewsText(item.source, 80),
+    url: `https://www.google.com/search?q=${encodeURIComponent(`${normalized} market news`)}`,
+    summary: sanitizeNewsText(item.summary, 240),
     relatedSymbols: [normalized],
     provider: "mock",
     isFallback: true,

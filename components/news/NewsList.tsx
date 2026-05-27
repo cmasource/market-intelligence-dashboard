@@ -2,15 +2,22 @@
 
 import type { NewsArticle } from "@/lib/news";
 import { useLanguage } from "@/lib/i18n/useLanguage";
+import { sanitizeNewsArticle } from "@/lib/news/sanitize-news";
 import { NewsSourceBadge } from "./NewsSourceBadge";
 
 export function NewsList({ articles }: { articles: NewsArticle[] }) {
   const { language } = useLanguage();
   const isSpanish = language === "es";
+  const cleanArticles = articles.map(sanitizeNewsArticle);
 
   return (
     <div className="grid gap-3">
-      {articles.map((article) => (
+      <p className="text-xs leading-5 text-slate-500">
+        {isSpanish
+          ? "Los titulares pueden mostrarse en el idioma original de la fuente."
+          : "Headlines may appear in the source's original language."}
+      </p>
+      {cleanArticles.map((article) => (
         <article key={`${article.title}-${article.url}`} className="rounded-lg border border-white/10 bg-slate-950/45 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -27,7 +34,7 @@ export function NewsList({ articles }: { articles: NewsArticle[] }) {
             <a
               href={article.url}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="mt-3 inline-flex text-sm font-medium text-cyan-100 hover:text-cyan-50"
             >
               {isSpanish ? "Abrir noticia" : "Open article"}
