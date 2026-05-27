@@ -48,8 +48,14 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.getByText("CMA Consulting").first()).toBeVisible();
     await expect(page.getByText("cma_source").first()).toBeVisible();
     await expect(page.locator("body")).toContainText(/Mixed coverage|Cobertura mixta/);
+    await expect(page.locator("body")).toContainText(/Market Intelligence Terminal/);
+    await expect(page.locator("body")).toContainText(/Cross-market pulse|Pulso cross-market/);
     await expect(page.locator("body")).not.toContainText("Solo datos mock");
     await expect(page.locator("body")).not.toContainText(forbiddenLegacyBrand);
+    const hasHorizontalOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+    );
+    expect(hasHorizontalOverflow).toBeFalsy();
   });
 
   test("header navigation exists", async ({ page }) => {
@@ -135,10 +141,10 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await page.goto("/");
 
     await page.getByRole("button", { name: "ES", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Inteligencia financiera para decisiones modernas de mercado" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Inteligencia financiera para decisiones de mercado" })).toBeVisible();
 
     await page.getByRole("button", { name: "EN", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Financial intelligence for modern market decisions" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Financial intelligence for market decisions" })).toBeVisible();
   });
 
   test("asset search finds and opens AAPL", async ({ page }) => {
@@ -958,6 +964,10 @@ test.describe("CMA Market Intelligence smoke tests", () => {
 
     await page.goto("/asset/AAPL");
     await expect(page.locator("body")).toContainText(/Lectura ejecutiva|Executive reading/, { timeout: 20_000 });
+    await expect(page.locator("body")).toContainText(/Price action|Precio/);
+    await expect(page.locator("body")).toContainText(/Data coverage|Cobertura de datos/);
+    await expect(page.locator("body")).toContainText(/Technical analysis|Análisis técnico|Analisis tecnico/);
+    await expect(page.locator("body")).toContainText(/Fundamental analysis|Análisis fundamental|Analisis fundamental/);
     await expect(page.locator("body")).toContainText(/Riesgos principales|Key risks/);
     await expect(page.locator("body")).toContainText(/Cobertura y limitaciones|Data coverage/);
   });

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { AIMarketBrief } from "@/components/dashboard/AIMarketBrief";
 import { ArgentinaMarket } from "@/components/dashboard/ArgentinaMarket";
 import { AssetSearch } from "@/components/dashboard/AssetSearch";
@@ -23,13 +24,13 @@ export default function Home() {
 
   return (
     <AppShell>
-      <div className="space-y-8">
-        <section className="grid gap-6 py-3 lg:grid-cols-[1.02fr_0.98fr] lg:items-stretch">
+      <div className="space-y-10">
+        <section className="grid gap-6 py-4 xl:grid-cols-[1.04fr_0.96fr] xl:items-stretch">
           <div
-            className={`relative flex h-full flex-col justify-between overflow-hidden rounded-lg border p-5 shadow-2xl backdrop-blur sm:p-7 ${
+            className={`cma-panel-elevated cma-glow-cyan relative flex h-full flex-col justify-between p-5 sm:p-8 ${
               isLight
-                ? "border-slate-300 bg-[linear-gradient(180deg,#ffffff_0%,#f7fbff_54%,#eef6fb_100%)] shadow-slate-900/12"
-                : "border-cyan-300/20 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-violet-950/50 shadow-cyan-950/20"
+                ? "border-slate-300 bg-[linear-gradient(180deg,#ffffff_0%,#f7fbff_54%,#eef6fb_100%)]"
+                : "border-cyan-300/20 bg-gradient-to-br from-slate-900/95 via-slate-900/78 to-violet-950/50"
             }`}
           >
             <div
@@ -50,17 +51,31 @@ export default function Home() {
                 {t("heroSubtitle")}
               </p>
               <p className={`mt-4 text-sm font-medium ${isLight ? "text-cyan-900" : "text-cyan-100"}`}>{t("heroBrandingPhrase")}</p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <a href="#markets" className="rounded-full border border-cyan-300/40 bg-cyan-300/14 px-4 py-2 text-sm font-semibold text-cyan-50 shadow-[0_0_24px_rgba(34,211,238,0.12)] transition hover:bg-cyan-300/20">
+                  {isSpanish ? "Buscar activo" : "Search asset"}
+                </a>
+                <Link href="/argentina" className="rounded-full border border-white/12 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-cyan-300/40 hover:text-white">
+                  {isSpanish ? "Ver Argentina" : "View Argentina"}
+                </Link>
+                <Link href="/screener" className="rounded-full border border-white/12 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-cyan-300/40 hover:text-white">
+                  {isSpanish ? "Abrir screener" : "Open screener"}
+                </Link>
+                <Link href="/report/AAPL" className="rounded-full border border-violet-300/30 bg-violet-300/10 px-4 py-2 text-sm font-medium text-violet-100 transition hover:bg-violet-300/15">
+                  {isSpanish ? "Reporte AAPL" : "AAPL report"}
+                </Link>
+              </div>
             </div>
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <div className={`rounded-lg border p-4 ${isLight ? "border-slate-300 bg-white shadow-sm shadow-slate-900/5" : "border-white/10 bg-white/[0.045]"}`}>
+              <div className={`cma-card-analysis p-4 ${isLight ? "bg-white" : ""}`}>
                 <p className={`text-xs uppercase tracking-[0.16em] ${isLight ? "text-slate-600" : "text-slate-500"}`}>{t("createdBy")}</p>
                 <p className={`mt-2 font-semibold ${isLight ? "text-slate-950" : "text-white"}`}>{t("companyName")}</p>
               </div>
-              <div className={`rounded-lg border p-4 ${isLight ? "border-slate-300 bg-white shadow-sm shadow-slate-900/5" : "border-white/10 bg-white/[0.045]"}`}>
+              <div className={`cma-card-analysis p-4 ${isLight ? "bg-white" : ""}`}>
                 <p className={`text-xs uppercase tracking-[0.16em] ${isLight ? "text-slate-600" : "text-slate-500"}`}>{t("developedBy")}</p>
                 <p className={`mt-2 font-semibold ${isLight ? "text-slate-950" : "text-white"}`}>{t("technologyDivision")}</p>
               </div>
-              <div className={`rounded-lg border p-4 ${isLight ? "border-cyan-800/25 bg-cyan-50 shadow-sm shadow-slate-900/5" : "border-white/10 bg-white/[0.045]"}`}>
+              <div className={`cma-card-price p-4 ${isLight ? "bg-cyan-50" : ""}`}>
                 <p className={`text-xs uppercase tracking-[0.16em] ${isLight ? "text-cyan-900" : "text-slate-500"}`}>
                   {isSpanish ? "Cobertura mixta" : "Mixed coverage"}
                 </p>
@@ -82,8 +97,23 @@ export default function Home() {
 
         <MarketOverview items={marketOverviewItems} />
         <FeaturedAssets assets={mockAssets} />
+        <section className="cma-panel cma-card-argentina p-5 sm:p-6">
+          <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+            <div>
+              <p className="cma-kicker">{isSpanish ? "Argentina + CEDEAR" : "Argentina + CEDEAR"}</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">
+                {isSpanish ? "Cobertura local con trazabilidad de fuente" : "Local coverage with source traceability"}
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-300">
+                {isSpanish
+                  ? "Acciones argentinas, CEDEARs, bonos y especies se separan por carga manual, dato simulado, proveedor y cobertura futura para que la demo sea clara."
+                  : "Argentine equities, CEDEARs, bonds and species are separated by manual load, mock data, provider and future coverage so the demo stays transparent."}
+              </p>
+            </div>
+            <ArgentinaMarket />
+          </div>
+        </section>
         <TechnicalOpportunities assets={mockAssets} />
-        <ArgentinaMarket />
         <FixedIncomeComparison />
         <CryptoMonitor />
         <FinancialEnginePreview />

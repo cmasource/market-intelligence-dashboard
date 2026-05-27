@@ -232,7 +232,7 @@ export default function DataAuditPage() {
   return (
     <AppShell>
       <div className="space-y-8 py-6">
-        <section className="rounded-lg border border-cyan-300/20 bg-slate-900/70 p-6 backdrop-blur">
+        <section className="cma-panel-elevated cma-glow-cyan p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
             CMA Market Intelligence
           </p>
@@ -261,7 +261,7 @@ export default function DataAuditPage() {
 
         <ProviderStatusPanel />
 
-        <section className="rounded-lg border border-emerald-300/20 bg-slate-950/55 p-5">
+        <section className="cma-panel cma-card-argentina p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200">
             {isSpanish ? "Paridad produccion/local" : "Production/local parity"}
           </p>
@@ -316,7 +316,7 @@ export default function DataAuditPage() {
           </Link>
         </section>
 
-        <section className="rounded-lg border border-violet-300/20 bg-slate-950/55 p-5">
+        <section className="cma-panel cma-card-argentina p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-200">
             {isSpanish ? "Argentina quote source" : "Argentina quote source"}
           </p>
@@ -328,6 +328,7 @@ export default function DataAuditPage() {
               ? "Esta sección separa cargas manuales, datos simulados y rutas futuras BYMA/CNV/broker para evitar confusión sobre qué datos locales son reales."
               : "This section separates manual loads, mock data and future BYMA/CNV/broker paths so local real-data status stays clear."}
           </p>
+          <p className="mt-2 text-xs font-medium text-slate-500">manual/mock/future</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {argentinaSources.map((source) => (
               <span key={source.source} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-300">
@@ -374,7 +375,7 @@ export default function DataAuditPage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-lg border border-white/10 bg-slate-950/55">
+        <section className="cma-panel overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-[1120px] w-full text-left text-sm">
               <thead className="border-b border-white/10 bg-white/[0.04] text-xs uppercase tracking-[0.12em] text-slate-500">

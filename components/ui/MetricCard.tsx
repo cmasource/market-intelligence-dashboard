@@ -23,10 +23,10 @@ export function MetricCard({ label, value, change, context, trend, tone = "neutr
 
   return (
     <article
-      className={`rounded-lg border p-4 backdrop-blur ${
+      className={`cma-card-price p-4 backdrop-blur ${
         isLight
-          ? "border-slate-300 bg-white shadow-lg shadow-slate-900/10"
-          : "border-white/10 bg-white/[0.045] shadow-2xl shadow-black/10"
+          ? "bg-white shadow-lg shadow-slate-900/10"
+          : "bg-white/[0.045] shadow-2xl shadow-black/10"
       }`}
     >
       <div className="flex items-start justify-between gap-3">

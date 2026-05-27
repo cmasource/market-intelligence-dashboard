@@ -1,5 +1,9 @@
 # Public Demo Readiness
 
+## Sprint 21 Visual Readiness
+
+The public demo now uses the **CMA Institutional Fintech Terminal** design direction. It keeps provider transparency, Spanish/English support and non-advisory copy visible while improving hierarchy, desktop width usage, card differentiation, sticky header quality and light/dark readability.
+
 ## What Currently Works
 
 - Home dashboard with market overview, universal search, featured assets and AI-style interpretation placeholders.

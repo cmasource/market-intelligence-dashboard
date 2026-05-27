@@ -70,7 +70,7 @@ export default function StatusPage() {
   return (
     <AppShell>
       <div className="space-y-8 py-6">
-        <section className="rounded-lg border border-cyan-300/20 bg-slate-900/70 p-6 backdrop-blur">
+        <section className="cma-panel-elevated cma-glow-cyan p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
             CMA Market Intelligence
           </p>
@@ -80,7 +80,7 @@ export default function StatusPage() {
         </section>
         <DataCoverageLegend />
         <ProviderStatusPanel />
-        <section className="rounded-lg border border-indigo-300/20 bg-indigo-300/10 p-5">
+        <section className="cma-panel cma-card-analysis p-5">
           <h2 className="text-xl font-semibold text-white">
             {isSpanish ? "Demo publica" : "Public demo"}
           </h2>
@@ -109,7 +109,7 @@ export default function StatusPage() {
             </Link>
           </div>
         </section>
-        <section className="rounded-lg border border-cyan-300/20 bg-cyan-300/10 p-5">
+        <section className="cma-panel cma-card-price p-5">
           <h2 className="text-xl font-semibold text-white">
             {isSpanish ? "Estado para demo publica" : "Public demo readiness"}
           </h2>
@@ -137,7 +137,7 @@ export default function StatusPage() {
           </div>
         </section>
         <div className="grid gap-6 lg:grid-cols-2">
-          <section className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-5">
+          <section className="cma-card-argentina p-5">
             <h2 className="text-xl font-semibold text-white">{isSpanish ? "Implementado" : "Implemented"}</h2>
             <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-300">
               {implemented.map((item) => (
@@ -145,7 +145,7 @@ export default function StatusPage() {
               ))}
             </ul>
           </section>
-          <section className="rounded-lg border border-amber-300/20 bg-amber-300/10 p-5">
+          <section className="cma-card-risk p-5">
             <h2 className="text-xl font-semibold text-white">{isSpanish ? "Pendiente" : "Pending"}</h2>
             <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-300">
               {pending.map((item) => (

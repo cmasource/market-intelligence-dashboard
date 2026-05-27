@@ -109,11 +109,12 @@ export function AssetSearch({ assets }: AssetSearchProps) {
   }
 
   return (
-    <section className="h-full rounded-lg border border-cyan-300/20 bg-slate-900/70 p-4 shadow-2xl shadow-cyan-950/20 backdrop-blur" id="markets">
+    <section className="cma-panel-glass cma-glow-violet h-full p-4 sm:p-5" id="markets">
+      <p className="cma-kicker mb-2">{isSpanish ? "Market Intelligence Terminal" : "Market Intelligence Terminal"}</p>
       <label htmlFor="asset-search" className="text-sm font-medium text-slate-200">
         {t("assetSearchLabel")}
       </label>
-      <div className="mt-3 rounded-lg border border-white/10 bg-slate-950/70 p-2 focus-within:border-cyan-300/60">
+      <div className="mt-3 rounded-2xl border border-white/10 bg-slate-950/70 p-2 shadow-inner shadow-black/20 focus-within:border-cyan-300/60">
         <input
           id="asset-search"
           type="search"
@@ -225,7 +226,7 @@ export function AssetSearch({ assets }: AssetSearchProps) {
                 key={`${instrument.country}-${instrument.market}-${instrument.symbol}-${instrument.category}`}
                 href={`/asset/${encodeURIComponent(instrument.symbol)}`}
                 onClick={() => saveRecentSymbol(instrument.symbol)}
-                className="group grid gap-4 rounded-lg border border-white/10 bg-white/[0.035] p-3 transition hover:border-cyan-300/40 hover:bg-cyan-300/10 sm:grid-cols-[minmax(0,1fr)_auto]"
+                className="group cma-card-price grid gap-4 p-3 sm:grid-cols-[minmax(0,1fr)_auto]"
               >
                 {content}
               </Link>

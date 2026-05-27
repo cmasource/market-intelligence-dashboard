@@ -33,7 +33,8 @@ function fallbackArticles(news: NewsItem[], symbol?: string): NewsArticle[] {
 }
 
 export function NewsPanel({ news, symbol }: NewsPanelProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isSpanish = language === "es";
   const [response, setResponse] = useState<NewsResponse | null>(null);
   const sentimentLabels: Record<NewsItem["sentiment"], string> = {
     positive: t("sentimentPositive"),
@@ -104,6 +105,9 @@ export function NewsPanel({ news, symbol }: NewsPanelProps) {
               </div>
             </div>
             <p className="mt-3 text-sm leading-6 text-slate-400">{sanitizeNewsText(item.summary, 240)}</p>
+            <span className="mt-3 inline-flex text-sm font-medium text-cyan-100">
+              {isSpanish ? "Abrir noticia" : "Open article"}
+            </span>
           </article>
         ))}
       </div>

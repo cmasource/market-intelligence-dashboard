@@ -7,6 +7,13 @@
 - Technology division: cma_source
 - cma_source must always remain lowercase.
 
+## Sprint 21: Visual Identity Upgrade
+
+- Implemented the CMA Institutional Fintech Terminal visual direction.
+- Added global design tokens and reusable panel/card utility classes.
+- Redesigned shell/header/homepage hierarchy and applied premium card treatments across asset, report, Argentina, screener and transparency pages.
+- Preserved provider chain, Argentina data layer, reports, localization and non-advisory copy.
+
 ## Phase 1: UI Mock Dashboard
 
 - Build the responsive fintech dashboard.

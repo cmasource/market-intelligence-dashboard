@@ -119,7 +119,7 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
   }, [asset.symbol, canUseArgentinaQuote]);
 
   return (
-    <section className="rounded-lg border border-cyan-300/20 bg-slate-900/70 p-5 shadow-2xl shadow-cyan-950/20 backdrop-blur">
+    <section className="cma-panel-elevated cma-glow-cyan p-5">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-3">
@@ -139,9 +139,9 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
           ) : null}
           <p className="mt-5 max-w-3xl text-sm leading-6 text-slate-300">{summary}</p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-white/[0.045] p-5 lg:min-w-64">
+        <div className="cma-card-price p-5 lg:min-w-72">
           <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{sourceLabel}</p>
-          <p className="mt-2 text-4xl font-semibold text-white">{formattedPrice}</p>
+          <p className="cma-metric mt-2 text-4xl font-semibold text-white">{formattedPrice}</p>
           <p className={isPositive ? "mt-2 text-sm font-semibold text-emerald-300" : "mt-2 text-sm font-semibold text-rose-300"}>
             {formatPercent(visibleChange)} {t("today")}
           </p>

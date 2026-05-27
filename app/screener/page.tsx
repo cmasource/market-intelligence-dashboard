@@ -27,10 +27,14 @@ export default async function ScreenerPage({
     <AppShell>
       <div className="space-y-8 py-6">
         <ScreenerHero />
-        <ScreenerInfoBanner />
-        <DataCoverageLegend />
+        <div className="grid gap-5 xl:grid-cols-[1fr_0.95fr]">
+          <ScreenerInfoBanner />
+          <DataCoverageLegend />
+        </div>
         <DataAuditLinkPanel />
-        <InstrumentScreener initialFilters={params} />
+        <div className="cma-panel p-5">
+          <InstrumentScreener initialFilters={params} />
+        </div>
         <InstrumentUniverseGroups />
       </div>
     </AppShell>

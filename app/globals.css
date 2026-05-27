@@ -3,11 +3,41 @@
 :root {
   --background: #020617;
   --foreground: #e2e8f0;
+  --cma-bg-base: #02040d;
+  --cma-bg-panel: rgba(7, 15, 29, 0.82);
+  --cma-bg-elevated: rgba(12, 24, 45, 0.9);
+  --cma-bg-glass: rgba(5, 12, 26, 0.72);
+  --cma-border-soft: rgba(148, 163, 184, 0.16);
+  --cma-border-strong: rgba(34, 211, 238, 0.34);
+  --cma-text-primary: #f8fafc;
+  --cma-text-secondary: #cbd5e1;
+  --cma-text-muted: #7c8da5;
+  --cma-accent-cyan: #22d3ee;
+  --cma-accent-blue: #38bdf8;
+  --cma-accent-violet: #a78bfa;
+  --cma-positive: #34d399;
+  --cma-warning: #fbbf24;
+  --cma-negative: #fb7185;
 }
 
 :root[data-theme="light"] {
   --background: #eef3f8;
   --foreground: #0f172a;
+  --cma-bg-base: #eef4fa;
+  --cma-bg-panel: rgba(255, 255, 255, 0.92);
+  --cma-bg-elevated: rgba(248, 251, 255, 0.97);
+  --cma-bg-glass: rgba(255, 255, 255, 0.78);
+  --cma-border-soft: rgba(15, 23, 42, 0.13);
+  --cma-border-strong: rgba(8, 145, 178, 0.35);
+  --cma-text-primary: #0f172a;
+  --cma-text-secondary: #334155;
+  --cma-text-muted: #64748b;
+  --cma-accent-cyan: #0891b2;
+  --cma-accent-blue: #2563eb;
+  --cma-accent-violet: #7c3aed;
+  --cma-positive: #047857;
+  --cma-warning: #b45309;
+  --cma-negative: #be123c;
   --card: #ffffff;
   --card-elevated: #f6f9fc;
   --card-border: #cbd5e1;
@@ -232,6 +262,167 @@ html {
 ::selection {
   background: rgba(34, 211, 238, 0.32);
   color: #ffffff;
+}
+
+.cma-shell {
+  min-height: 100vh;
+  background: var(--cma-bg-base);
+  color: var(--cma-text-primary);
+}
+
+.cma-market-background {
+  background:
+    radial-gradient(circle at 16% 12%, color-mix(in srgb, var(--cma-accent-cyan) 22%, transparent), transparent 28%),
+    radial-gradient(circle at 84% 5%, color-mix(in srgb, var(--cma-accent-violet) 18%, transparent), transparent 26%),
+    radial-gradient(circle at 68% 80%, rgba(16, 185, 129, 0.08), transparent 24%),
+    linear-gradient(180deg, var(--cma-bg-base) 0%, #06111f 52%, var(--cma-bg-base) 100%);
+}
+
+:root[data-theme="light"] .cma-market-background {
+  background:
+    radial-gradient(circle at 16% 12%, rgba(8, 145, 178, 0.18), transparent 28%),
+    radial-gradient(circle at 84% 5%, rgba(124, 58, 237, 0.14), transparent 28%),
+    linear-gradient(180deg, #f8fbff 0%, #e8f1f8 52%, #f6f9fc 100%);
+}
+
+.cma-terminal-grid {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.055) 1px, transparent 1px),
+    linear-gradient(135deg, transparent 0 47%, rgba(34, 211, 238, 0.07) 48%, transparent 51% 100%);
+  background-size: 44px 44px, 44px 44px, 220px 220px;
+}
+
+:root[data-theme="light"] .cma-terminal-grid {
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.06) 1px, transparent 1px),
+    linear-gradient(135deg, transparent 0 47%, rgba(8, 145, 178, 0.08) 48%, transparent 51% 100%);
+}
+
+.cma-page-grid {
+  width: 100%;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.cma-panel,
+.cma-panel-elevated,
+.cma-panel-glass {
+  position: relative;
+  border: 1px solid var(--cma-border-soft);
+  border-radius: 18px;
+  color: var(--cma-text-primary);
+  overflow: hidden;
+}
+
+.cma-panel {
+  background: var(--cma-bg-panel);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+}
+
+.cma-panel-elevated {
+  background: var(--cma-bg-elevated);
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.cma-panel-glass {
+  background: var(--cma-bg-glass);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme="light"] .cma-panel,
+:root[data-theme="light"] .cma-panel-elevated,
+:root[data-theme="light"] .cma-panel-glass {
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.09);
+}
+
+.cma-card-price,
+.cma-card-analysis,
+.cma-card-risk,
+.cma-card-news,
+.cma-card-argentina {
+  border-radius: 16px;
+  border: 1px solid var(--cma-border-soft);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.028));
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.cma-card-price {
+  border-color: color-mix(in srgb, var(--cma-accent-cyan) 26%, var(--cma-border-soft));
+}
+
+.cma-card-analysis {
+  border-color: color-mix(in srgb, var(--cma-accent-blue) 22%, var(--cma-border-soft));
+}
+
+.cma-card-risk {
+  border-color: color-mix(in srgb, var(--cma-warning) 30%, var(--cma-border-soft));
+  background: linear-gradient(180deg, rgba(251, 191, 36, 0.1), rgba(255, 255, 255, 0.025));
+}
+
+.cma-card-news {
+  border-color: color-mix(in srgb, var(--cma-accent-violet) 24%, var(--cma-border-soft));
+}
+
+.cma-card-argentina {
+  border-color: color-mix(in srgb, var(--cma-positive) 24%, var(--cma-border-soft));
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.075), rgba(16, 185, 129, 0.05));
+}
+
+@media (hover: hover) {
+  .cma-card-price:hover,
+  .cma-card-analysis:hover,
+  .cma-card-risk:hover,
+  .cma-card-news:hover,
+  .cma-card-argentina:hover {
+    transform: translateY(-2px);
+    border-color: var(--cma-border-strong);
+    box-shadow: 0 18px 44px rgba(8, 145, 178, 0.12);
+  }
+}
+
+.cma-kicker {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cma-accent-cyan);
+}
+
+.cma-metric {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+}
+
+.cma-glow-cyan::before,
+.cma-glow-violet::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0.55;
+}
+
+.cma-glow-cyan::before {
+  background: radial-gradient(circle at top left, rgba(34, 211, 238, 0.22), transparent 38%);
+}
+
+.cma-glow-violet::before {
+  background: radial-gradient(circle at top right, rgba(167, 139, 250, 0.22), transparent 36%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 .chart-line {

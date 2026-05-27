@@ -14,9 +14,9 @@ export const translations: Record<Language, Record<string, string>> = {
     navReports: "Reports",
     navAgents: "Agents",
     heroEyebrow: "CMA Consulting | cma_source",
-    heroTitle: "Financial intelligence for modern market decisions",
+    heroTitle: "Financial intelligence for market decisions",
     heroSubtitle:
-      "Technical analysis, fundamentals, fixed income analytics, crypto monitoring and AI-assisted interpretation in one professional dashboard.",
+      "Provider prices, technical analysis, fundamentals, news and local Argentina context in one asset intelligence platform.",
     heroBrandingPhrase: "Created by CMA Consulting. Developed by cma_source.",
     createdBy: "Created by",
     developedBy: "Developed by",
@@ -272,9 +272,9 @@ export const translations: Record<Language, Record<string, string>> = {
     navReports: "Reportes",
     navAgents: "Agentes",
     heroEyebrow: "CMA Consulting | cma_source",
-    heroTitle: "Inteligencia financiera para decisiones modernas de mercado",
+    heroTitle: "Inteligencia financiera para decisiones de mercado",
     heroSubtitle:
-      "Análisis técnico, fundamentos, renta fija, monitoreo cripto e interpretación asistida por IA en un dashboard profesional.",
+      "Precios de proveedor, análisis técnico, fundamentos, noticias y contexto local argentino en una plataforma de inteligencia de activos.",
     heroBrandingPhrase: "Creado por CMA Consulting. Desarrollado por cma_source.",
     createdBy: "Creado por",
     developedBy: "Desarrollado por",

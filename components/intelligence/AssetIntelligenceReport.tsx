@@ -34,7 +34,7 @@ function formatNullableNumber(value: number | null, language: "en" | "es") {
 }
 
 function cardClass(extra = "") {
-  return `rounded-lg border border-white/10 bg-slate-950/45 p-5 shadow-sm shadow-slate-950/20 ${extra}`.trim();
+  return `cma-card-analysis p-5 shadow-sm shadow-slate-950/20 ${extra}`.trim();
 }
 
 function sectionTitleClass() {
@@ -91,7 +91,7 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
 
   if (error) {
     return (
-      <section className="rounded-lg border border-amber-300/20 bg-amber-300/10 p-5">
+      <section className="cma-card-risk p-5">
         <h2 className="text-xl font-semibold text-white">
           {isSpanish ? "Lectura ejecutiva no disponible" : "Executive reading unavailable"}
         </h2>
@@ -106,7 +106,7 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
 
   if (!report) {
     return (
-      <section className="rounded-lg border border-white/10 bg-slate-950/55 p-5">
+      <section className="cma-panel p-5">
         <p className="text-sm text-slate-400">
           {isSpanish ? "Generando lectura ejecutiva..." : "Generating executive reading..."}
         </p>
@@ -176,19 +176,19 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
       className={
         isReportMode
           ? "space-y-5"
-          : "rounded-lg border border-cyan-300/20 bg-slate-900/70 p-5 shadow-2xl shadow-cyan-950/15 backdrop-blur"
+          : "cma-panel cma-glow-cyan p-5"
       }
     >
-      <div className="grid gap-3 rounded-lg border border-cyan-300/20 bg-slate-950/60 p-4 shadow-lg shadow-cyan-950/10 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="cma-card-price grid gap-3 p-4 shadow-lg shadow-cyan-950/10 sm:grid-cols-2 lg:grid-cols-4">
         {summaryStrip.map((item) => (
-          <div key={item.label} className="rounded-md bg-white/[0.035] px-3 py-2">
+          <div key={item.label} className="rounded-xl bg-white/[0.035] px-3 py-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{item.label}</p>
             <p className="mt-1 truncate text-sm font-semibold text-white">{item.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="rounded-lg border border-cyan-300/20 bg-slate-900/80 p-6 shadow-xl shadow-cyan-950/10">
+      <div className="cma-panel-elevated cma-glow-cyan p-6 shadow-xl shadow-cyan-950/10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-4xl">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
@@ -212,7 +212,7 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
       </div>
 
       {finalTakeaways.length ? (
-        <div className="rounded-lg border border-white/10 bg-white/[0.035] p-5">
+        <div className="cma-card-analysis p-5">
           <h3 className={sectionTitleClass()}>{labels.keyTakeaways}</h3>
           <ul className="mt-4 grid list-disc gap-3 pl-5 text-sm leading-6 text-slate-300 md:grid-cols-2">
             {finalTakeaways.map((point, index) => (
@@ -306,7 +306,7 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {report.newsSummary.latestHeadlines.slice(0, isReportMode ? 3 : 4).map((headline) => (
-              <article key={`${headline.title}-${headline.source}`} className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
+              <article key={`${headline.title}-${headline.source}`} className="cma-card-news p-4">
                 <p className="text-sm font-medium leading-5 text-slate-200">{headline.title}</p>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
                   <span>{headline.source}</span>
@@ -345,7 +345,7 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
                   : `${formatNumber(report.cedearSummary.impliedCcl, language)} ARS/USD`}
               </span>
             </div>
-            <div className="mt-4 rounded-lg border border-violet-300/15 bg-violet-300/10 p-3">
+            <div className="mt-4 cma-card-argentina p-3">
               <p className="text-sm font-semibold text-white">{labels.howToRead}</p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-slate-300">
                 <li>{isSpanish ? "Usar el subyacente para evaluar tendencia y fundamentos." : "Use the underlying asset to evaluate trend and fundamentals."}</li>
@@ -370,7 +370,7 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <div className="rounded-lg border border-amber-300/20 bg-amber-300/10 p-5">
+        <div className="cma-card-risk p-5">
           <h3 className="font-semibold text-white">{labels.risks}</h3>
           <div className="mt-3 grid gap-2">
             {report.riskSummary.keyRisks.map((risk, index) => (
@@ -384,7 +384,7 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
           </div>
         </div>
 
-        <div className="rounded-lg border border-white/10 bg-white/[0.035] p-5">
+        <div className="cma-panel p-5">
           <h3 className="font-semibold text-white">{labels.coverage}</h3>
           <div className="mt-3 flex flex-wrap gap-2">
             {[

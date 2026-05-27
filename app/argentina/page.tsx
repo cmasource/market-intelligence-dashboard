@@ -94,9 +94,9 @@ export default function ArgentinaPage() {
     .filter((instrument): instrument is ArgentinaInstrument => Boolean(instrument));
 
   return (
-    <AppShell>
+    <AppShell background="argentina">
       <div className="space-y-8 py-6">
-        <section className="rounded-lg border border-violet-300/20 bg-slate-900/70 p-6 backdrop-blur">
+        <section className="cma-panel-elevated cma-glow-violet p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-200">
             {isSpanish ? "Modulo Argentina" : "Argentina module"}
           </p>
@@ -109,7 +109,7 @@ export default function ArgentinaPage() {
               : "This page centralizes Argentina-specific analytics: equities, CEDEARs, sovereign bonds, CER-linked instruments, MEP/CCL references and future BYMA, IOL and CNV integrations."}
           </p>
         </section>
-        <section className="rounded-lg border border-cyan-300/20 bg-slate-950/55 p-5 backdrop-blur">
+        <section className="cma-panel cma-card-argentina p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
             {isSpanish ? "Capa de datos local" : "Local data layer"}
           </p>
@@ -123,7 +123,7 @@ export default function ArgentinaPage() {
           </p>
           <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             {sources.map((source) => (
-              <article key={source.source} className="rounded-lg border border-white/10 bg-white/[0.04] p-3">
+              <article key={source.source} className="cma-card-argentina p-3">
                 <p className="text-sm font-semibold text-white">{argentinaSourceLabel(source.source, isSpanish)}</p>
                 <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">{source.mode}</p>
                 <p className="mt-2 text-xs leading-5 text-slate-400">{source.notes}</p>
@@ -185,7 +185,7 @@ export default function ArgentinaPage() {
         <FixedIncomeComparison />
         <BondSpeciesGuide />
         <InstrumentUniverseGroups argentinaOnly />
-        <section className="rounded-lg border border-white/10 bg-white/[0.045] p-5 backdrop-blur">
+        <section className="cma-panel p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-200">
             {isSpanish ? "Universo de instrumentos" : "Instrument universe"}
           </p>
@@ -199,7 +199,7 @@ export default function ArgentinaPage() {
                 .filter(Boolean);
 
               return (
-                <article key={group.key} className="rounded-lg border border-white/10 bg-slate-950/45 p-4">
+                <article key={group.key} className="cma-card-argentina p-4">
                   <h3 className="font-semibold text-white">{isSpanish ? group.es : group.en}</h3>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {instruments.map((instrument) => (

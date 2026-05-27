@@ -28,9 +28,9 @@ export function ShareableAssetReportPage({ symbol }: ShareableAssetReportPagePro
   };
 
   return (
-    <AppShell>
-      <div className="mx-auto max-w-6xl space-y-7 py-7">
-        <section className="rounded-lg border border-cyan-300/20 bg-slate-900/75 p-6 shadow-xl shadow-cyan-950/10 backdrop-blur sm:p-7">
+    <AppShell width="report" background="report">
+      <div className="mx-auto space-y-7 py-7">
+        <section className="cma-panel-elevated p-6 sm:p-7">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
@@ -65,7 +65,7 @@ export function ShareableAssetReportPage({ symbol }: ShareableAssetReportPagePro
 
         <AssetIntelligenceReport symbol={symbol} mode="report" />
 
-        <section className="rounded-lg border border-amber-300/20 bg-amber-300/10 p-6">
+        <section className="cma-card-risk p-6">
           <h2 className="text-xl font-semibold text-white">{copy.scopeTitle}</h2>
           <p className="mt-3 text-sm leading-6 text-slate-300">{copy.scopeBody}</p>
         </section>

@@ -23,7 +23,7 @@ export function MarketOverview({ items }: MarketOverviewProps) {
   };
 
   return (
-    <section>
+    <section className="cma-panel p-5 sm:p-6">
       <SectionHeader
         eyebrow={t("marketOverviewEyebrow")}
         title={t("marketOverviewTitle")}

@@ -41,9 +41,9 @@ export default async function AssetDetailPage({
   if (!asset) {
     if (instrument) {
       return (
-        <AppShell>
-          <div className="space-y-6">
-            <section className="rounded-lg border border-violet-300/20 bg-slate-900/75 p-6 backdrop-blur">
+        <AppShell width="asset">
+          <div className="space-y-7">
+            <section className="cma-panel-elevated p-6">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-200">
                 Future coverage
               </p>
@@ -99,21 +99,23 @@ export default async function AssetDetailPage({
   }
 
   return (
-    <AppShell>
-      <div className="space-y-6">
+    <AppShell width="asset">
+      <div className="space-y-7">
         <AssetHeader asset={asset} />
-        <DataCoveragePanel symbol={asset.symbol} />
-        <DataTransparencyNote />
+        <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+          <DataCoveragePanel symbol={asset.symbol} />
+          <DataTransparencyNote />
+        </div>
         <AssetIntelligenceReport symbol={asset.symbol} />
-        <MarketSignalGauge
-          technicalScore={asset.technicalScore}
-          fundamentalScore={asset.fundamentalScore}
-          assetType={asset.type}
-          riskLevel={asset.riskLevel}
-        />
-        <RelatedInstrumentsCard symbol={asset.symbol} />
-        {isCedearSymbol(asset.symbol) ? <CedearAnalyticsCard symbol={asset.symbol} /> : null}
-        <InteractiveAssetChart symbol={asset.symbol} name={asset.name} currency={asset.currency} />
+        <div className="grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
+          <MarketSignalGauge
+            technicalScore={asset.technicalScore}
+            fundamentalScore={asset.fundamentalScore}
+            assetType={asset.type}
+            riskLevel={asset.riskLevel}
+          />
+          <InteractiveAssetChart symbol={asset.symbol} name={asset.name} currency={asset.currency} />
+        </div>
         <div className="grid gap-6 xl:grid-cols-2">
           <TechnicalAnalysisCard asset={asset} />
           <FundamentalAnalysisCard
@@ -125,11 +127,13 @@ export default async function AssetDetailPage({
             currency={asset.currency}
           />
         </div>
+        {isCedearSymbol(asset.symbol) ? <CedearAnalyticsCard symbol={asset.symbol} /> : null}
         {asset.bondMetrics ? <BondMetricsCard symbol={asset.symbol} fallbackBondMetrics={asset.bondMetrics} /> : null}
         <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
           <NewsPanel news={asset.news} symbol={asset.symbol} />
           <AISummaryCard asset={asset} />
         </div>
+        <RelatedInstrumentsCard symbol={asset.symbol} />
         <AssetDisclaimer />
       </div>
     </AppShell>

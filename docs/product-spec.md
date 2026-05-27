@@ -4,6 +4,10 @@
 
 CMA Market Intelligence is a professional financial intelligence dashboard created under CMA Consulting and technologically developed by cma_source. The platform helps consultants, analysts and decision-makers interpret financial markets faster through a unified view of technical analysis, fundamental analysis, fixed income analytics, crypto monitoring, Argentina market context and AI-assisted market interpretation.
 
+## Sprint 21 Visual Identity
+
+The product now follows the **CMA Institutional Fintech Terminal** direction: institutional dark fintech base, trading-terminal data density, BI clarity and restrained crypto/trading energy. Dashboard pages use wider layouts, report pages remain narrower and more editorial, and card families distinguish price, analysis, news, risk, Argentina/CEDEAR and fixed income surfaces.
+
 ## Branding
 
 - Product: CMA Market Intelligence

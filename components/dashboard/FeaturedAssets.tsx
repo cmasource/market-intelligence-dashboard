@@ -48,7 +48,7 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
   const argentinaQuotes = useArgentinaQuotes(argentinaSymbols);
 
   return (
-    <section>
+    <section className="cma-panel p-5 sm:p-6">
       <SectionHeader
         eyebrow={t("featuredEyebrow")}
         title={t("featuredTitle")}
@@ -82,10 +82,10 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
           return (
             <article
               key={asset.symbol}
-              className={`rounded-lg border p-4 backdrop-blur transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-cyan-300/10 ${
+              className={`cma-card-price p-4 backdrop-blur ${
                 isLight
-                  ? "border-slate-300 bg-white/90 shadow-xl shadow-slate-900/10"
-                  : "border-white/10 bg-white/[0.045] shadow-2xl shadow-black/10"
+                  ? "bg-white/90 shadow-xl shadow-slate-900/10"
+                  : "bg-white/[0.045] shadow-2xl shadow-black/10"
               }`}
             >
               <div className="flex items-start justify-between gap-4">

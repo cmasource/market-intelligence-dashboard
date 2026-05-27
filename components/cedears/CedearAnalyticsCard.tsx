@@ -97,8 +97,35 @@ export function CedearAnalyticsCard({ symbol }: CedearAnalyticsCardProps) {
 
   if (isLoading) {
     return (
-      <section className="rounded-lg border border-violet-300/20 bg-slate-950/55 p-5">
+      <section className="cma-panel cma-card-argentina p-5">
         <p className="text-sm text-slate-400">{isSpanish ? "Cargando contexto CEDEAR..." : "Loading CEDEAR context..."}</p>
+        <div className="mt-4 grid gap-3 md:grid-cols-5">
+          {[
+            "CEDEAR",
+            isSpanish ? "Activo subyacente" : "Underlying asset",
+            isSpanish ? "Precio subyacente de respaldo" : "Fallback underlying price",
+            isSpanish ? "Precio local CEDEAR simulado" : "Mock local CEDEAR price",
+            isSpanish ? "CCL implicito" : "Implied CCL",
+          ].map((label) => (
+            <div key={label} className="rounded-lg border border-white/10 bg-white/[0.035] p-3">
+              <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{label}</p>
+              <p className="mt-2 text-sm font-semibold text-white">...</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+          <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 font-medium text-amber-100">
+            {isSpanish ? "Datos simulados" : "Mock data"}
+          </span>
+          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-slate-300">ARS</span>
+          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-slate-300">USD</span>
+          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-slate-300">ARS/USD</span>
+        </div>
+        <p className="mt-3 rounded-lg border border-amber-300/20 bg-amber-300/10 p-3 text-xs leading-5 text-amber-100">
+          {isSpanish
+            ? "El analisis tecnico y fundamental se basa en el subyacente cuando no existe integracion real del CEDEAR local."
+            : "Technical and fundamental analysis is based on the underlying asset when local CEDEAR integration is not available."}
+        </p>
       </section>
     );
   }
