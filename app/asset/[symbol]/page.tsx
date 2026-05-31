@@ -1,7 +1,7 @@
 import { AssetDisclaimer } from "@/components/asset/AssetDisclaimer";
-import { AISummaryCard } from "@/components/asset/AISummaryCard";
 import { AssetHeader } from "@/components/asset/AssetHeader";
 import { AssetNotFound } from "@/components/asset/AssetNotFound";
+import { AssetSecondaryDetails } from "@/components/asset/AssetSecondaryDetails";
 import { BondMetricsCard } from "@/components/asset/BondMetricsCard";
 import { FundamentalAnalysisCard } from "@/components/asset/FundamentalAnalysisCard";
 import { NewsPanel } from "@/components/asset/NewsPanel";
@@ -11,8 +11,9 @@ import { MarketSignalGauge } from "@/components/analysis/MarketSignalGauge";
 import { CedearAnalyticsCard } from "@/components/cedears/CedearAnalyticsCard";
 import { InteractiveAssetChart } from "@/components/charts/InteractiveAssetChart";
 import { DataCoveragePanel } from "@/components/data-coverage/DataCoveragePanel";
-import { DataTransparencyNote } from "@/components/data-coverage/DataTransparencyNote";
+import { AssetExecutiveSummary } from "@/components/intelligence/AssetExecutiveSummary";
 import { AssetIntelligenceReport } from "@/components/intelligence/AssetIntelligenceReport";
+import { AssetRiskPanel } from "@/components/intelligence/AssetRiskPanel";
 import { AppShell } from "@/components/layout/AppShell";
 import Link from "next/link";
 import { getInstrumentBySymbol } from "@/lib/instrument-universe";
@@ -100,39 +101,36 @@ export default async function AssetDetailPage({
 
   return (
     <AppShell width="asset">
-      <div className="space-y-7">
+      <div className="space-y-6">
         <AssetHeader asset={asset} />
-        <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-          <DataCoveragePanel symbol={asset.symbol} />
-          <DataTransparencyNote />
+        <AssetExecutiveSummary symbol={asset.symbol} />
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.85fr)] xl:items-start">
+          <div className="space-y-6">
+            <InteractiveAssetChart symbol={asset.symbol} name={asset.name} currency={asset.currency} />
+            <TechnicalAnalysisCard asset={asset} />
+            <NewsPanel news={asset.news} symbol={asset.symbol} />
+          </div>
+          <aside className="space-y-6 xl:sticky xl:top-24">
+            <MarketSignalGauge
+              technicalScore={asset.technicalScore}
+              fundamentalScore={asset.fundamentalScore}
+              assetType={asset.type}
+              riskLevel={asset.riskLevel}
+            />
+            <FundamentalAnalysisCard
+              asset={asset}
+              symbol={asset.symbol}
+              assetType={asset.type}
+              fallbackFundamentals={asset.fundamentals}
+              fallbackFundamentalScore={asset.fundamentalScore}
+              currency={asset.currency}
+            />
+            {isCedearSymbol(asset.symbol) ? <CedearAnalyticsCard symbol={asset.symbol} /> : null}
+            {asset.bondMetrics ? <BondMetricsCard symbol={asset.symbol} fallbackBondMetrics={asset.bondMetrics} /> : null}
+            <AssetRiskPanel symbol={asset.symbol} />
+          </aside>
         </div>
-        <AssetIntelligenceReport symbol={asset.symbol} />
-        <div className="grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
-          <MarketSignalGauge
-            technicalScore={asset.technicalScore}
-            fundamentalScore={asset.fundamentalScore}
-            assetType={asset.type}
-            riskLevel={asset.riskLevel}
-          />
-          <InteractiveAssetChart symbol={asset.symbol} name={asset.name} currency={asset.currency} />
-        </div>
-        <div className="grid gap-6 xl:grid-cols-2">
-          <TechnicalAnalysisCard asset={asset} />
-          <FundamentalAnalysisCard
-            asset={asset}
-            symbol={asset.symbol}
-            assetType={asset.type}
-            fallbackFundamentals={asset.fundamentals}
-            fallbackFundamentalScore={asset.fundamentalScore}
-            currency={asset.currency}
-          />
-        </div>
-        {isCedearSymbol(asset.symbol) ? <CedearAnalyticsCard symbol={asset.symbol} /> : null}
-        {asset.bondMetrics ? <BondMetricsCard symbol={asset.symbol} fallbackBondMetrics={asset.bondMetrics} /> : null}
-        <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-          <NewsPanel news={asset.news} symbol={asset.symbol} />
-          <AISummaryCard asset={asset} />
-        </div>
+        <AssetSecondaryDetails symbol={asset.symbol} />
         <RelatedInstrumentsCard symbol={asset.symbol} />
         <AssetDisclaimer />
       </div>

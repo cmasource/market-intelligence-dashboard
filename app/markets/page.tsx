@@ -6,6 +6,7 @@ import { DataCoverageBadges } from "@/components/data-coverage/DataCoverageBadge
 import { FeaturedAssets } from "@/components/dashboard/FeaturedAssets";
 import { MarketOverview } from "@/components/dashboard/MarketOverview";
 import { AppShell } from "@/components/layout/AppShell";
+import { MarketHeatmap } from "@/components/market/MarketHeatmap";
 import { mockCedears } from "@/lib/cedears";
 import { getInstrumentUniverseGroups } from "@/lib/instrument-universe";
 import { useLanguage } from "@/lib/i18n/useLanguage";
@@ -60,6 +61,8 @@ export default function MarketsPage() {
               : "Explore the current universe of supported, simulated and future instruments."}
           </p>
         </section>
+
+        <MarketHeatmap />
 
         <section className="grid gap-4 xl:grid-cols-3">
           {groups.map((group) => (

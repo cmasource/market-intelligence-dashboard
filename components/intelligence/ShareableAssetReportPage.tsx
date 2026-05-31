@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AssetLogo } from "@/components/assets/AssetLogo";
 import { AppShell } from "@/components/layout/AppShell";
 import { AssetIntelligenceReport } from "@/components/intelligence/AssetIntelligenceReport";
 import { useLanguage } from "@/lib/i18n/useLanguage";
@@ -32,12 +33,15 @@ export function ShareableAssetReportPage({ symbol }: ShareableAssetReportPagePro
       <div className="mx-auto space-y-7 py-7">
         <section className="cma-panel-elevated p-6 sm:p-7">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
+            <div className="flex max-w-3xl gap-4">
+              <AssetLogo symbol={symbol} size="lg" />
+              <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
                 CMA Market Intelligence
               </p>
               <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">{symbol}</h1>
               <p className="mt-4 text-sm leading-6 text-slate-300">{copy.intro}</p>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-2 lg:max-w-sm lg:justify-end">

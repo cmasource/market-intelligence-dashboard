@@ -39,6 +39,10 @@ function formatNullableCurrency(value: number | null | undefined, currency: stri
   return safeValue === null ? fallback : formatCurrency(safeValue, currency, language);
 }
 
+function factorScore(value: number | null | undefined, fallback = 50) {
+  return typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : fallback;
+}
+
 function fallbackSnapshot(asset: Asset | undefined, fallbackTechnicalData: TechnicalIndicators | undefined): TechnicalIndicatorSnapshot {
   const technical = fallbackTechnicalData ?? asset?.technical;
 
@@ -113,6 +117,28 @@ export function TechnicalAnalysisCard({
       value: t(`volumeTrend${snapshot.volumeTrend[0].toUpperCase()}${snapshot.volumeTrend.slice(1)}`),
     },
   ];
+  const factorBars = [
+    {
+      label: language === "es" ? "Tendencia" : "Trend",
+      value: factorScore(score),
+      detail: translateTrendLabel(snapshot.trendLabel, language),
+    },
+    {
+      label: "Momentum",
+      value: factorScore(snapshot.rsi14),
+      detail: translateMomentumLabel(snapshot.momentumLabel, language),
+    },
+    {
+      label: language === "es" ? "Medias moviles" : "Moving averages",
+      value: snapshot.lastClose && snapshot.sma200 && snapshot.lastClose > snapshot.sma200 ? 76 : 46,
+      detail: "SMA 20 / SMA 200",
+    },
+    {
+      label: "RSI / MACD",
+      value: snapshot.rsi14 && snapshot.rsi14 > 70 ? 68 : snapshot.rsi14 && snapshot.rsi14 < 35 ? 38 : 56,
+      detail: snapshot.macd === null ? t("notAvailable") : "MACD",
+    },
+  ];
 
   useEffect(() => {
     if (!symbol) return undefined;
@@ -145,7 +171,7 @@ export function TechnicalAnalysisCard({
   }, [initialTimeframe, language, symbol]);
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.045] p-5 backdrop-blur">
+    <section className="cma-panel border-cyan-300/20 p-5" data-testid="technical-analysis-module">
       <SectionHeader
         eyebrow={t("technicalAnalysis")}
         title={t("technicalScore", { score: formatScore(score) })}
@@ -162,6 +188,27 @@ export function TechnicalAnalysisCard({
       </div>
       <div className="mb-4">
         <TechnicalSignalGauge score={score} language={language} sourceLabel={loading ? t("technicalLoading") : translateProviderLabel(sourceLabel, language)} />
+      </div>
+      <div className="mb-4 rounded-2xl border border-cyan-300/15 bg-slate-950/35 p-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200">
+          {language === "es" ? "Panel de factores tecnicos" : "Technical factor panel"}
+        </p>
+        <div className="mt-3 space-y-3">
+          {factorBars.map((factor) => (
+            <div key={factor.label}>
+              <div className="mb-1 flex items-center justify-between gap-3 text-xs">
+                <span className="font-medium text-slate-200">{factor.label}</span>
+                <span className="text-slate-500">{factor.detail}</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-emerald-300"
+                  style={{ width: `${factor.value}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
         <div className="rounded-lg border border-white/10 bg-slate-950/40 p-3">
@@ -180,9 +227,9 @@ export function TechnicalAnalysisCard({
       <p className="mb-4 text-sm leading-6 text-slate-300">{humanSummary.expandedSummary}</p>
       <MetricGrid items={indicators} />
       {humanSummary.bulletPoints.length ? (
-        <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-300">
+        <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-300">
           {humanSummary.bulletPoints.map((point) => (
-            <li key={point}>- {point}</li>
+            <li key={point}>{point}</li>
           ))}
         </ul>
       ) : null}

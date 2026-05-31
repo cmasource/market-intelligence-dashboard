@@ -35,7 +35,7 @@ The product now follows the **CMA Institutional Fintech Terminal** direction: in
 - Fixed income analytics for sovereign bonds and CER-linked instruments, including mock yield, duration, convexity, cash flows and risk profiles.
 - Instrument universe relationships for Argentine bond species and future CEDEAR/ADR mappings.
 - Instrument screener with search, category, market, country, currency and data-status filters.
-- Market universe page with group cards for Argentine equities, CEDEARs, sovereign bonds and species, ETFs, USA stocks and crypto.
+- Market universe page with group cards and a filterable heatmap for Argentine equities, CEDEARs, sovereign bonds and species, ETFs, USA stocks and crypto.
 - Data coverage badges showing real/provider, mock/fallback, future, not-applicable and unavailable layers.
 - Data audit and methodology pages explaining coverage status, calculation inputs and analytical limitations.
 - Centralized currency formatting for USD and ARS, with MEP, cable/CCL and CER shown as bond species or indexation context rather than price currencies.
@@ -53,6 +53,7 @@ The product now follows the **CMA Institutional Fintech Terminal** direction: in
 - News placeholder for later data-provider integrations.
 - Shareable `/report/[symbol]` pages for public demos, plus reports placeholder for future market briefings and AI-generated PDFs.
 - Shareable report mode for `/report/[symbol]` with a compact summary strip, concise key points, CEDEAR reading guidance, news source-language note, grouped risk presentation and precise data limitations.
+- Heatmap Pro module with segment filters, movement/source sorting, real/manual-only filtering, source badges and accessible click-through cells.
 
 ## MVP Scope
 
@@ -74,6 +75,8 @@ The product now follows the **CMA Institutional Fintech Terminal** direction: in
 - Appearance preference toggle for dark and light modes, with dark as the default.
 - Integrated market signal gauge that combines technical and fundamental inputs when available.
 - Technical signal gauge using non-advisory defensive/neutral/constructive terminology.
+- Sprint 22 asset page hierarchy with a compact executive strip, distinct market signal, technical factor panel, secondary coverage disclosure and asset identity fallback logos.
+- Sprint 23 market heatmap and Argentina page panels for cross-segment browsing, local bonds, local equities and CEDEARs with compact source transparency.
 - Public demo footer with informational disclaimer, data coverage note and core navigation links.
 - Vercel deployment readiness documentation and pre-deploy validation checklist.
 - Manual technical and fundamental validation guides for comparison against external market platforms.

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { AssetLogo } from "@/components/assets/AssetLogo";
 import { formatAssetPrice, formatCurrencyValue, formatPercent } from "@/lib/formatters";
 import { isArgentinaInstrument } from "@/lib/argentina";
 import { useArgentinaQuotes, type ArgentinaQuoteState } from "@/lib/hooks/useArgentinaQuotes";
@@ -89,9 +90,12 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
               }`}
             >
               <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-lg font-semibold text-white">{asset.symbol}</p>
-                  <p className="mt-1 text-sm text-slate-400">{name}</p>
+                <div className="flex min-w-0 items-start gap-3">
+                  <AssetLogo symbol={asset.symbol} name={name} type={asset.type} size="sm" />
+                  <div className="min-w-0">
+                    <p className="text-lg font-semibold text-white">{asset.symbol}</p>
+                    <p className="mt-1 line-clamp-1 text-sm text-slate-400">{name}</p>
+                  </div>
                 </div>
                 <span className={isPositive ? "text-sm font-semibold text-emerald-300" : "text-sm font-semibold text-rose-300"}>
                   {formatPercent(visibleChange)}

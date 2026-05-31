@@ -12,6 +12,7 @@ import { ReportsPlaceholder } from "@/components/dashboard/ReportsPlaceholder";
 import { TechnicalOpportunities } from "@/components/dashboard/TechnicalOpportunities";
 import { FixedIncomeComparison } from "@/components/fixed-income/FixedIncomeComparison";
 import { AppShell } from "@/components/layout/AppShell";
+import { MarketHeatmap } from "@/components/market/MarketHeatmap";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { useTheme } from "@/lib/theme/useTheme";
 import { marketOverviewItems, mockAssets } from "@/lib/mock-data";
@@ -96,6 +97,7 @@ export default function Home() {
         </section>
 
         <MarketOverview items={marketOverviewItems} />
+        <MarketHeatmap compact />
         <FeaturedAssets assets={mockAssets} />
         <section className="cma-panel cma-card-argentina p-5 sm:p-6">
           <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">

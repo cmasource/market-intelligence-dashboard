@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { AssetLogo } from "@/components/assets/AssetLogo";
 import { formatAssetPrice, formatCurrencyValue, formatDisplayCurrency, formatPercent } from "@/lib/formatters";
 import type { ArgentinaQuote } from "@/lib/argentina";
 import { getAssetTypeLabel } from "@/lib/i18n/domain";
@@ -119,27 +121,61 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
   }, [asset.symbol, canUseArgentinaQuote]);
 
   return (
-    <section className="cma-panel-elevated cma-glow-cyan p-5">
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-4xl font-semibold tracking-tight text-white">{asset.symbol}</h1>
-            <ScoreBadge riskLevel={asset.riskLevel} />
-            <ScoreBadge score={asset.technicalScore} label={t("technicalView")} />
-            {asset.fundamentalScore !== undefined ? <ScoreBadge score={asset.fundamentalScore} label={t("fundamentalView")} /> : null}
+    <section className="cma-panel-elevated cma-glow-cyan p-5" data-testid="asset-hero-header">
+      <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+            <AssetLogo symbol={asset.symbol} name={name} type={asset.type} size="lg" />
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-4xl font-semibold tracking-tight text-white">{asset.symbol}</h1>
+                <ScoreBadge riskLevel={asset.riskLevel} />
+                <ScoreBadge score={asset.technicalScore} label={t("technicalView")} />
+                {asset.fundamentalScore !== undefined ? <ScoreBadge score={asset.fundamentalScore} label={t("fundamentalView")} /> : null}
+              </div>
+              <p className="mt-3 text-lg text-slate-300">{name}</p>
+            </div>
           </div>
-          <p className="mt-3 text-lg text-slate-300">{name}</p>
-          <p className="mt-2 text-sm text-slate-500">
-            {getAssetTypeLabel(asset.type, t)} | {asset.market} | {formatDisplayCurrency(asset.currency, language)}
-          </p>
-          {context ? (
-            <p className="mt-2 inline-flex rounded-full border border-violet-300/25 bg-violet-300/10 px-3 py-1 text-xs font-medium text-violet-100">
-              {context}
-            </p>
-          ) : null}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-slate-300">
+              {getAssetTypeLabel(asset.type, t)}
+            </span>
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-slate-300">
+              {asset.market}
+            </span>
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-slate-300">
+              {formatDisplayCurrency(asset.currency, language)}
+            </span>
+            {asset.argentinaContext ? (
+              <span className="rounded-full border border-emerald-300/25 bg-emerald-300/10 px-3 py-1 text-xs font-medium text-emerald-100">
+                BYMA / Argentina
+              </span>
+            ) : null}
+            {asset.type === "cedear" ? (
+              <span className="rounded-full border border-violet-300/25 bg-violet-300/10 px-3 py-1 text-xs font-medium text-violet-100">
+                CEDEAR
+              </span>
+            ) : null}
+            {context ? (
+              <span className="rounded-full border border-violet-300/25 bg-violet-300/10 px-3 py-1 text-xs font-medium text-violet-100">
+                {context}
+              </span>
+            ) : null}
+          </div>
           <p className="mt-5 max-w-3xl text-sm leading-6 text-slate-300">{summary}</p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link href={`/report/${encodeURIComponent(asset.symbol)}`} className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-300/15">
+              {language === "es" ? "Ver reporte" : "View report"}
+            </Link>
+            <Link href="/methodology" className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-cyan-300/40 hover:text-white">
+              {language === "es" ? "Ver metodologia" : "View methodology"}
+            </Link>
+            <a href="#asset-coverage" className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-cyan-300/40 hover:text-white">
+              {language === "es" ? "Ver cobertura" : "View coverage"}
+            </a>
+          </div>
         </div>
-        <div className="cma-card-price p-5 lg:min-w-72">
+        <div className="cma-card-price p-5 xl:min-w-80">
           <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{sourceLabel}</p>
           <p className="cma-metric mt-2 text-4xl font-semibold text-white">{formattedPrice}</p>
           <p className={isPositive ? "mt-2 text-sm font-semibold text-emerald-300" : "mt-2 text-sm font-semibold text-rose-300"}>

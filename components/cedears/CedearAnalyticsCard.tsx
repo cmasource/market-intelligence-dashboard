@@ -102,7 +102,7 @@ export function CedearAnalyticsCard({ symbol }: CedearAnalyticsCardProps) {
         <div className="mt-4 grid gap-3 md:grid-cols-5">
           {[
             "CEDEAR",
-            isSpanish ? "Activo subyacente" : "Underlying asset",
+            isSpanish ? "Subyacente" : "Underlying asset",
             isSpanish ? "Precio subyacente de respaldo" : "Fallback underlying price",
             isSpanish ? "Precio local CEDEAR simulado" : "Mock local CEDEAR price",
             isSpanish ? "CCL implicito" : "Implied CCL",
@@ -116,6 +116,9 @@ export function CedearAnalyticsCard({ symbol }: CedearAnalyticsCardProps) {
         <div className="mt-3 flex flex-wrap gap-2 text-xs">
           <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 font-medium text-amber-100">
             {isSpanish ? "Datos simulados" : "Mock data"}
+          </span>
+          <span className="rounded-full border border-violet-300/25 bg-violet-300/10 px-3 py-1 font-medium text-violet-100">
+            {isSpanish ? "CEDEAR local simulado" : "Mock local CEDEAR"}
           </span>
           <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-slate-300">ARS</span>
           <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-slate-300">USD</span>
@@ -175,6 +178,9 @@ export function CedearAnalyticsCard({ symbol }: CedearAnalyticsCardProps) {
         <div className="flex flex-wrap gap-2">
           <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-xs font-medium text-amber-100">
             {labels.mock}
+          </span>
+          <span className="rounded-full border border-violet-300/25 bg-violet-300/10 px-3 py-1 text-xs font-medium text-violet-100">
+            {isSpanish ? "CEDEAR local simulado" : "Mock local CEDEAR"}
           </span>
           <span className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-xs font-medium text-cyan-100">
             {labels.calculated}

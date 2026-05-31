@@ -449,7 +449,7 @@ export const translations: Record<Language, Record<string, string>> = {
     overallRisk: "Riesgo total",
     bondMetrics: "Métricas de bonos",
     newsPlaceholder: "Placeholder de noticias",
-    marketHeadlines: "Titulares de mercado",
+    marketHeadlines: "Pulso de noticias",
     newsDescription: "Noticias mock preparadas para futuras integraciones de proveedores y procesamiento de sentimiento con IA.",
     impact: "impacto {impact}",
     aiStyleSummary: "Resumen estilo IA",

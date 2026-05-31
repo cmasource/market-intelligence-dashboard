@@ -19,6 +19,7 @@ The app is transparent about mixed coverage: selected USA and crypto instruments
 ## Features
 
 - Sprint 21 visual identity: CMA Institutional Fintech Terminal design system with premium dark fintech panels, market-grid background, sticky glass header and differentiated card families.
+- Sprint 22 asset page IA: compact executive strip, distinct market signal, technical factor panel, secondary coverage disclosure and first market heatmap.
 - Dashboard overview
 - Markets universe page
 - Advanced instrument screener
@@ -69,6 +70,7 @@ npm run test:e2e
 
 - `docs/design-system.md` documents the CMA Institutional Fintech Terminal tokens, utility classes and card families.
 - `docs/redesign-sprint-21.md` documents the Sprint 21 redesign direction and confirms external references were used only as inspiration.
+- `docs/sprint-22-asset-redesign.md`, `docs/heatmap-module.md` and `docs/ui-decisions.md` document the Sprint 22 asset IA, heatmap and signal/technical distinction.
 
 ## Vercel Deployment
 

@@ -199,7 +199,7 @@ export function FundamentalAnalysisCard({
 
   if (isNotApplicable) {
     return (
-      <section className="rounded-lg border border-white/10 bg-white/[0.045] p-5 backdrop-blur">
+      <section className="cma-panel p-5" data-testid="fundamental-analysis-module">
         <SectionHeader
           eyebrow={t("fundamentalAnalysis")}
           title={language === "es" ? t("equityRatiosNotApplicable") : fundamentals?.interpretation.label ?? t("equityRatiosNotApplicable")}
@@ -266,7 +266,7 @@ export function FundamentalAnalysisCard({
   };
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.045] p-5 backdrop-blur">
+    <section className="cma-panel p-5" data-testid="fundamental-analysis-module">
       <SectionHeader
         eyebrow={t("fundamentalAnalysis")}
         title={score === null ? t("fundamentalScoreUnavailable") : t("fundamentalScore", { score: formatScore(score) })}
@@ -310,9 +310,9 @@ export function FundamentalAnalysisCard({
         ) : null}
       </div>
       {humanSummary.bulletPoints.length ? (
-        <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-300">
+        <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-300">
           {humanSummary.bulletPoints.map((point) => (
-            <li key={point}>- {point}</li>
+            <li key={point}>{point}</li>
           ))}
         </ul>
       ) : null}

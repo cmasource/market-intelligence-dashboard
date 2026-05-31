@@ -6,10 +6,11 @@ import { ArgentinaMarket } from "@/components/dashboard/ArgentinaMarket";
 import { BondSpeciesGuide } from "@/components/fixed-income/BondSpeciesGuide";
 import { FixedIncomeComparison } from "@/components/fixed-income/FixedIncomeComparison";
 import { AppShell } from "@/components/layout/AppShell";
+import { MarketHeatmap } from "@/components/market/MarketHeatmap";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { InstrumentUniverseGroups } from "@/components/screener/InstrumentUniverseGroups";
 import { ARGENTINA_INSTRUMENT_UNIVERSE } from "@/lib/instrument-universe";
-import { formatCurrencyValue, formatNumber } from "@/lib/formatters";
+import { formatCurrencyValue, formatNumber, formatPercent } from "@/lib/formatters";
 import type { ArgentinaInstrument, ArgentinaQuote, ArgentinaSourceStatus } from "@/lib/argentina";
 
 const universeGroups = [
@@ -33,7 +34,55 @@ const universeGroups = [
   },
 ];
 
-const argentinaTableSymbols = ["GGAL", "YPFD", "AL30", "GD30", "TX26", "AAPL"];
+const argentinaTableSymbols = [
+  "GGAL",
+  "YPFD",
+  "PAMP",
+  "TXAR",
+  "ALUA",
+  "BYMA",
+  "AL30",
+  "AL30D",
+  "AL30C",
+  "GD30",
+  "GD30D",
+  "GD30C",
+  "TX26",
+  "AAPL",
+  "MSFT",
+  "NVDA",
+  "TSLA",
+  "KO",
+  "SPY",
+  "QQQ",
+];
+
+const localMarketSections = [
+  {
+    key: "snapshot",
+    es: "Panorama local de mercado",
+    en: "Local market snapshot",
+    symbols: ["AL30", "GD30", "GGAL", "YPFD", "AAPL"],
+  },
+  {
+    key: "bonds",
+    es: "Bonos soberanos",
+    en: "Sovereign bonds",
+    symbols: ["AL30", "AL30D", "AL30C", "GD30", "GD30D", "GD30C", "TX26"],
+  },
+  {
+    key: "equities",
+    es: "Acciones argentinas",
+    en: "Argentine equities",
+    symbols: ["GGAL", "YPFD", "PAMP", "TXAR", "ALUA", "BYMA"],
+  },
+  {
+    key: "cedears",
+    es: "CEDEARs destacados",
+    en: "Featured CEDEARs",
+    symbols: ["AAPL", "MSFT", "NVDA", "TSLA", "KO", "SPY", "QQQ"],
+  },
+];
 
 function argentinaSourceLabel(source: string, isSpanish: boolean) {
   if (source === "manual") return isSpanish ? "Carga manual validada" : "Validated manual load";
@@ -93,6 +142,50 @@ export default function ArgentinaPage() {
     .map((symbol) => instruments.find((instrument) => instrument.symbol === symbol))
     .filter((instrument): instrument is ArgentinaInstrument => Boolean(instrument));
 
+  function renderInstrumentCard(symbol: string) {
+    const instrument = instruments.find((item) => item.symbol === symbol);
+    if (!instrument) return null;
+    const quote = quotes[symbol];
+    const price = quote?.price === null || quote?.price === undefined ? "N/D" : formatCurrencyValue(quote.price, quote.currency, language);
+    const change = typeof quote?.changePercent === "number" ? formatPercent(quote.changePercent) : "N/D";
+    const source = argentinaSourceLabel(quote?.source ?? instrument.sourceStatus, isSpanish);
+
+    return (
+      <Link
+        key={symbol}
+        href={`/asset/${encodeURIComponent(symbol)}`}
+        className="rounded-2xl border border-white/10 bg-slate-950/45 p-4 transition hover:-translate-y-0.5 hover:border-cyan-300/35 hover:bg-cyan-300/10"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-lg font-semibold text-white">{instrument.displaySymbol}</p>
+            <p className="mt-1 line-clamp-1 text-xs text-slate-400">{instrument.name}</p>
+          </div>
+          <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-slate-300">
+            {instrument.type.replaceAll("_", " ")}
+          </span>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{isSpanish ? "Precio" : "Price"}</p>
+            <p className="mt-1 font-semibold text-slate-100">{price}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{isSpanish ? "Variacion" : "Change"}</p>
+            <p className="mt-1 font-semibold text-slate-100">{change}</p>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-xs text-cyan-100">
+            {source}
+          </span>
+          <span className="text-xs text-slate-500">{quote?.lastUpdated ?? (isSpanish ? "Sin fecha" : "No timestamp")}</span>
+        </div>
+        <span className="mt-4 inline-flex text-sm font-semibold text-cyan-100">{isSpanish ? "Abrir analisis" : "Open analysis"}</span>
+      </Link>
+    );
+  }
+
   return (
     <AppShell background="argentina">
       <div className="space-y-8 py-6">
@@ -108,6 +201,31 @@ export default function ArgentinaPage() {
               ? "Esta página centraliza analítica específica de Argentina: acciones, CEDEARs, bonos soberanos, instrumentos CER, referencias MEP/CCL e integraciones futuras con BYMA, IOL y CNV."
               : "This page centralizes Argentina-specific analytics: equities, CEDEARs, sovereign bonds, CER-linked instruments, MEP/CCL references and future BYMA, IOL and CNV integrations."}
           </p>
+        </section>
+        <MarketHeatmap defaultSegment="argentina" />
+        <section className="cma-panel cma-card-argentina p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
+            {isSpanish ? "Panel local" : "Local panel"}
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            {isSpanish ? "Panorama local de mercado" : "Local market snapshot"}
+          </h2>
+          <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
+            {isSpanish
+              ? "Panel inicial para comparar precios locales, variacion, fuente y fecha disponible por instrumento."
+              : "Initial panel for comparing local prices, variation, source and available timestamp by instrument."}
+          </p>
+          <div className="mt-5 space-y-6">
+            {localMarketSections.map((section) => (
+              <div key={section.key}>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h3 className="text-base font-semibold text-white">{isSpanish ? section.es : section.en}</h3>
+                  <span className="rounded-full border border-white/10 px-2.5 py-1 text-xs text-slate-400">{section.symbols.length}</span>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{section.symbols.map(renderInstrumentCard)}</div>
+              </div>
+            ))}
+          </div>
         </section>
         <section className="cma-panel cma-card-argentina p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">

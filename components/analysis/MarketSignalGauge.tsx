@@ -13,14 +13,6 @@ type MarketSignalGaugeProps = {
   compact?: boolean;
 };
 
-const segments = [
-  "bg-rose-400/75",
-  "bg-amber-400/75",
-  "bg-slate-400/75",
-  "bg-cyan-400/80",
-  "bg-emerald-400/80",
-];
-
 function componentValue(value: number | null | undefined) {
   return typeof value === "number" && Number.isFinite(value) ? `${formatScore(value)}/100` : "N/A";
 }
@@ -47,8 +39,11 @@ export function MarketSignalGauge({
   const showFixedIncome = assetType?.includes("bond") || fixedIncomeScore !== undefined;
 
   return (
-    <section className="rounded-lg border border-indigo-300/25 bg-gradient-to-br from-slate-950/70 via-slate-900/55 to-indigo-950/35 p-5 shadow-xl shadow-indigo-950/15">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+    <section
+      className="cma-panel-elevated cma-glow-violet border-indigo-300/25 p-5 shadow-xl shadow-indigo-950/15"
+      data-testid="market-signal-module"
+    >
+      <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_180px] md:items-center">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-200">
             {isSpanish ? "Senal de mercado" : "Market signal"}
@@ -56,32 +51,25 @@ export function MarketSignalGauge({
           <h2 className="mt-2 text-2xl font-semibold text-white">{signal.label}</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">{signal.description}</p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-white/[0.045] px-4 py-3 text-left md:text-right">
-          <p className="text-3xl font-semibold text-white">
-            {signal.score === null ? "N/A" : `${formatScore(signal.score)} /100`}
-          </p>
-          <p className="mt-1 text-xs text-slate-400">
+        <div className="mx-auto">
+          <div
+            className="relative grid h-40 w-40 place-items-center rounded-full border border-white/10 bg-slate-950/60 shadow-2xl shadow-indigo-950/25"
+            style={{
+              background: `conic-gradient(from -120deg, rgba(251,113,133,.88) 0deg, rgba(251,191,36,.9) 82deg, rgba(148,163,184,.72) 150deg, rgba(34,211,238,.9) 225deg, rgba(52,211,153,.95) ${Math.max(12, (pointer / 100) * 300)}deg, rgba(15,23,42,.78) ${Math.max(12, (pointer / 100) * 300)}deg 360deg)`,
+            }}
+          >
+            <div className="grid h-28 w-28 place-items-center rounded-full border border-white/10 bg-slate-950/92 text-center">
+              <div>
+                <p className="text-3xl font-semibold text-white">
+                  {signal.score === null ? "N/A" : formatScore(signal.score)}
+                </p>
+                <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-slate-500">/100</p>
+              </div>
+            </div>
+          </div>
+          <p className="mt-3 text-center text-xs text-slate-400">
             {isSpanish ? "Confianza" : "Confidence"}: {signal.confidenceLabel}
           </p>
-        </div>
-      </div>
-
-      <div className="mt-5">
-        <div className="relative h-3 overflow-hidden rounded-full bg-slate-800/80">
-          <div className="grid h-full grid-cols-5">
-            {segments.map((segment, index) => (
-              <div key={segment} className={`${segment} ${index > 0 ? "border-l border-slate-950/40" : ""}`} />
-            ))}
-          </div>
-          <div
-            className="absolute top-1/2 h-6 w-1.5 -translate-y-1/2 rounded-full border border-white/80 bg-white shadow-lg shadow-slate-950/30"
-            style={{ left: `calc(${pointer}% - 3px)` }}
-          />
-        </div>
-        <div className="mt-2 flex justify-between text-[0.68rem] text-slate-500">
-          <span>{isSpanish ? "Defensivo" : "Defensive"}</span>
-          <span>Neutral</span>
-          <span>{isSpanish ? "Constructivo" : "Constructive"}</span>
         </div>
       </div>
 

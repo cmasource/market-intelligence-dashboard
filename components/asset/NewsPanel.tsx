@@ -72,7 +72,7 @@ export function NewsPanel({ news, symbol }: NewsPanelProps) {
   const providerArticles = providerResponse?.articles ?? null;
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.045] p-5 backdrop-blur">
+    <section className="cma-card-news p-5" data-testid="news-panel">
       <SectionHeader
         eyebrow={t("newsPlaceholder")}
         title={t("marketHeadlines")}
@@ -84,6 +84,11 @@ export function NewsPanel({ news, symbol }: NewsPanelProps) {
             <NewsSourceBadge provider={providerResponse.provider} isFallback={providerResponse.isFallback} />
             <span className="text-xs text-slate-500">{providerResponse.sourceLabel}</span>
           </div>
+          <p className="mb-3 text-xs text-slate-500">
+            {isSpanish
+              ? "Los titulares pueden mostrarse en el idioma original de la fuente."
+              : "Headlines may appear in the source's original language."}
+          </p>
           <NewsList articles={providerResponse.articles} />
         </>
       ) : (

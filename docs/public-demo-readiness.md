@@ -4,6 +4,10 @@
 
 The public demo now uses the **CMA Institutional Fintech Terminal** design direction. It keeps provider transparency, Spanish/English support and non-advisory copy visible while improving hierarchy, desktop width usage, card differentiation, sticky header quality and light/dark readability.
 
+## Sprint 22 Asset Readiness
+
+Asset pages now prioritize a smaller set of stronger modules: hero, executive strip, chart, technical engine, market signal, fundamentals, news, local context and risks. Data coverage remains available through a secondary disclosure, and the first heatmap gives a quick mixed-coverage market scan.
+
 ## What Currently Works
 
 - Home dashboard with market overview, universal search, featured assets and AI-style interpretation placeholders.
@@ -21,6 +25,8 @@ The public demo now uses the **CMA Institutional Fintech Terminal** design direc
 - Interactive charts with provider/fallback market data.
 - Featured dashboard cards and visible dashboard search results hydrate provider-supported USA/crypto quotes after mount.
 - Asset Intelligence Reports on asset pages and shareable `/report/[symbol]` routes for demos.
+- Asset pages now use logo/fallback identity marks and a two-column analytical layout on desktop.
+- Market heatmap module on the home and markets pages.
 - The shareable report route is now a cleaner executive summary, while `/asset/[symbol]` remains the full working analysis page.
 - Report mode includes a compact price/signal/confidence/source strip and shorter key points for public sharing.
 - Technical analysis calculated from OHLCV candles.

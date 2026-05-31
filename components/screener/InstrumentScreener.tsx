@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { AssetLogo } from "@/components/assets/AssetLogo";
 import { DataCoverageBadges } from "@/components/data-coverage/DataCoverageBadges";
 import { formatDisplayCurrency } from "@/lib/formatters";
 import { getCoverageGroupOptions } from "@/lib/data-coverage";
@@ -160,11 +161,13 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
               }`}
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h3 className="text-xl font-semibold text-white">{instrument.symbol}</h3>
-                  <p className="mt-1 text-sm text-slate-300">
-                    {isSpanish && instrument.displayNameEs ? instrument.displayNameEs : instrument.displayNameEn ?? instrument.displayName}
-                  </p>
+                <div className="flex min-w-0 items-start gap-3">
+                  <AssetLogo symbol={instrument.symbol} name={instrument.displayName} type={instrument.category} size="sm" />
+                  <div className="min-w-0">
+                    <h3 className="text-xl font-semibold text-white">{instrument.symbol}</h3>
+                    <p className="mt-1 text-sm text-slate-300">
+                      {isSpanish && instrument.displayNameEs ? instrument.displayNameEs : instrument.displayNameEn ?? instrument.displayName}
+                    </p>
                   <p className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-500">
                     {formatEnum(instrument.category)} | {instrument.market} | {instrument.country} |{" "}
                     {formatDisplayCurrency(instrument.currency, language)}
@@ -185,6 +188,7 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
                       {isSpanish ? "Accion USA" : "USA stock"}
                     </p>
                   ) : null}
+                  </div>
                 </div>
                 <span className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-xs font-medium text-cyan-100">
                   {sourceStatusLabel(instrument.sourceStatus, isSpanish)}

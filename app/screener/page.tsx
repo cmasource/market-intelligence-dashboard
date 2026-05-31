@@ -1,6 +1,7 @@
 import { InstrumentScreener } from "@/components/screener/InstrumentScreener";
 import { ScreenerInfoBanner } from "@/components/screener/ScreenerInfoBanner";
 import { InstrumentUniverseGroups } from "@/components/screener/InstrumentUniverseGroups";
+import { HeatmapCta } from "@/components/screener/HeatmapCta";
 import { ScreenerHero } from "@/components/screener/ScreenerHero";
 import { DataCoverageLegend } from "@/components/data-coverage/DataCoverageLegend";
 import { DataAuditLinkPanel } from "@/components/data-coverage/DataAuditLinkPanel";
@@ -31,6 +32,7 @@ export default async function ScreenerPage({
           <ScreenerInfoBanner />
           <DataCoverageLegend />
         </div>
+        <HeatmapCta />
         <DataAuditLinkPanel />
         <div className="cma-panel p-5">
           <InstrumentScreener initialFilters={params} />

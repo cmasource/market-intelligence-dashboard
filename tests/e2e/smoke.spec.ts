@@ -50,6 +50,8 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.locator("body")).toContainText(/Mixed coverage|Cobertura mixta/);
     await expect(page.locator("body")).toContainText(/Market Intelligence Terminal/);
     await expect(page.locator("body")).toContainText(/Cross-market pulse|Pulso cross-market/);
+    await expect(page.getByTestId("market-heatmap")).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Market heatmap|Mapa de calor de mercado/);
     await expect(page.locator("body")).not.toContainText("Solo datos mock");
     await expect(page.locator("body")).not.toContainText(forbiddenLegacyBrand);
     const hasHorizontalOverflow = await page.evaluate(
@@ -111,6 +113,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
       await page.goto(asset.route);
 
       await expect(page.getByText(asset.symbol).first()).toBeVisible();
+      await expect(page.getByTestId("asset-logo").first()).toBeVisible();
       await expect(page.locator("body")).toContainText(marketDataStatus);
       await expect(page.getByTestId("asset-chart-container")).toBeVisible();
       await expect(page.locator("body")).not.toContainText(forbiddenLegacyBrand);
@@ -286,6 +289,10 @@ test.describe("CMA Market Intelligence smoke tests", () => {
   test("markets page shows universe cards and CEDEAR prominence", async ({ page }) => {
     await page.goto("/markets");
 
+    await expect(page.getByTestId("market-heatmap")).toBeVisible();
+    await expect(page.getByLabel(/Segment|Segmento/)).toBeVisible();
+    await expect(page.getByLabel(/Sort by|Ordenar por/)).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Include simulated|Incluir simulados/);
     await expect(page.locator("body")).toContainText(/Argentine equities|Acciones argentinas/);
     await expect(page.locator("body")).toContainText("CEDEARs");
     await expect(page.locator("body")).toContainText(/Bonds|Bonos|Sovereign bonds and species|Bonos soberanos y especies/);
@@ -296,6 +303,35 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.getByText("MSFT").first()).toBeVisible();
     await expect(page.getByText(/NVDA|TSLA/).first()).toBeVisible();
     await expect(page.locator("body")).toContainText(/CCL|implied CCL/i);
+  });
+
+  test("market heatmap filters and navigates by segment", async ({ page }) => {
+    await page.goto("/markets");
+
+    const heatmap = page.getByTestId("market-heatmap");
+    await expect(heatmap).toContainText(/Market heatmap|Mapa de calor de mercado/);
+    await page.getByLabel(/Segment|Segmento/).selectOption("argentina");
+    await expect(heatmap).toContainText(/GGAL|YPFD/);
+
+    await page.getByLabel(/Segment|Segmento/).selectOption("bonds");
+    await expect(heatmap).toContainText(/AL30|GD30/);
+
+    const al30Cell = heatmap.getByTestId("heatmap-cell-AL30").first();
+    await expect(al30Cell).toBeVisible();
+    await al30Cell.scrollIntoViewIfNeeded();
+    await Promise.all([page.waitForURL(/\/asset\/AL30$/, { timeout: 15_000 }), al30Cell.click()]);
+    await expect(page.getByText("AL30").first()).toBeVisible();
+  });
+
+  test("market heatmap avoids horizontal overflow", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.goto("/markets");
+    await expect(page.getByTestId("market-heatmap")).toBeVisible();
+
+    const hasHorizontalOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+    );
+    expect(hasHorizontalOverflow).toBeFalsy();
   });
 
   test("appearance toggle switches without crashing", async ({ page }) => {
@@ -325,8 +361,8 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await page.getByRole("button", { name: "Light" }).click();
 
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-    await expect(page.getByText("CEDEARs").first()).toBeVisible();
-    await expect(page.getByText(/Bonds|Bonos/).first()).toBeVisible();
+    await expect(page.locator("body")).toContainText("CEDEARs");
+    await expect(page.locator("body")).toContainText(/Bonds|Bonos/);
   });
 
   test("screener remains readable in light mode", async ({ page }) => {
@@ -365,6 +401,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
   test("asset pages show data coverage badges", async ({ page }) => {
     await page.goto("/asset/AAPL");
     await expect(page.locator("body")).toContainText(/Data coverage|Cobertura de datos/);
+    await expect(page.locator("body")).toContainText(/View data coverage|Ver cobertura de datos/);
     await expect(page.locator("body")).toContainText(/Price: Provider|Precio: Proveedor|Provider|Proveedor/);
     await expect(page.locator("body")).toContainText(/Fundamentals: Provider|Fundamentos: Proveedor|Provider|Proveedor/);
 
@@ -642,9 +679,11 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await page.goto("/argentina");
 
     await expect(page.locator("body")).toContainText(/Cobertura de datos Argentina|Argentina data coverage/);
+    await expect(page.getByTestId("market-heatmap")).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Panorama local de mercado|Local market snapshot/);
     await expect(page.getByText("AL30").first()).toBeVisible();
     await expect(page.getByText("GGAL").first()).toBeVisible();
-    await expect(page.locator("body")).toContainText(/Carga manual validada|Validated manual load|Dato estructurado simulado|Structured mock data/);
+    await expect(page.locator("body")).toContainText(/Proveedor|Manual validado|Simulado|Futuro|Carga manual validada|Validated manual load|Dato estructurado simulado|Structured mock data/);
     await expect(page.locator("body")).toContainText(/BYMA|CNV|Broker\/API/);
   });
 
@@ -964,19 +1003,23 @@ test.describe("CMA Market Intelligence smoke tests", () => {
 
     await page.goto("/asset/AAPL");
     await expect(page.locator("body")).toContainText(/Lectura ejecutiva|Executive reading/, { timeout: 20_000 });
+    await expect(page.getByTestId("asset-executive-summary")).toBeVisible();
     await expect(page.locator("body")).toContainText(/Price action|Precio/);
+    await expect(page.locator("body")).toContainText(/View data coverage|Ver cobertura de datos/);
     await expect(page.locator("body")).toContainText(/Data coverage|Cobertura de datos/);
     await expect(page.locator("body")).toContainText(/Technical analysis|Análisis técnico|Analisis tecnico/);
     await expect(page.locator("body")).toContainText(/Fundamental analysis|Análisis fundamental|Analisis fundamental/);
     await expect(page.locator("body")).toContainText(/Riesgos principales|Key risks/);
-    await expect(page.locator("body")).toContainText(/Cobertura y limitaciones|Data coverage/);
+    await expect(page.getByTestId("market-signal-module")).toBeVisible();
+    await expect(page.getByTestId("technical-analysis-module")).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Technical factor panel|Panel de factores tecnicos/);
   });
 
   test("Spanish technical interpretation is human-readable", async ({ page }) => {
     await page.goto("/asset/AAPL");
     await page.getByRole("button", { name: "ES", exact: true }).click();
 
-    await expect(page.locator("body")).toContainText(/Lectura tecnica|Lectura tÃ©cnica/);
+    await expect(page.locator("body")).toContainText(/An.lisis t.cnico|Panel de factores tecnicos/i);
     await expect(page.locator("body")).not.toContainText("constructive uptrend");
     await expect(page.locator("body")).not.toContainText("overbought momentum watch");
     await expect(page.locator("body")).toContainText(/tendencia|momentum|sobrecompra/i);
@@ -987,8 +1030,10 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await page.getByRole("button", { name: "ES", exact: true }).click();
 
     await expect(page.locator("body")).toContainText("Subyacente");
-    await expect(page.locator("body")).toContainText(/CEDEAR local simulado/);
+    await expect(page.locator("body")).toContainText(/CEDEAR local simulado|Precio local CEDEAR simulado/);
     await expect(page.locator("body")).not.toContainText("Provider underlying / mock local CEDEAR");
+    await expect(page.locator("body")).not.toContainText("mock local CEDEAR");
+    await expect(page.locator("body")).not.toContainText("provider underlying");
   });
 
   test("Spanish fundamental card avoids English unavailable copy", async ({ page }) => {
@@ -1038,7 +1083,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await page.getByRole("button", { name: "ES", exact: true }).click();
 
     await expect(page.locator("body")).toContainText("Lectura ejecutiva", { timeout: 20_000 });
-    await expect(page.locator("body")).toContainText(/ntesis t/i);
+    await expect(page.locator("body")).toContainText(/Panel de factores tecnicos|Detalle tecnico/i);
     await expect(page.locator("body")).toContainText("Pulso de noticias");
     await expect(page.locator("body")).not.toContainText("Shareable asset intelligence report");
   });

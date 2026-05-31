@@ -14,6 +14,21 @@
 - Redesigned shell/header/homepage hierarchy and applied premium card treatments across asset, report, Argentina, screener and transparency pages.
 - Preserved provider chain, Argentina data layer, reports, localization and non-advisory copy.
 
+## Sprint 22: Asset Page IA and Heatmap
+
+- Simplified the asset page into a hero, compact executive strip, two-column analytical zone and secondary detail disclosures.
+- Differentiated integrated market signal from pure technical analysis with distinct visual components.
+- Added asset identity fallback logos and the first market heatmap module for cross-segment scanning.
+- Moved data coverage into secondary UI while preserving public-demo transparency.
+
+## Sprint 23: Heatmap Pro and Argentina Market Panels
+
+- Upgraded the heatmap with segment controls for USA, CEDEARs, Argentina, bonds, crypto, ETFs and all instruments.
+- Added sorting by variation, absolute movement, symbol and source, plus a simulated-data toggle.
+- Added source badges and accessible click-through heatmap cells.
+- Improved the Argentina page with local snapshot, sovereign bonds, Argentine equities, featured CEDEARs and clearer source/limitation presentation.
+- Connected the screener to the heatmap so users can move from filtering to market scanning.
+
 ## Phase 1: UI Mock Dashboard
 
 - Build the responsive fintech dashboard.
