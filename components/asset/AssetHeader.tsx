@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AssetLogo } from "@/components/assets/AssetLogo";
+import { WatchlistButton } from "@/components/watchlist/WatchlistButton";
 import { formatAssetPrice, formatCurrencyValue, formatDisplayCurrency, formatPercent } from "@/lib/formatters";
 import type { ArgentinaQuote } from "@/lib/argentina";
 import { getAssetTypeLabel } from "@/lib/i18n/domain";
@@ -121,11 +122,11 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
   }, [asset.symbol, canUseArgentinaQuote]);
 
   return (
-    <section className="cma-panel-elevated cma-glow-cyan p-5" data-testid="asset-hero-header">
+    <section className="cma-panel-elevated cma-asset-hero cma-glow-cyan p-5" data-testid="asset-hero-header">
       <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
         <div className="min-w-0">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-            <AssetLogo symbol={asset.symbol} name={name} type={asset.type} size="lg" />
+            <AssetLogo symbol={asset.symbol} name={name} type={asset.type} size="lg" className="ring-1 ring-white/10" />
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-4xl font-semibold tracking-tight text-white">{asset.symbol}</h1>
@@ -173,6 +174,15 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
             <a href="#asset-coverage" className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-cyan-300/40 hover:text-white">
               {language === "es" ? "Ver cobertura" : "View coverage"}
             </a>
+            <WatchlistButton
+              item={{
+                symbol: asset.symbol,
+                name,
+                assetType: asset.type,
+                market: asset.market,
+                currency: visibleCurrency,
+              }}
+            />
           </div>
         </div>
         <div className="cma-card-price p-5 xl:min-w-80">

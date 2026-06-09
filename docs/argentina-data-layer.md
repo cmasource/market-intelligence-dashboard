@@ -31,6 +31,16 @@ Sprint 23 adds a more useful Argentina market panel:
 
 The Argentina page now uses the local quote layer first, then falls back to structured simulation or future integration labels. Detailed provider limitations remain visible, but compact source badges keep the user interface readable.
 
+## CNV Documents Layer
+
+Sprint 24 adds a first CNV document intelligence layer for Argentine issuers. It registers local issuers and structured demo documents for financial statements, relevant events and corporate context.
+
+CNV remains separate from quote data:
+
+- CNV is for issuer filings, relevant events and corporate documents.
+- BYMA, IOL, PPI or licensed providers remain future paths for market prices.
+- Current CNV documents are structured placeholders unless explicitly marked otherwise.
+
 ## Current Limits
 
 - BYMA integration is future-scoped and may require access, licensing or homologation.

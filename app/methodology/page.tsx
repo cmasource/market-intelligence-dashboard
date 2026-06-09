@@ -69,8 +69,20 @@ export default function MethodologyPage() {
         ? "La capa Argentina puede usar cargas manuales validadas, futuras integraciones BYMA/proveedor o respaldo estructurado simulado. La carga manual es un paso intermedio para mostrar valores locales reales mientras se gestionan integraciones oficiales. CNV se planifica para hechos relevantes, presentaciones y fundamentos, no para precios intradiarios. BYMA, IOL, PPI o proveedores licenciados quedan como rutas futuras para cotizaciones."
         : "The Argentina layer can use validated manual loads, future BYMA/provider integrations or structured mock fallback. Manual data is an interim step to show real local values while official integrations are pending. CNV is planned for filings, relevant facts and fundamentals, not intraday prices. BYMA, IOL, PPI or licensed providers remain future quote paths.",
     },
-    {
-      title: isSpanish ? "Limitaciones actuales" : "Current limitations",
+      {
+        title: isSpanish ? "Metodologia de documentos CNV" : "CNV documents methodology",
+        body: isSpanish
+          ? "La capa CNV se orienta a emisoras, estados financieros, hechos relevantes y documentacion societaria. La version actual usa documentos estructurados de demostracion o cargas manuales futuras; no consulta endpoints privados ni scrapea brokers. CNV no se utiliza para precios de mercado en vivo."
+          : "The CNV layer is designed for issuers, financial statements, relevant events and corporate documents. The current version uses structured demo documents or future manual loads; it does not call private endpoints or scrape brokers. CNV is not used for live market prices.",
+      },
+      {
+        title: isSpanish ? "Cobertura objetivo del universo" : "Target universe coverage",
+        body: isSpanish
+          ? "Acciones USA con relacion CEDEAR usan datos de proveedor o fallback para el subyacente. Los precios locales de CEDEAR, acciones argentinas y bonos dependen de la capa Argentina con carga manual, datos estructurados simulados o cobertura futura hasta integrar BYMA, IOL, PPI o proveedor licenciado."
+          : "USA stocks with a CEDEAR relationship use provider or fallback data for the underlying. Local CEDEAR prices, Argentine equities and bonds depend on the Argentina layer with manual loads, structured mock data or future coverage until BYMA, IOL, PPI or a licensed provider is integrated.",
+      },
+      {
+        title: isSpanish ? "Limitaciones actuales" : "Current limitations",
       body: isSpanish
         ? "Pueden existir diferencias frente a plataformas externas por fuente de datos, ajuste de precios, zona horaria, metodología de indicadores, frecuencia de actualización y convención de ratio CEDEAR."
         : "Differences versus external platforms can come from data source, price adjustment, timezone, indicator methodology, update frequency and CEDEAR ratio convention.",

@@ -180,12 +180,18 @@ export function BondMetricsCard({ symbol, fallbackBondMetrics, metrics }: BondMe
           <h3 className="mb-3 text-sm font-semibold text-white">{t("instrumentDetails")}</h3>
           <MetricGrid items={instrumentRows} />
         </div>
-        {riskRows.length > 0 ? (
-          <div>
-            <h3 className="mb-3 text-sm font-semibold text-white">{t("riskProfile")}</h3>
+        <div>
+          <h3 className="mb-3 text-sm font-semibold text-white">{t("riskProfile")}</h3>
+          {riskRows.length > 0 ? (
             <MetricGrid items={riskRows} />
-          </div>
-        ) : null}
+          ) : (
+            <p className="rounded-lg border border-amber-300/15 bg-amber-300/10 p-3 text-sm leading-6 text-amber-100">
+              {language === "es"
+                ? "Perfil de riesgo estimado desde datos estructurados hasta contar con analitica completa del proveedor."
+                : "Risk profile estimated from structured data until full provider analytics are available."}
+            </p>
+          )}
+        </div>
         <div className="rounded-lg border border-white/10 bg-slate-950/45 p-4">
           <h3 className="text-sm font-semibold text-white">{analytics?.interpretation.label ?? t("fixedIncomeInterpretation")}</h3>
           <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">

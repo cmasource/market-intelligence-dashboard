@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { DataCoverageLegend } from "@/components/data-coverage/DataCoverageLegend";
 import { ProviderStatusPanel } from "@/components/providers/ProviderStatusPanel";
@@ -8,7 +9,7 @@ import Link from "next/link";
 
 const implemented = [
   "MVP dashboard",
-  "CMA Consulting / cma_source branding",
+  "CMA Consulting brand identity",
   "EN/ES i18n",
   "Financial engine",
   "Financial engine validation",
@@ -21,17 +22,19 @@ const implemented = [
   "CEDEAR ratio and implied CCL mock analytics",
   "News MVP with provider/RSS/mock fallback",
   "Expanded USA/crypto provider coverage with fallback",
+  "CNV issuer registry and structured document placeholders",
   "Data audit page",
   "Methodology page",
+  "Screener",
+  "Local browser watchlist",
   "Playwright smoke tests",
 ];
 
 const pending = [
   "Real Argentina market data",
   "BYMA/IOL/CNV integration",
+  "Official CNV document integration",
   "Real bond terms and calendars",
-  "Screener",
-  "Watchlist",
   "Portfolio",
   "Alerts",
   "AI agents",
@@ -53,6 +56,7 @@ const demoReady = [
   "Data coverage transparency",
   "Data audit",
   "Methodology",
+  "Local watchlist",
 ];
 
 const demoPending = [
@@ -60,8 +64,78 @@ const demoPending = [
   "CNV/BYMA/IOL integrations",
   "CEDEAR ratios and implied CCL",
   "Licensed real news provider configuration",
-  "User accounts and watchlists",
+  "Account-synced watchlists",
 ];
+
+type RuntimeDiagnostics = {
+  nodeEnvironment?: string;
+  vercelEnvironment?: string;
+  configuredMarketProvider?: string;
+  configuredNewsProvider?: string;
+  configuredFundamentalsProvider?: string;
+  activeMarketDataProvider?: string;
+  activeFundamentalsProvider?: string;
+  activeNewsProvider?: string;
+  providerFlags?: {
+    fmpKeyPresent?: boolean;
+    logoDevTokenPresent?: boolean;
+    yahooFallbackEnabled?: boolean;
+    mockFallbackEnabled?: boolean;
+  };
+};
+
+function DeploymentParityPanel({ isSpanish }: { isSpanish: boolean }) {
+  const [diagnostics, setDiagnostics] = useState<RuntimeDiagnostics | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/diagnostics/runtime")
+      .then((response) => response.json())
+      .then((data: RuntimeDiagnostics) => {
+        if (active) setDiagnostics(data);
+      })
+      .catch(() => {
+        if (active) setDiagnostics(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const flags = diagnostics?.providerFlags;
+
+  return (
+    <section className="cma-panel cma-glow-violet p-5">
+      <p className="cma-kicker">{isSpanish ? "Produccion" : "Production"}</p>
+      <h2 className="mt-2 text-xl font-semibold text-white">
+        {isSpanish ? "Paridad local/producción" : "Local/production parity"}
+      </h2>
+      <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
+        {isSpanish
+          ? "Si faltan variables de entorno en Vercel, produccion puede usar datos fallback, simulados o manuales aunque local use proveedores configurados. Configura las variables y redeploya para igualar comportamiento."
+          : "If Vercel environment variables are missing, production can use fallback, mock or manual data even when local uses configured providers. Configure variables and redeploy to match behavior."}
+      </p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          ["NODE_ENV", diagnostics?.nodeEnvironment ?? "unknown"],
+          ["Vercel", diagnostics?.vercelEnvironment ?? "local"],
+          [isSpanish ? "Mercado" : "Market", diagnostics?.configuredMarketProvider ?? "unknown"],
+          [isSpanish ? "Noticias" : "News", diagnostics?.configuredNewsProvider ?? "unknown"],
+          [isSpanish ? "Fundamentos" : "Fundamentals", diagnostics?.configuredFundamentalsProvider ?? "unknown"],
+          ["FMP key", flags?.fmpKeyPresent ? "yes" : "no"],
+          ["Logo.dev", flags?.logoDevTokenPresent ? "yes" : "no"],
+          [isSpanish ? "Fallback" : "Fallback", flags?.yahooFallbackEnabled || flags?.mockFallbackEnabled ? "enabled" : "disabled"],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-lg border border-white/10 bg-white/[0.035] p-3">
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
+            <p className="mt-2 text-sm font-semibold text-white">{value}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export default function StatusPage() {
   const { language } = useLanguage();
@@ -80,6 +154,7 @@ export default function StatusPage() {
         </section>
         <DataCoverageLegend />
         <ProviderStatusPanel />
+        <DeploymentParityPanel isSpanish={isSpanish} />
         <section className="cma-panel cma-card-analysis p-5">
           <h2 className="text-xl font-semibold text-white">
             {isSpanish ? "Demo publica" : "Public demo"}

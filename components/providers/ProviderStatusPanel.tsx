@@ -1,17 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ProviderStatus } from "@/lib/providers";
 import { useLanguage } from "@/lib/i18n/useLanguage";
+import type { ProviderStatus } from "@/lib/providers";
 
 function formatProvider(provider: string) {
   return provider.replaceAll("_", " ");
+}
+
+function formatProviderDisplay(provider: string, isSpanish: boolean) {
+  if (provider === "fmp") return "FMP";
+  if (provider === "yahoo") return isSpanish ? "Yahoo compatible" : "Yahoo-compatible";
+  if (provider === "google_news_rss") return "Google News RSS";
+  if (provider === "alpha_vantage") return "Alpha Vantage";
+  return formatProvider(provider);
 }
 
 function formatProviderReason(reason: string | undefined, isSpanish: boolean) {
   if (!reason) return isSpanish ? "inactivo" : "disabled";
   if (!isSpanish) return reason.replaceAll("_", " ");
   if (reason === "plan_restricted") return "limitado por plan";
+  if (reason.startsWith("Missing ")) return `falta ${reason.replace("Missing ", "")}`;
   return reason.replaceAll("_", " ");
 }
 
@@ -44,6 +53,8 @@ export function ProviderStatusPanel() {
         { title: isSpanish ? "Noticias" : "News", active: status.activeNewsProvider, items: status.news },
       ]
     : [];
+  const fmpMarketData = status?.marketData.find((item) => item.provider === "fmp");
+  const fmpIsMissing = Boolean(fmpMarketData && !fmpMarketData.enabled);
 
   return (
     <section className="rounded-lg border border-cyan-300/20 bg-slate-950/55 p-5">
@@ -54,10 +65,25 @@ export function ProviderStatusPanel() {
         {isSpanish ? "Cadena de datos activa" : "Active data provider chain"}
       </h2>
       <p className="mt-3 text-sm leading-6 text-slate-300">
-        {isSpanish
-          ? "Proveedor configurado: FMP. Si FMP falla o no devuelve datos válidos para un símbolo, la app usa Yahoo compatible como proveedor real de respaldo antes de recurrir a datos simulados."
-          : "Configured provider: FMP. If FMP fails or returns no valid data for a symbol, the app uses Yahoo-compatible data as a real-data fallback before using mock data."}
+        {status
+          ? isSpanish
+            ? `Proveedor efectivo de precios: ${formatProviderDisplay(status.activeMarketDataProvider, true)}. Si FMP no esta disponible en este entorno, la app usa Yahoo compatible como respaldo real antes de recurrir a datos simulados.`
+            : `Effective market-data provider: ${formatProviderDisplay(status.activeMarketDataProvider, false)}. If FMP is unavailable in this environment, the app uses Yahoo-compatible data as a real-data fallback before using mock data.`
+          : isSpanish
+            ? "Consultando la cadena activa de proveedores."
+            : "Checking the active provider chain."}
       </p>
+
+      {fmpIsMissing ? (
+        <div className="mt-4 rounded-lg border border-amber-300/25 bg-amber-300/10 p-3 text-sm leading-6 text-amber-50">
+          <p className="font-semibold">{isSpanish ? "Accion de despliegue requerida" : "Deployment action required"}</p>
+          <p className="mt-1 text-amber-100/90">
+            {isSpanish
+              ? "Este entorno no tiene FMP_API_KEY disponible. Agrega esa variable en Vercel para Production, Preview y Development y redeploya para que FMP vuelva a ser el proveedor principal."
+              : "This environment does not expose FMP_API_KEY. Add that variable in Vercel for Production, Preview and Development, then redeploy so FMP becomes the primary provider again."}
+          </p>
+        </div>
+      ) : null}
 
       {!status ? (
         <p className="mt-4 text-sm text-slate-500">{isSpanish ? "Cargando estado..." : "Loading status..."}</p>
@@ -68,13 +94,13 @@ export function ProviderStatusPanel() {
               <div className="flex items-start justify-between gap-3">
                 <h3 className="font-semibold text-white">{group.title}</h3>
                 <span className="rounded-full border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-xs text-emerald-100">
-                  {isSpanish ? "configurado: " : "configured: "}{formatProvider(group.active)}
+                  {isSpanish ? "activo: " : "active: "}{formatProviderDisplay(group.active, isSpanish)}
                 </span>
               </div>
               <div className="mt-3 space-y-2">
                 {group.items.map((item) => (
                   <div key={`${group.title}-${item.provider}`} className="flex items-start justify-between gap-2 text-xs">
-                    <span className="capitalize text-slate-300">{formatProvider(item.provider)}</span>
+                    <span className="text-slate-300">{formatProviderDisplay(item.provider, isSpanish)}</span>
                     <span className={item.enabled ? "text-emerald-200" : "text-amber-200"}>
                       {item.enabled ? (isSpanish ? "activo" : "enabled") : formatProviderReason(item.reason, isSpanish)}
                     </span>

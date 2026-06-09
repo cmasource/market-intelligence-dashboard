@@ -199,7 +199,7 @@ export function FundamentalAnalysisCard({
 
   if (isNotApplicable) {
     return (
-      <section className="cma-panel p-5" data-testid="fundamental-analysis-module">
+      <section className="cma-panel cma-module-fundamentals p-5" data-testid="fundamental-analysis-module">
         <SectionHeader
           eyebrow={t("fundamentalAnalysis")}
           title={language === "es" ? t("equityRatiosNotApplicable") : fundamentals?.interpretation.label ?? t("equityRatiosNotApplicable")}
@@ -266,7 +266,7 @@ export function FundamentalAnalysisCard({
   };
 
   return (
-    <section className="cma-panel p-5" data-testid="fundamental-analysis-module">
+    <section className="cma-panel cma-module-fundamentals p-5" data-testid="fundamental-analysis-module">
       <SectionHeader
         eyebrow={t("fundamentalAnalysis")}
         title={score === null ? t("fundamentalScoreUnavailable") : t("fundamentalScore", { score: formatScore(score) })}

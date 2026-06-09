@@ -45,7 +45,7 @@ export function AssetRiskPanel({ symbol }: AssetRiskPanelProps) {
   const risks = report?.riskSummary.keyRisks.slice(0, 5) ?? [];
 
   return (
-    <section className="cma-card-risk p-5" data-testid="asset-risk-panel">
+    <section className="cma-card-risk cma-module-risk p-5" data-testid="asset-risk-panel">
       <p className="cma-kicker text-amber-200">{isSpanish ? "Riesgo" : "Risk"}</p>
       <h2 className="mt-2 text-xl font-semibold text-white">{isSpanish ? "Riesgos principales" : "Key risks"}</h2>
       {risks.length ? (

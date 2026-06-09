@@ -40,13 +40,13 @@ export function MarketSignalGauge({
 
   return (
     <section
-      className="cma-panel-elevated cma-glow-violet border-indigo-300/25 p-5 shadow-xl shadow-indigo-950/15"
+      className="cma-panel-elevated cma-integrated-signal cma-glow-violet border-indigo-300/25 p-5 shadow-xl shadow-indigo-950/15"
       data-testid="market-signal-module"
     >
       <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_180px] md:items-center">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-200">
-            {isSpanish ? "Senal de mercado" : "Market signal"}
+            {isSpanish ? "Senal integrada de mercado" : "Integrated market signal"}
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-white">{signal.label}</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">{signal.description}</p>

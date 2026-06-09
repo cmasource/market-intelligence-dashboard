@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { DataCoverageBadges } from "@/components/data-coverage/DataCoverageBadges";
 import { formatAssetPrice, formatCurrencyValue, formatDisplayCurrency, formatPercent } from "@/lib/formatters";
 import { useArgentinaQuotes, type ArgentinaQuoteState } from "@/lib/hooks/useArgentinaQuotes";
@@ -84,6 +84,16 @@ export function AssetSearch({ assets }: AssetSearchProps) {
     return instrument.category.replaceAll("_", " ");
   }
 
+  function groupLabel(instrument: InstrumentUniverseItem) {
+    if (instrument.country === "US" && instrument.category === "equity") return isSpanish ? "Acciones USA" : "USA stocks";
+    if (instrument.category === "cedear") return "CEDEARs";
+    if (instrument.country === "AR" && instrument.category === "equity") return isSpanish ? "Argentina" : "Argentina";
+    if (instrument.category.includes("bond") || instrument.category === "lecap" || instrument.category === "letra") return isSpanish ? "Bonos" : "Bonds";
+    if (instrument.category === "crypto") return isSpanish ? "Cripto" : "Crypto";
+    if (instrument.category === "etf") return "ETFs";
+    return isSpanish ? "Otros" : "Other";
+  }
+
   function displayName(instrument: InstrumentUniverseItem) {
     return language === "es" && instrument.displayNameEs ? instrument.displayNameEs : instrument.displayNameEn ?? instrument.displayName;
   }
@@ -148,7 +158,7 @@ export function AssetSearch({ assets }: AssetSearchProps) {
       ) : null}
       <div className="mt-4 max-h-[30rem] space-y-2 overflow-y-auto pr-3">
         {visibleInstruments.length ? (
-          visibleInstruments.map((instrument) => {
+          visibleInstruments.map((instrument, index) => {
             const asset = assetBySymbol.get(instrument.symbol);
             const quote = quotes[instrument.symbol];
             const argentinaQuote = argentinaQuotes[instrument.symbol];
@@ -221,15 +231,22 @@ export function AssetSearch({ assets }: AssetSearchProps) {
               </>
             );
 
+            const group = groupLabel(instrument);
+            const previousGroup = index > 0 ? groupLabel(visibleInstruments[index - 1]) : null;
+
             return (
+              <Fragment key={`${instrument.country}-${instrument.market}-${instrument.symbol}-${instrument.category}`}>
+              {group !== previousGroup ? (
+                <p className="pt-2 text-xs uppercase tracking-[0.16em] text-slate-500">{group}</p>
+              ) : null}
               <Link
-                key={`${instrument.country}-${instrument.market}-${instrument.symbol}-${instrument.category}`}
                 href={`/asset/${encodeURIComponent(instrument.symbol)}`}
                 onClick={() => saveRecentSymbol(instrument.symbol)}
                 className="group cma-card-price grid gap-4 p-3 sm:grid-cols-[minmax(0,1fr)_auto]"
               >
                 {content}
               </Link>
+              </Fragment>
             );
           })
         ) : (

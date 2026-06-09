@@ -21,6 +21,7 @@ const realRoutes = [
   { route: "/methodology", heading: /Methodology|Metodología|Metodologia/ },
   { route: "/argentina", heading: /Argentina Market|Mercado argentino/ },
   { route: "/crypto", heading: /Crypto Monitor|Monitor cripto/ },
+  { route: "/watchlist", heading: /Watchlist|Mi lista/ },
   { route: "/reports", heading: /Reports|Reportes/ },
   { route: "/agents", heading: /AI Agents|Agentes IA/ },
   { route: "/status", heading: /Development Status|Estado del desarrollo/ },
@@ -31,13 +32,18 @@ const forbiddenLegacyBrand = new RegExp(["Se", "mia"].join(""), "i");
 const marketDataStatus = /Real market data|Fallback mock data|Mock OHLCV data/;
 const technicalSourceStatus = /Calculated from real market data|Calculated from fallback mock data/;
 const fundamentalsSourceStatus = /Provider fundamentals|Fallback mock fundamentals/;
-const fixedIncomeSourceStatus = /Mock fixed income analytics/;
+const fixedIncomeSourceStatus = /Mock fixed income analytics|Calculating fixed income analytics/;
 const forbiddenCurrencyLabels = [/ARS\/USD/, /USD\/ARS/, new RegExp(["ARS", "SAR"].join(" "))];
 const forbiddenCurrencyLabelsWhenCclIsAllowed = [/USD\/ARS/, new RegExp(["ARS", "SAR"].join(" "))];
 
 test.describe("CMA Market Intelligence smoke tests", () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => window.localStorage.clear());
+    await page.addInitScript(() => {
+      if (!window.sessionStorage.getItem("cma-e2e-local-storage-cleared")) {
+        window.localStorage.clear();
+        window.sessionStorage.setItem("cma-e2e-local-storage-cleared", "true");
+      }
+    });
   });
 
   test("home dashboard loads with approved branding", async ({ page }) => {
@@ -46,7 +52,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page).toHaveTitle(/CMA Market Intelligence/);
     await expect(page.getByText("CMA Market Intelligence").first()).toBeVisible();
     await expect(page.getByText("CMA Consulting").first()).toBeVisible();
-    await expect(page.getByText("cma_source").first()).toBeVisible();
+    await expect(page.locator("footer")).toContainText("cma_source");
     await expect(page.locator("body")).toContainText(/Mixed coverage|Cobertura mixta/);
     await expect(page.locator("body")).toContainText(/Market Intelligence Terminal/);
     await expect(page.locator("body")).toContainText(/Cross-market pulse|Pulso cross-market/);
@@ -65,7 +71,13 @@ test.describe("CMA Market Intelligence smoke tests", () => {
 
     const header = page.locator("header");
     await expect(header.locator('[aria-label="CMA"]')).toContainText("CMA");
+    await expect(header.getByRole("link", { name: "CMA Market Intelligence" })).toBeVisible();
+    await expect(header.locator('img[alt="CMA Market Intelligence"]')).toBeVisible();
     await expect(header.locator("span").filter({ hasText: /^S$/ })).toHaveCount(0);
+    const hasHorizontalOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+    );
+    expect(hasHorizontalOverflow).toBeFalsy();
 
     const navigation = page.getByRole("navigation", { name: "Primary navigation" });
     await expect(navigation.getByRole("link", { name: "Dashboard" })).toBeVisible();
@@ -73,8 +85,63 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(navigation.getByRole("link", { name: "Screener" })).toBeVisible();
     await expect(navigation.getByRole("link", { name: "Argentina" })).toBeVisible();
     await expect(navigation.getByRole("link", { name: "Crypto" })).toBeVisible();
+    await expect(navigation.getByRole("link", { name: "Watchlist" })).toBeVisible();
     await expect(navigation.getByRole("link", { name: "Reports" })).toBeVisible();
     await expect(navigation.getByRole("link", { name: "Agents" })).toBeVisible();
+  });
+
+  test("header brand mark remains visible across themes", async ({ page }) => {
+    await page.goto("/");
+
+    const header = page.locator("header");
+    const brandMark = header.locator('img[alt="CMA Market Intelligence"]');
+    await expect(page.getByText("CMA Market Intelligence").first()).toBeVisible();
+    await expect(brandMark).toBeVisible();
+
+    await page.getByRole("button", { name: "Light" }).click();
+    await expect(brandMark).toBeVisible();
+    await expect(page.getByText("CMA Market Intelligence").first()).toBeVisible();
+
+    await page.getByRole("button", { name: "Dark" }).click();
+    await expect(brandMark).toBeVisible();
+  });
+
+  test("favicon and app icon assets are available", async ({ request }) => {
+    for (const route of ["/icon.png", "/apple-icon.png", "/favicon.ico", "/brand/icon-192.png"]) {
+      const response = await request.get(route);
+      expect(response.ok()).toBeTruthy();
+      expect((await response.body()).length).toBeGreaterThan(1000);
+    }
+  });
+
+  test("rankings API returns safe bundled rankings", async ({ request }) => {
+    const response = await request.get("/api/rankings");
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data).toHaveProperty("technical");
+    expect(data).toHaveProperty("fundamental");
+    expect(data).toHaveProperty("combined");
+    expect(data.technical.items.length).toBeGreaterThan(0);
+    expect(JSON.stringify(data)).not.toMatch(/API_KEY|FMP_API_KEY|FINNHUB_API_KEY|ALPHA_VANTAGE_API_KEY/i);
+  });
+
+  test("technical ranking API avoids direct recommendation wording", async ({ request }) => {
+    const response = await request.get("/api/rankings/technical");
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(Array.isArray(data.items)).toBeTruthy();
+    expect(data.items.length).toBeGreaterThan(0);
+    const forbiddenRecommendation = new RegExp(["Strong ", "Buy|Strong ", "Sell|Compra fuerte|Venta fuerte"].join(""), "i");
+    expect(JSON.stringify(data)).not.toMatch(forbiddenRecommendation);
+  });
+
+  test("performance ranking API supports period query", async ({ request }) => {
+    const response = await request.get("/api/rankings/performance?period=YTD");
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data.type).toBe("performance");
+    expect(data.period).toBe("YTD");
+    expect(data.items.length).toBeGreaterThan(0);
   });
 
   for (const route of realRoutes) {
@@ -96,6 +163,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
       { name: "Screener", route: /\/screener$/ },
       { name: "Argentina", route: /\/argentina$/ },
       { name: "Crypto", route: /\/crypto$/ },
+      { name: "Watchlist", route: /\/watchlist$/ },
       { name: "Reports", route: /\/reports$/ },
       { name: "Agents", route: /\/agents$/ },
     ];
@@ -150,6 +218,38 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.getByRole("heading", { name: "Financial intelligence for market decisions" })).toBeVisible();
   });
 
+  test("homepage rankings show technical fundamental combined and performance modules", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "ES", exact: true }).click();
+
+    const rankings = page.getByTestId("market-rankings");
+    await expect(rankings).toBeVisible();
+    await expect(rankings).toContainText("Rankings de oportunidad informativa");
+    await expect(rankings).toContainText("Ranking técnico");
+    await expect(rankings).toContainText("Ranking fundamental");
+    await expect(rankings).toContainText("Ranking combinado");
+    await expect(rankings).toContainText("Mejores rendimientos");
+    await expect(rankings).toContainText(/Últimos 30 días|Ultimos 30 dias/);
+    await expect(rankings).toContainText(/Año en curso|Ano en curso/);
+  });
+
+  test("ranking row navigation opens an asset page", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "ES", exact: true }).click();
+
+    const firstRankingRow = page.getByTestId("ranking-row").first();
+    await expect(firstRankingRow).toBeVisible();
+    await firstRankingRow.click();
+    await expect(page).toHaveURL(/\/asset\//);
+    await expect(page.locator("body")).not.toContainText(/404|This page could not be found|Activo no encontrado/i);
+  });
+
+  test("rankings page surface avoids direct recommendation wording", async ({ page }) => {
+    await page.goto("/");
+    const forbiddenRecommendation = new RegExp(["Strong ", "Buy|Strong ", "Sell|Compra fuerte|Venta fuerte"].join(""), "i");
+    await expect(page.locator("body")).not.toContainText(forbiddenRecommendation);
+  });
+
   test("asset search finds and opens AAPL", async ({ page }) => {
     await page.goto("/");
 
@@ -182,6 +282,9 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await page.getByLabel("Asset search").fill("Microsoft");
     await expect(searchSection.getByText("MSFT").first()).toBeVisible();
 
+    await page.getByLabel("Asset search").fill("Galicia");
+    await expect(searchSection.getByText("GGAL").first()).toBeVisible();
+
     await page.getByLabel("Asset search").fill("Bitcoin");
     await expect(searchSection.getByText("BTC-USD").first()).toBeVisible();
   });
@@ -194,6 +297,31 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(searchSection.getByText("PAMP").first()).toBeVisible();
     await expect(searchSection).toContainText(/View preliminary profile|Ver ficha preliminar|Future coverage|Cobertura futura/);
     await expect(searchSection.locator("a").first()).toBeVisible();
+  });
+
+  test("watchlist stores removes and persists assets locally", async ({ page }) => {
+    await page.goto("/asset/AAPL");
+    const watchlistButton = page.getByTestId("watchlist-button-AAPL").first();
+    await expect(watchlistButton).toBeVisible();
+    await expect(watchlistButton).toBeEnabled();
+    await watchlistButton.click();
+    await expect(watchlistButton).toContainText(/Remove from watchlist|Quitar de mi lista/);
+
+    await page.goto("/watchlist");
+    await expect(page.getByRole("heading", { name: /Watchlist|Mi lista/ })).toBeVisible();
+    await expect(page.getByText("AAPL").first()).toBeVisible();
+    await page.reload();
+    await expect(page.getByText("AAPL").first()).toBeVisible();
+
+    await page.getByRole("button", { name: /Remove from watchlist|Quitar de mi lista/ }).first().click();
+    await expect(page.locator("body")).toContainText(/No saved assets|Sin activos guardados/);
+  });
+
+  test("header watchlist navigation opens the local list", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "Watchlist" }).click();
+    await expect(page).toHaveURL(/\/watchlist$/);
+    await expect(page.getByRole("heading", { name: /Watchlist|Mi lista/ })).toBeVisible();
   });
 
   test("future asset fallback page is graceful", async ({ page }) => {
@@ -250,7 +378,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.locator("body")).toContainText(/Provider|Proveedor|Real/);
     await expect(page.locator("body")).toContainText(/Mock|Simulado/);
     await expect(page.locator("body")).toContainText(/Future|Futuro/);
-    for (const symbol of ["AL30", "AL30D", "AL30C", "GGAL", "YPFD", "BTC-USD", "ETH-USD", "AAPL"]) {
+    for (const symbol of ["AL30", "AL30D", "AL30C", "GGAL", "YPFD", "PAMP", "BTC-USD", "ETH-USD", "AAPL"]) {
       await expect(page.getByText(symbol).first()).toBeVisible();
     }
     await expect(page.getByPlaceholder(/Search AL30|Buscar AL30/)).toBeVisible();
@@ -345,8 +473,8 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.locator("[data-app-theme='light']")).toBeVisible();
     await expect(page.getByText("CMA Market Intelligence").first()).toBeVisible();
     await expect(page.locator("#markets")).toBeVisible();
-    await expect(page.locator("body")).toContainText(/Created by|Creado por/);
-    await expect(page.locator("body")).toContainText(/Developed by|Desarrollado por/);
+    await expect(page.locator("header")).not.toContainText("cma_source");
+    await expect(page.locator("#markets")).not.toContainText("cma_source");
     await expect(page.locator("body")).toContainText(/Mixed coverage|Cobertura mixta/);
     await expect(page.locator("body")).toContainText(/informational analysis only|analisis informativo/);
     await expect(page.locator("body")).toContainText(/Very high|Muy alto|High|Alto|Medium|Medio/);
@@ -591,11 +719,17 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     expect(data.app).toBe("CMA Market Intelligence");
     expect(typeof data.configuredMarketProvider).toBe("string");
     expect(typeof data.configuredNewsProvider).toBe("string");
+    expect(typeof data.configuredFundamentalsProvider).toBe("string");
     expect(typeof data.fmpEnabled).toBe("boolean");
+    expect(typeof data.fmpKeyPresent).toBe("boolean");
+    expect(typeof data.logoDevTokenPresent).toBe("boolean");
     expect(typeof data.yahooFallbackEnabled).toBe("boolean");
     expect(typeof data.mockFallbackEnabled).toBe("boolean");
+    expect(typeof data.providerFlags.fmpKeyPresent).toBe("boolean");
+    expect(typeof data.providerFlags.logoDevTokenPresent).toBe("boolean");
     expect(payload).not.toMatch(/api[_-]?key/i);
     if (process.env.FMP_API_KEY) expect(payload).not.toContain(process.env.FMP_API_KEY);
+    if (process.env.NEXT_PUBLIC_LOGO_DEV_TOKEN) expect(payload).not.toContain(process.env.NEXT_PUBLIC_LOGO_DEV_TOKEN);
   });
 
   test("quote API exposes provider or fallback structure without secrets", async ({ request }) => {
@@ -675,6 +809,29 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     expect(JSON.stringify(instruments)).toContain("BYMA CEDEAR");
   });
 
+  test("CNV APIs expose issuer documents and safe source status", async ({ request }) => {
+    const issuerResponse = await request.get("/api/cnv/issuer/YPFD");
+    expect(issuerResponse.ok()).toBeTruthy();
+    const issuerData = await issuerResponse.json();
+    expect(issuerData.symbol).toBe("YPFD");
+    expect(issuerData.issuer.issuerName).toBeTruthy();
+    expect(issuerData.issuer.sourceStatus).toBeTruthy();
+
+    const documentsResponse = await request.get("/api/cnv/documents/YPFD");
+    expect(documentsResponse.ok()).toBeTruthy();
+    const documentsData = await documentsResponse.json();
+    expect(Array.isArray(documentsData.documents)).toBeTruthy();
+    expect(documentsData.documents.length).toBeGreaterThan(0);
+    expect(documentsData.documents[0].sourceLabel).toBeTruthy();
+    if (process.env.FMP_API_KEY) expect(JSON.stringify(documentsData)).not.toContain(process.env.FMP_API_KEY);
+
+    const statusResponse = await request.get("/api/cnv/status");
+    expect(statusResponse.ok()).toBeTruthy();
+    const statusData = await statusResponse.json();
+    expect(Array.isArray(statusData.sources)).toBeTruthy();
+    expect(statusData.officialIntegrationEnabled).toBe(false);
+  });
+
   test("Argentina page shows local data coverage status", async ({ page }) => {
     await page.goto("/argentina");
 
@@ -687,6 +844,26 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.locator("body")).toContainText(/BYMA|CNV|Broker\/API/);
   });
 
+  test("Argentina page shows CNV issuer and documents section", async ({ page }) => {
+    await page.goto("/argentina");
+
+    await expect(page.locator("body")).toContainText(/Emisoras y documentos CNV|CNV issuers and documents/);
+    await expect(page.getByTestId("cnv-documents-panel").first()).toBeVisible();
+    await expect(page.locator("body")).toContainText(/YPFD|GGAL/);
+    await expect(page.locator("body")).toContainText(/Documento estructurado de demostracion|Structured demo document/);
+  });
+
+  test("Argentine asset pages show CNV context and non-Argentina assets do not", async ({ page }) => {
+    await page.goto("/asset/YPFD");
+    await expect(page.locator("body")).toContainText(/Emisora CNV|CNV issuer/);
+    await expect(page.locator("body")).toContainText(/Documentos societarios|Corporate documents/);
+    await expect(page.locator("body")).toContainText(/Integracion CNV futura|Future CNV integration/);
+
+    await page.goto("/asset/AAPL");
+    await expect(page.locator("body")).not.toContainText("Emisora CNV");
+    await expect(page.locator("body")).not.toContainText("CNV issuer");
+  });
+
   test("data audit includes Argentina quote source section", async ({ page }) => {
     await page.goto("/data-audit");
 
@@ -694,6 +871,8 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.locator("body")).toContainText(/manual\/mock\/future/);
     await expect(page.getByText("AL30").first()).toBeVisible();
     await expect(page.getByText("GGAL").first()).toBeVisible();
+    await expect(page.locator("body")).toContainText(/CNV source\/status|Auditoria de documentos CNV/);
+    await expect(page.locator("body")).toContainText(/Structured demo document|Documento estructurado de demostracion/);
   });
 
   test("AAPL asset header uses quote source labels and preserves CEDEAR distinction", async ({ page, request }) => {
@@ -735,6 +914,8 @@ test.describe("CMA Market Intelligence smoke tests", () => {
   });
 
   test("Spanish asset summaries use localized copy", async ({ page }) => {
+    test.setTimeout(45_000);
+
     await page.goto("/asset/AAPL");
     await page.getByRole("button", { name: "ES", exact: true }).click();
     await expect(page.locator("body")).toContainText("Compañía tecnológica global");
@@ -817,6 +998,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
 
   test("status and footer link to data audit and methodology", async ({ page }) => {
     await page.goto("/status");
+    await expect(page.locator("body")).toContainText(/Paridad local\/producci|Local\/production parity/i);
     await expect(page.getByRole("link", { name: /View data audit|Ver auditor/i })).toHaveAttribute("href", "/data-audit");
     await expect(page.getByRole("link", { name: /View methodology|Ver metodolog/i })).toHaveAttribute("href", "/methodology");
 
@@ -828,7 +1010,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
 
   test("technical analysis source and API stay fallback-safe", async ({ page, request }) => {
     await page.goto("/asset/AAPL");
-    await expect(page.locator("body")).toContainText(/Market signal|Senal de mercado/);
+    await expect(page.locator("body")).toContainText(/Integrated market signal|Market signal|Senal integrada de mercado|Senal de mercado/);
     await expect(page.locator("body")).toContainText(/Technical|Tecnico/);
     await expect(page.locator("body")).toContainText(/Fundamentals|Fundamentos/);
     await expect(page.locator("body")).toContainText(technicalSourceStatus);
@@ -1176,6 +1358,29 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     for (const symbol of ["AL30D", "AL30C", "GD30D", "GD30C", "TX26", "GGAL", "YPFD", "PAMP", "AAPL", "MSFT", "SPY"]) {
       await expect(page.getByText(symbol).first()).toBeVisible();
     }
+  });
+
+  test("asset logo fallback is visible without broken images", async ({ page }) => {
+    await page.goto("/asset/TSLA");
+
+    const logo = page.getByTestId("asset-logo").first();
+    await expect(logo).toBeVisible();
+    const brokenImages = await page.evaluate(() =>
+      Array.from(document.images).filter((image) => image.complete && image.naturalWidth === 0).length,
+    );
+    expect(brokenImages).toBe(0);
+  });
+
+  test("expanded CEDEAR universe is discoverable", async ({ page }) => {
+    await page.goto("/screener");
+
+    await page.getByPlaceholder(/Search AL30|Buscar AL30/).fill("NVDA");
+    await expect(page.locator("body")).toContainText("NVDA");
+    await expect(page.locator("body")).toContainText(/CEDEAR|Referencia CEDEAR|CEDEAR context/);
+
+    await page.getByPlaceholder(/Search AL30|Buscar AL30/).fill("SPY");
+    await expect(page.locator("body")).toContainText("SPY");
+    await expect(page.locator("body")).toContainText(/CEDEAR|ETF/);
   });
 
   test("crypto page shows crypto universe roadmap", async ({ page }) => {

@@ -171,7 +171,7 @@ export function TechnicalAnalysisCard({
   }, [initialTimeframe, language, symbol]);
 
   return (
-    <section className="cma-panel border-cyan-300/20 p-5" data-testid="technical-analysis-module">
+    <section className="cma-panel cma-module-technical border-cyan-300/20 p-5" data-testid="technical-analysis-module">
       <SectionHeader
         eyebrow={t("technicalAnalysis")}
         title={t("technicalScore", { score: formatScore(score) })}
@@ -191,7 +191,7 @@ export function TechnicalAnalysisCard({
       </div>
       <div className="mb-4 rounded-2xl border border-cyan-300/15 bg-slate-950/35 p-3">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200">
-          {language === "es" ? "Panel de factores tecnicos" : "Technical factor panel"}
+          {language === "es" ? "Motor tecnico - Panel de factores tecnicos" : "Technical engine - Technical factor panel"}
         </p>
         <div className="mt-3 space-y-3">
           {factorBars.map((factor) => (

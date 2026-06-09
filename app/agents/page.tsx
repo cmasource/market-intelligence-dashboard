@@ -32,7 +32,7 @@ export default function AgentsPage() {
       <div className="space-y-8 py-6">
         <section className="rounded-lg border border-cyan-300/20 bg-slate-900/70 p-6 backdrop-blur">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
-            CMA Consulting | cma_source
+            CMA Market Intelligence
           </p>
           <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white">
             {isSpanish ? "Agentes IA" : "AI Agents"}

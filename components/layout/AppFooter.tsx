@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { useTheme } from "@/lib/theme/useTheme";
@@ -22,12 +23,39 @@ export function AppFooter() {
   const isLight = resolvedMode === "light";
 
   return (
-    <footer className={`border-t ${isLight ? "border-slate-200 bg-white/75 text-slate-700" : "border-white/10 bg-slate-950/75 text-slate-400"} backdrop-blur`}>
-      <div className="mx-auto grid max-w-7xl gap-5 px-4 py-6 text-sm sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:px-8">
+    <footer className={`border-t ${isLight ? "border-slate-200 bg-white/82 text-slate-700" : "border-white/10 bg-slate-950/86 text-slate-400"} backdrop-blur`}>
+      <div className="mx-auto grid max-w-[1520px] gap-6 px-4 py-7 text-sm sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-10">
         <div>
-          <p className={`font-semibold ${isLight ? "text-slate-950" : "text-white"}`}>CMA Market Intelligence</p>
-          <p className="mt-2">CMA Consulting</p>
-          <p>{isSpanish ? "Desarrollado por cma_source" : "Developed by cma_source"}</p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className={`relative h-10 w-40 overflow-hidden rounded-lg border px-3 py-1.5 ${isLight ? "border-slate-200 bg-white" : "border-white/10 bg-white"}`}>
+              <Image
+                src="/brand/cma-consulting-header-transparent.png"
+                alt="CMA Consulting"
+                width={622}
+                height={144}
+                className="h-full w-full object-contain"
+              />
+            </div>
+            <div className={`hidden h-8 w-px sm:block ${isLight ? "bg-slate-200" : "bg-white/10"}`} />
+            <div className={`relative h-8 w-32 overflow-hidden rounded-lg border px-2 py-1 ${isLight ? "border-slate-200 bg-white" : "border-white/10 bg-white"}`}>
+              <Image
+                src="/brand/cma-source-horizontal-transparent.png"
+                alt="cma_source"
+                width={622}
+                height={144}
+                className="h-full w-full object-contain"
+              />
+            </div>
+            <div className="min-w-0">
+              <p className={`font-semibold ${isLight ? "text-slate-950" : "text-white"}`}>CMA Market Intelligence</p>
+              <p className="mt-1 text-xs leading-5">
+                {isSpanish ? "Producto por CMA Consulting." : "Product by CMA Consulting."}{" "}
+                <span className={isLight ? "text-slate-500" : "text-slate-500"}>
+                  {isSpanish ? "Desarrollado por cma_source." : "Developed by cma_source."}
+                </span>
+              </p>
+            </div>
+          </div>
           <p
             className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${
               isLight

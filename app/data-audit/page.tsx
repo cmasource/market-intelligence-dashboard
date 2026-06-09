@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
+import { CnvDocumentsPanel } from "@/components/cnv/CnvDocumentsPanel";
 import { DataCoverageBadges } from "@/components/data-coverage/DataCoverageBadges";
 import { ProviderStatusPanel } from "@/components/providers/ProviderStatusPanel";
+import { cnvIssuers, getCnvSourceStatus, getLatestCnvDocuments } from "@/lib/cnv";
 import { getInstrumentContextCoverage, getCoverageStatusLabel } from "@/lib/data-coverage";
 import { instrumentUniverse } from "@/lib/instrument-universe/universe";
 import { useLanguage } from "@/lib/i18n/useLanguage";
@@ -228,6 +230,8 @@ export default function DataAuditPage() {
   const argentinaAuditItems = argentinaAuditSymbols
     .map((symbol) => argentinaInstruments.find((instrument) => instrument.symbol === symbol))
     .filter((instrument): instrument is ArgentinaInstrument => Boolean(instrument));
+  const cnvStatus = getCnvSourceStatus();
+  const latestCnvDocuments = getLatestCnvDocuments(4);
 
   return (
     <AppShell>
@@ -372,6 +376,47 @@ export default function DataAuditPage() {
                 })}
               </tbody>
             </table>
+          </div>
+        </section>
+
+        <section className="cma-panel cma-card-argentina p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200">
+            {isSpanish ? "Cobertura objetivo del universo" : "Target universe coverage"}
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            {isSpanish ? "Ruta de reemplazo de datos simulados" : "Path to replace simulated data"}
+          </h2>
+          <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
+            {isSpanish
+              ? "Acciones USA con relacion CEDEAR usan datos de proveedor o fallback para el subyacente. Los precios locales de CEDEAR, acciones argentinas y bonos quedan etiquetados como carga manual, simulado o futuro hasta integrar BYMA/IOL/PPI o un proveedor licenciado."
+              : "USA stocks with a CEDEAR relationship use provider or fallback data for the underlying. Local CEDEAR prices, Argentine equities and bonds stay labeled as manual, mock or future until BYMA/IOL/PPI or a licensed provider is integrated."}
+          </p>
+        </section>
+
+        <section className="cma-panel cma-card-argentina p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-200">
+            {isSpanish ? "CNV source/status" : "CNV source/status"}
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            {isSpanish ? "Auditoria de documentos CNV" : "CNV document audit"}
+          </h2>
+          <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
+            {isSpanish
+              ? "La capa CNV separa emisoras registradas, documentos estructurados de demostracion e integracion oficial futura. CNV no se usa para precios en vivo."
+              : "The CNV layer separates registered issuers, structured demo documents and future official integration. CNV is not used for live prices."}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {cnvStatus.sources.map((source) => (
+              <span key={source.source} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-300">
+                {source.label} | {source.mode}
+              </span>
+            ))}
+          </div>
+          <p className="mt-4 text-sm text-slate-300">
+            {isSpanish ? "Emisoras registradas" : "Registered issuers"}: {cnvIssuers.map((issuer) => issuer.symbol).join(", ")}
+          </p>
+          <div className="mt-5">
+            <CnvDocumentsPanel documents={latestCnvDocuments} compact />
           </div>
         </section>
 

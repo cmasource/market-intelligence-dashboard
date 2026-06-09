@@ -19,12 +19,26 @@ export async function GET() {
     vercelEnvironment: process.env.VERCEL_ENV ?? "local",
     configuredMarketProvider: providerKeys.marketDataProvider,
     configuredNewsProvider: providerKeys.newsProvider,
+    configuredFundamentalsProvider: providerStatus.configuredActiveFundamentalsProvider,
     activeMarketDataProvider: providerStatus.activeMarketDataProvider,
     activeFundamentalsProvider: providerStatus.activeFundamentalsProvider,
     activeNewsProvider: providerStatus.activeNewsProvider,
+    providerFlags: {
+      fmpKeyPresent: providerKeys.fmp.length > 0,
+      finnhubKeyPresent: providerKeys.finnhub.length > 0,
+      alphaVantageKeyPresent: providerKeys.alphaVantage.length > 0,
+      logoDevTokenPresent: Boolean(process.env.NEXT_PUBLIC_LOGO_DEV_TOKEN?.trim()),
+      yahooFallbackEnabled: providerStatus.marketData.some((provider) => provider.provider === "yahoo" && provider.enabled),
+      mockFallbackEnabled: providerStatus.marketData.some((provider) => provider.provider === "mock" && provider.enabled),
+    },
     fmpEnabled: providerStatus.marketData.some((provider) => provider.provider === "fmp" && provider.enabled),
+    fmpKeyPresent: providerKeys.fmp.length > 0,
+    logoDevTokenPresent: Boolean(process.env.NEXT_PUBLIC_LOGO_DEV_TOKEN?.trim()),
     yahooFallbackEnabled: providerStatus.marketData.some((provider) => provider.provider === "yahoo" && provider.enabled),
     mockFallbackEnabled: providerStatus.marketData.some((provider) => provider.provider === "mock" && provider.enabled),
+    fallbackProvidersEnabled: providerStatus.marketData
+      .filter((provider) => ["yahoo", "mock"].includes(provider.provider) && provider.enabled)
+      .map((provider) => provider.provider),
     newsSanitization: "lib/news/sanitize-news",
     secretsExposed: false,
   });

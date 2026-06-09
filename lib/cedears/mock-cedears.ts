@@ -4,6 +4,31 @@ import type { CedearInstrument } from "./types";
 // En producción deben venir de BYMA, IOL, brokers o proveedores licenciados.
 export const MOCK_REFERENCE_CCL = 1250;
 
+function mockCedear(input: {
+  symbol: string;
+  name: string;
+  market: CedearInstrument["underlyingMarket"];
+  ratio: number;
+  localPrice: number;
+  underlyingPrice: number;
+}): CedearInstrument {
+  return {
+    localSymbol: input.symbol,
+    underlyingSymbol: input.symbol,
+    underlyingName: input.name,
+    localMarket: "BYMA",
+    underlyingMarket: input.market,
+    localCurrency: "ARS",
+    underlyingCurrency: "USD",
+    ratio: input.ratio,
+    localPrice: input.localPrice,
+    underlyingPrice: input.underlyingPrice,
+    sourceLabel: "Mock CEDEAR data",
+    isMock: true,
+    status: "mock",
+  };
+}
+
 export const mockCedears: CedearInstrument[] = [
   {
     localSymbol: "AAPL",
@@ -155,6 +180,31 @@ export const mockCedears: CedearInstrument[] = [
     isMock: true,
     status: "mock",
   },
+  mockCedear({ symbol: "AMD", name: "Advanced Micro Devices Inc.", market: "NASDAQ", ratio: 10, localPrice: 21500, underlyingPrice: 172 }),
+  mockCedear({ symbol: "INTC", name: "Intel Corporation", market: "NASDAQ", ratio: 5, localPrice: 7400, underlyingPrice: 29.6 }),
+  mockCedear({ symbol: "NFLX", name: "Netflix Inc.", market: "NASDAQ", ratio: 16, localPrice: 68000, underlyingPrice: 870 }),
+  mockCedear({ symbol: "MELI", name: "MercadoLibre Inc.", market: "NASDAQ", ratio: 60, localPrice: 43200, underlyingPrice: 2075 }),
+  mockCedear({ symbol: "BABA", name: "Alibaba Group Holding Ltd.", market: "NYSE", ratio: 9, localPrice: 15400, underlyingPrice: 111 }),
+  mockCedear({ symbol: "PEP", name: "PepsiCo Inc.", market: "NASDAQ", ratio: 18, localPrice: 11900, underlyingPrice: 171 }),
+  mockCedear({ symbol: "MCD", name: "McDonald's Corporation", market: "NYSE", ratio: 24, localPrice: 15800, underlyingPrice: 303 }),
+  mockCedear({ symbol: "WMT", name: "Walmart Inc.", market: "NYSE", ratio: 30, localPrice: 3800, underlyingPrice: 91 }),
+  mockCedear({ symbol: "COST", name: "Costco Wholesale Corporation", market: "NASDAQ", ratio: 48, localPrice: 26500, underlyingPrice: 1018 }),
+  mockCedear({ symbol: "PG", name: "Procter & Gamble Company", market: "NYSE", ratio: 15, localPrice: 13800, underlyingPrice: 166 }),
+  mockCedear({ symbol: "JNJ", name: "Johnson & Johnson", market: "NYSE", ratio: 15, localPrice: 12600, underlyingPrice: 152 }),
+  mockCedear({ symbol: "JPM", name: "JPMorgan Chase & Co.", market: "NYSE", ratio: 15, localPrice: 21000, underlyingPrice: 252 }),
+  mockCedear({ symbol: "BAC", name: "Bank of America Corporation", market: "NYSE", ratio: 4, localPrice: 13800, underlyingPrice: 44 }),
+  mockCedear({ symbol: "V", name: "Visa Inc.", market: "NYSE", ratio: 18, localPrice: 23700, underlyingPrice: 341 }),
+  mockCedear({ symbol: "MA", name: "Mastercard Incorporated", market: "NYSE", ratio: 33, localPrice: 20500, underlyingPrice: 542 }),
+  mockCedear({ symbol: "BRKB", name: "Berkshire Hathaway Inc.", market: "NYSE", ratio: 22, localPrice: 26000, underlyingPrice: 458 }),
+  mockCedear({ symbol: "DIA", name: "SPDR Dow Jones Industrial Average ETF", market: "NYSE_ARCA", ratio: 20, localPrice: 28000, underlyingPrice: 448 }),
+  mockCedear({ symbol: "IWM", name: "iShares Russell 2000 ETF", market: "NYSE_ARCA", ratio: 20, localPrice: 14200, underlyingPrice: 227 }),
+  mockCedear({ symbol: "XLE", name: "Energy Select Sector SPDR Fund", market: "NYSE_ARCA", ratio: 10, localPrice: 11700, underlyingPrice: 94 }),
+  mockCedear({ symbol: "GLD", name: "SPDR Gold Shares", market: "NYSE_ARCA", ratio: 10, localPrice: 30000, underlyingPrice: 240 }),
+  mockCedear({ symbol: "SLV", name: "iShares Silver Trust", market: "NYSE_ARCA", ratio: 10, localPrice: 3850, underlyingPrice: 30.8 }),
+  mockCedear({ symbol: "XOM", name: "Exxon Mobil Corporation", market: "NYSE", ratio: 10, localPrice: 14800, underlyingPrice: 118 }),
+  mockCedear({ symbol: "CVX", name: "Chevron Corporation", market: "NYSE", ratio: 16, localPrice: 12300, underlyingPrice: 157 }),
+  mockCedear({ symbol: "VALE", name: "Vale S.A.", market: "NYSE", ratio: 2, localPrice: 6900, underlyingPrice: 11 }),
+  mockCedear({ symbol: "PBR", name: "Petrobras", market: "NYSE", ratio: 2, localPrice: 8900, underlyingPrice: 14.2 }),
 ];
 
 export function getMockCedear(symbol: string) {

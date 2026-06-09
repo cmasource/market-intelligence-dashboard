@@ -47,6 +47,14 @@ function getTypeLabel(item: HeatmapItem, language: FormatterLanguage) {
   return labels[item.assetType]?.[language] ?? item.typeLabel;
 }
 
+function getSourceTone(sourceKind: HeatmapSourceKind) {
+  if (sourceKind === "provider" || sourceKind === "yahoo") return "border-cyan-200/25 bg-cyan-300/12 text-cyan-50";
+  if (sourceKind === "manual") return "border-emerald-200/25 bg-emerald-300/12 text-emerald-50";
+  if (sourceKind === "mock" || sourceKind === "fallback") return "border-amber-200/25 bg-amber-300/10 text-amber-50";
+  if (sourceKind === "future") return "border-violet-200/25 bg-violet-300/10 text-violet-50";
+  return "border-white/15 bg-white/[0.06] text-slate-300";
+}
+
 export function HeatmapCell({ item, language }: HeatmapCellProps) {
   const source = sourceLabels[item.sourceKind]?.[language] ?? item.sourceLabel;
   const changeLabel = item.changePercent === null ? "N/D" : formatPercent(item.changePercent);
@@ -70,7 +78,7 @@ export function HeatmapCell({ item, language }: HeatmapCellProps) {
       <p className="mt-3 text-xs font-semibold opacity-95">{priceLabel}</p>
       <div className="mt-3 flex flex-wrap gap-1.5 text-[10px] uppercase tracking-[0.14em]">
         <span className="rounded-full border border-white/15 bg-white/[0.06] px-2 py-0.5 opacity-80">{getTypeLabel(item, language)}</span>
-        <span className="rounded-full border border-white/15 bg-white/[0.06] px-2 py-0.5 opacity-80">{source}</span>
+        <span className={`rounded-full border px-2 py-0.5 ${getSourceTone(item.sourceKind)}`}>{source}</span>
       </div>
     </Link>
   );

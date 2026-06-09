@@ -1,20 +1,45 @@
 import type { AssetType } from "@/types/asset";
+import { assetLogoDomains, cryptoLogoIds } from "./logo-domains";
 
 export type AssetLogoMetadata = {
   symbol: string;
   label: string;
   initials: string;
   accent: "cyan" | "blue" | "violet" | "emerald" | "amber" | "rose" | "slate";
+  variant?: "apple" | "microsoft" | "tesla" | "cocaCola" | "amazon" | "etf";
+  logoDomain?: string;
+  cryptoLogoId?: string;
 };
 
 const knownLogos: Record<string, AssetLogoMetadata> = {
-  AAPL: { symbol: "AAPL", label: "Apple", initials: "A", accent: "slate" },
-  MSFT: { symbol: "MSFT", label: "Microsoft", initials: "M", accent: "blue" },
+  AAPL: { symbol: "AAPL", label: "Apple", initials: "A", accent: "slate", variant: "apple" },
+  MSFT: { symbol: "MSFT", label: "Microsoft", initials: "M", accent: "blue", variant: "microsoft" },
   NVDA: { symbol: "NVDA", label: "NVIDIA", initials: "NV", accent: "emerald" },
-  TSLA: { symbol: "TSLA", label: "Tesla", initials: "T", accent: "rose" },
-  KO: { symbol: "KO", label: "Coca-Cola", initials: "KO", accent: "rose" },
-  SPY: { symbol: "SPY", label: "SPY ETF", initials: "SP", accent: "cyan" },
-  QQQ: { symbol: "QQQ", label: "QQQ ETF", initials: "Q", accent: "violet" },
+  TSLA: { symbol: "TSLA", label: "Tesla", initials: "T", accent: "rose", variant: "tesla" },
+  KO: { symbol: "KO", label: "Coca-Cola", initials: "KO", accent: "rose", variant: "cocaCola" },
+  AMZN: { symbol: "AMZN", label: "Amazon", initials: "A", accent: "amber", variant: "amazon" },
+  GOOGL: { symbol: "GOOGL", label: "Alphabet", initials: "GO", accent: "blue" },
+  META: { symbol: "META", label: "Meta", initials: "ME", accent: "blue" },
+  PEP: { symbol: "PEP", label: "PepsiCo", initials: "PE", accent: "blue" },
+  MCD: { symbol: "MCD", label: "McDonald's", initials: "MC", accent: "amber" },
+  WMT: { symbol: "WMT", label: "Walmart", initials: "WM", accent: "blue" },
+  COST: { symbol: "COST", label: "Costco", initials: "CO", accent: "blue" },
+  JPM: { symbol: "JPM", label: "JPMorgan Chase", initials: "JP", accent: "blue" },
+  BAC: { symbol: "BAC", label: "Bank of America", initials: "BA", accent: "blue" },
+  V: { symbol: "V", label: "Visa", initials: "V", accent: "blue" },
+  MA: { symbol: "MA", label: "Mastercard", initials: "MA", accent: "amber" },
+  XOM: { symbol: "XOM", label: "Exxon Mobil", initials: "XO", accent: "blue" },
+  CVX: { symbol: "CVX", label: "Chevron", initials: "CV", accent: "blue" },
+  MELI: { symbol: "MELI", label: "MercadoLibre", initials: "ML", accent: "amber" },
+  NFLX: { symbol: "NFLX", label: "Netflix", initials: "N", accent: "rose" },
+  AMD: { symbol: "AMD", label: "AMD", initials: "AM", accent: "rose" },
+  INTC: { symbol: "INTC", label: "Intel", initials: "IN", accent: "blue" },
+  SPY: { symbol: "SPY", label: "SPY ETF", initials: "SP", accent: "cyan", variant: "etf" },
+  QQQ: { symbol: "QQQ", label: "QQQ ETF", initials: "Q", accent: "violet", variant: "etf" },
+  DIA: { symbol: "DIA", label: "DIA ETF", initials: "DI", accent: "cyan", variant: "etf" },
+  IWM: { symbol: "IWM", label: "IWM ETF", initials: "IW", accent: "cyan", variant: "etf" },
+  GLD: { symbol: "GLD", label: "GLD ETF", initials: "GL", accent: "amber", variant: "etf" },
+  SLV: { symbol: "SLV", label: "SLV ETF", initials: "SL", accent: "slate", variant: "etf" },
   "BTC-USD": { symbol: "BTC-USD", label: "Bitcoin", initials: "B", accent: "amber" },
   "ETH-USD": { symbol: "ETH-USD", label: "Ethereum", initials: "E", accent: "violet" },
   GGAL: { symbol: "GGAL", label: "Grupo Financiero Galicia", initials: "GG", accent: "emerald" },
@@ -46,11 +71,17 @@ function initialsFromSymbol(symbol: string) {
 
 export function getAssetLogoMetadata(symbol: string, type?: AssetType | string, name?: string): AssetLogoMetadata {
   const normalized = symbol.toUpperCase();
-  return knownLogos[normalized] ?? {
+  const base = knownLogos[normalized] ?? {
     symbol: normalized,
     label: name ?? normalized,
     initials: initialsFromSymbol(normalized),
     accent: accentForType(type),
+  };
+
+  return {
+    ...base,
+    logoDomain: assetLogoDomains[normalized],
+    cryptoLogoId: cryptoLogoIds[normalized],
   };
 }
 

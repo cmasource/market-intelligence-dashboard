@@ -1,31 +1,29 @@
-# UI Decisions
+# UI decisions
 
-## Market Signal vs Technical Score
+CMA Market Intelligence prioritizes information architecture and market readability over repeated explanatory text.
 
-The market signal is an integrated intelligence signal. It combines available technical, fundamental, fixed-income, risk and data-quality context. It is shown as an executive radial module.
+## Signal vs technical
 
-The technical score is a pure market-engine reading. It focuses on trend, momentum, moving averages, RSI and MACD. It is shown as a technical factor panel with horizontal bars so it does not look like the market signal.
+- Market signal: integrated, executive module combining available technical, fundamental, risk and coverage context.
+- Technical analysis: trader-style engine focused on trend, momentum, moving averages, RSI, MACD and price levels.
+- Fundamental analysis: provider/fallback financial statement metrics, with available values shown before unavailable fields.
+- Risk: caution module with concise categories and non-advisory language.
+- Local context: Argentina and CEDEAR modules explain local mapping, simulated/manual source status and future integration paths.
 
-## Data Coverage
+## Progressive disclosure
 
-Coverage is important for public-demo trust, but it is not the primary user task on the asset page. Sprint 22 moves it into a disclosure that remains accessible through "View data coverage" / "Ver cobertura de datos".
+Coverage and limitations remain accessible but should not dominate the asset page. The primary reading starts with price, signal and analysis; data provenance sits in chips, badges or disclosures.
 
-## Asset Logos
+## Sprint 25 rankings and brand lockup
 
-Asset identity uses `lib/assets/logo-map.ts` and `components/assets/AssetLogo.tsx`.
+- Header branding uses a compact CMA monogram lockup instead of a heavy square app icon.
+- Footer branding keeps CMA Consulting institutional ownership and cma_source development attribution concise.
+- Homepage rankings sit after the market pulse so users see broad context before ranked lists.
+- Technical, fundamental, combined and performance rankings use distinct accents without direct investment recommendation language.
 
-The strategy is safe by default:
+## Sprint 26 brand contrast and source confidence
 
-- known symbols get curated metadata, initials and accent colors
-- missing symbols fall back to a deterministic monogram
-- no secrets, database or external authentication are required
-- no page should break if a logo is missing
-
-## Argentina and Local Data
-
-Argentina, CEDEAR and fixed-income data continue to show source context. Manual, mock, provider and future coverage labels remain visible, but secondary to the market reading.
-
-## Report vs Asset Page
-
-The report page remains an editorial, shareable brief. The asset page is now a working analysis terminal with chart, signal, technical, fundamentals, local context, news and risks arranged for faster scanning.
-
+- Header mark uses a controlled light capsule in both themes so transparent brand assets stay crisp on dark backgrounds.
+- Footer logos are contained in small capsules, with text doing most of the attribution work.
+- Asset logos use a hybrid external/fallback strategy with fixed dimensions and no layout shift.
+- Source badges visually separate provider/manual data from simulated, fallback and future coverage.

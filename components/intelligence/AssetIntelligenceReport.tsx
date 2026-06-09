@@ -128,6 +128,7 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
     news: isSpanish ? "Pulso de noticias" : "News pulse",
     cedear: isSpanish ? "Contexto CEDEAR" : "CEDEAR context",
     fixedIncome: isSpanish ? "Lectura de renta fija" : "Fixed income view",
+    cnv: isSpanish ? "Contexto CNV" : "CNV context",
     risks: isSpanish ? "Riesgos principales" : "Key risks",
     coverage: isSpanish ? "Cobertura y limitaciones de datos" : "Data coverage and limitations",
     notAdvice: isSpanish ? "No constituye asesoramiento de inversión." : "Not investment advice.",
@@ -365,6 +366,28 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
               <span>Duration: {formatNullableNumber(report.fixedIncomeSummary.modifiedDuration, language)}</span>
               <span>Parity: {formatNullablePercent(report.fixedIncomeSummary.parity, language)}</span>
             </div>
+          </div>
+        ) : null}
+
+        {report.cnvSummary ? (
+          <div className={cardClass()}>
+            <h3 className="font-semibold text-white">{labels.cnv}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-300">{report.cnvSummary.interpretation}</p>
+            <p className="mt-2 text-xs text-slate-500">
+              {report.cnvSummary.issuerName} | {report.cnvSummary.sourceLabel}
+            </p>
+            {report.cnvSummary.latestDocuments.length ? (
+              <div className="mt-3 space-y-2">
+                {report.cnvSummary.latestDocuments.map((document) => (
+                  <div key={`${document.title}-${document.publishedAt}`} className="rounded-lg border border-white/10 bg-white/[0.035] p-3">
+                    <p className="text-sm font-medium text-white">{document.title}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {document.publishedAt} | {document.sourceLabel}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>

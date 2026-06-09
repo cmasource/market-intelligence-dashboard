@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { AssetLogo } from "@/components/assets/AssetLogo";
+import { WatchlistButton } from "@/components/watchlist/WatchlistButton";
 import { formatAssetPrice, formatCurrencyValue, formatPercent } from "@/lib/formatters";
 import { isArgentinaInstrument } from "@/lib/argentina";
 import { useArgentinaQuotes, type ArgentinaQuoteState } from "@/lib/hooks/useArgentinaQuotes";
@@ -33,6 +34,23 @@ function getArgentinaQuoteLabel(quote: ArgentinaQuoteState | undefined, isSpanis
   if (quote.source === "mock") return isSpanish ? "Dato estructurado simulado" : "Structured mock data";
   if (quote.source === "byma_future") return isSpanish ? "Integración BYMA futura" : "Future BYMA integration";
   return isSpanish ? "No disponible" : "Unavailable";
+}
+
+function getSourceBadgeTone(sourceLabel: string) {
+  const normalized = sourceLabel.toLowerCase();
+  if (normalized.includes("yahoo") || normalized.includes("fmp") || normalized.includes("provider") || normalized.includes("proveedor")) {
+    return "border-cyan-300/20 bg-cyan-300/10 text-cyan-100";
+  }
+  if (normalized.includes("manual") || normalized.includes("validada")) {
+    return "border-emerald-300/20 bg-emerald-300/10 text-emerald-100";
+  }
+  if (normalized.includes("simulado") || normalized.includes("mock")) {
+    return "border-amber-300/20 bg-amber-300/10 text-amber-100";
+  }
+  if (normalized.includes("future") || normalized.includes("futura")) {
+    return "border-violet-300/20 bg-violet-300/10 text-violet-100";
+  }
+  return "border-white/10 bg-white/[0.04] text-slate-300";
 }
 
 export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
@@ -110,7 +128,7 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
                 {context ? (
                   <span className="rounded-full border border-violet-300/20 px-2.5 py-1 text-xs text-violet-100">{context}</span>
                 ) : null}
-                <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-xs text-cyan-100">
+                <span className={`rounded-full border px-2.5 py-1 text-xs ${getSourceBadgeTone(sourceLabel)}`}>
                   {sourceLabel}
                 </span>
               </div>
@@ -134,6 +152,16 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
                 <Link href={`/report/${encodeURIComponent(asset.symbol)}`} className="text-cyan-200 hover:text-white">
                   {isSpanish ? "Ver reporte" : "View report"}
                 </Link>
+                <WatchlistButton
+                  compact
+                  item={{
+                    symbol: asset.symbol,
+                    name,
+                    assetType: asset.type,
+                    market: asset.market,
+                    currency: visibleCurrency,
+                  }}
+                />
               </div>
             </article>
           );

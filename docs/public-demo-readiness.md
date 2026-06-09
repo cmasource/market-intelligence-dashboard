@@ -39,6 +39,7 @@ Asset pages now prioritize a smaller set of stronger modules: hero, executive st
 - Spanish report mode now avoids mixed CTA labels and localizes the report intro, executive reading, technical/fundamental synthesis, risks and data coverage sections.
 - Report news cards note that headlines may remain in the original source language.
 - Argentina data layer now supports validated manual quote loads, structured mock fallback and future BYMA/CNV/broker status labels.
+- CNV document intelligence now adds local issuer profiles and structured demo document context for Argentine equities.
 
 ## Real or Provider Data
 
@@ -57,6 +58,7 @@ Asset pages now prioritize a smaller set of stronger modules: hero, executive st
 ## Future Coverage
 
 - Full BYMA, IOL or CNV integrations.
+- Official CNV document integration.
 - CEDEAR local prices, ratios, dollar species and implied CCL.
 - News feeds.
 - AI agents and PDF reports.
@@ -83,6 +85,7 @@ Asset pages now prioritize a smaller set of stronger modules: hero, executive st
 - CEDEAR local prices and ratios are simulated; implied CCL is informational.
 - CEDEAR report context explains how to read the underlying asset, local CEDEAR price and simulated implied CCL separately.
 - Manual Argentina data is not real-time and must be validated before deploy.
+- CNV documents are structured demo placeholders until an official or compliant public integration is enabled.
 - Provider keys are optional; missing keys should show fallback or mock labels rather than breaking the demo.
 - FMP can be configured while a specific endpoint is plan-restricted; in that case Yahoo-compatible data is a valid provider fallback and should not be presented as mock.
 - Some dashboard values render server-side seed values first and then update from the provider quote chain on the client.

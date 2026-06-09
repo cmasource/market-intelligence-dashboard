@@ -22,6 +22,11 @@ export const metadata: Metadata = {
   authors: [{ name: "CMA Consulting" }],
   creator: "CMA Consulting",
   publisher: "CMA Consulting",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/favicon.ico",
+    apple: "/apple-icon.png",
+  },
   robots: {
     index: false,
     follow: false,

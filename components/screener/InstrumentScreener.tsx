@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { AssetLogo } from "@/components/assets/AssetLogo";
 import { DataCoverageBadges } from "@/components/data-coverage/DataCoverageBadges";
+import { WatchlistButton } from "@/components/watchlist/WatchlistButton";
 import { formatDisplayCurrency } from "@/lib/formatters";
 import { getCoverageGroupOptions } from "@/lib/data-coverage";
 import {
@@ -54,6 +55,16 @@ function coverageBadges(instrument: InstrumentUniverseItem, isSpanish: boolean) 
     .map(([key]) => labels[key as keyof typeof labels]);
 }
 
+function groupLabel(instrument: InstrumentUniverseItem, isSpanish: boolean) {
+  if (instrument.country === "US" && instrument.category === "equity") return isSpanish ? "Acciones USA" : "USA stocks";
+  if (instrument.category === "cedear") return "CEDEARs";
+  if (instrument.country === "AR" && instrument.category === "equity") return isSpanish ? "Argentina" : "Argentina";
+  if (instrument.category.includes("bond") || instrument.category === "lecap" || instrument.category === "letra") return isSpanish ? "Bonos" : "Bonds";
+  if (instrument.category === "crypto") return isSpanish ? "Cripto" : "Crypto";
+  if (instrument.category === "etf") return "ETFs";
+  return isSpanish ? "Otros" : "Other";
+}
+
 export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerProps) {
   const { language } = useLanguage();
   const { resolvedMode } = useTheme();
@@ -69,6 +80,18 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
   const coverageGroups = getCoverageGroupOptions(language);
 
   const results = useMemo(() => filterInstrumentUniverse(filters), [filters]);
+  const groupedResults = useMemo(() => {
+    return results.reduce<Array<{ label: string; items: InstrumentUniverseItem[] }>>((groups, instrument) => {
+      const label = groupLabel(instrument, isSpanish);
+      const group = groups.find((item) => item.label === label);
+      if (group) {
+        group.items.push(instrument);
+      } else {
+        groups.push({ label, items: [instrument] });
+      }
+      return groups;
+    }, []);
+  }, [isSpanish, results]);
 
   const updateFilter = (key: keyof InstrumentUniverseFilters, value: string) => {
     setFilters((current) => ({
@@ -147,8 +170,15 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
         {isSpanish ? `${results.length} instrumentos encontrados` : `${results.length} instruments found`}
       </p>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        {results.map((instrument) => {
+      <div className="mt-4 space-y-6">
+        {groupedResults.map((group) => (
+          <Fragment key={group.label}>
+            <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-2">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">{group.label}</h2>
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-slate-400">{group.items.length}</span>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+        {group.items.map((instrument) => {
           const hasAssetPage = supportedAssetSymbols.has(instrument.symbol);
           const badges = coverageBadges(instrument, isSpanish);
           const relatedCount = Math.max(0, instrument.relatedSymbols.length - 1);
@@ -221,7 +251,7 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
                 ) : null}
               </div>
 
-              <div className="mt-5">
+              <div className="mt-5 flex flex-wrap gap-2">
                 {hasAssetPage ? (
                   <Link
                     href={`/asset/${encodeURIComponent(instrument.symbol)}`}
@@ -240,10 +270,23 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
                     {isSpanish ? "Proximamente" : "Coming soon"}
                   </span>
                 )}
+                <WatchlistButton
+                  compact
+                  item={{
+                    symbol: instrument.symbol,
+                    name: isSpanish && instrument.displayNameEs ? instrument.displayNameEs : instrument.displayNameEn ?? instrument.displayName,
+                    assetType: instrument.category,
+                    market: instrument.market,
+                    currency: instrument.currency,
+                  }}
+                />
               </div>
             </article>
           );
         })}
+            </div>
+          </Fragment>
+        ))}
       </div>
     </section>
   );

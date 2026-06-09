@@ -25,6 +25,8 @@ The product now follows the **CMA Institutional Fintech Terminal** direction: in
 ## Main Modules
 
 - Market overview across global, local and crypto references.
+- Homepage rankings for technical, fundamental, combined and period performance readings.
+- Theme-aware CMA brand lockup, padded app icons and hybrid asset/company logos.
 - Asset search and detail pages for stocks, ETFs, CEDEARs, Argentine equities, bonds, letras, obligaciones negociables and cryptocurrencies.
 - Interactive asset chart module with OHLCV candles, timeframe switching, source labels, mock fallback and volume histogram support.
 - First market-data service layer for USA stocks, ETFs and crypto charts with mock fallback behavior.
@@ -35,6 +37,7 @@ The product now follows the **CMA Institutional Fintech Terminal** direction: in
 - Fixed income analytics for sovereign bonds and CER-linked instruments, including mock yield, duration, convexity, cash flows and risk profiles.
 - Instrument universe relationships for Argentine bond species and future CEDEAR/ADR mappings.
 - Instrument screener with search, category, market, country, currency and data-status filters.
+- Local watchlist saved in the current browser with add/remove/clear behavior and no account dependency.
 - Market universe page with group cards and a filterable heatmap for Argentine equities, CEDEARs, sovereign bonds and species, ETFs, USA stocks and crypto.
 - Data coverage badges showing real/provider, mock/fallback, future, not-applicable and unavailable layers.
 - Data audit and methodology pages explaining coverage status, calculation inputs and analytical limitations.
@@ -47,6 +50,8 @@ The product now follows the **CMA Institutional Fintech Terminal** direction: in
 - CEDEAR analytics module with local ARS mock price, underlying USD context, ratio structure and implied CCL.
 - Provider architecture for market data, fundamentals and news with transparent fallback labels.
 - Argentina data layer with a normalized local instrument registry, manual quote imports, structured mock fallback and future BYMA/CNV/broker integration status.
+- Expanded Argentina target universe covering common local equities, CEDEAR references, sovereign bond species, CER examples and LECAP samples while keeping simulated/manual/future labels explicit.
+- CNV documents layer with a local issuer registry, structured demo filings, relevant-event placeholders and future official integration status.
 - Asset Intelligence Report layer that combines price, market signal, technicals, fundamentals, news, risks, CEDEAR context, fixed income context and data coverage into a concise non-advisory executive reading.
 - Human-readable interpretation builders for technical and fundamental readings, with localized Spanish explanations for trend, momentum, valuation, profitability, missing data and provider context.
 - AI-style market interpretation and future agent-ready structure.
@@ -54,6 +59,10 @@ The product now follows the **CMA Institutional Fintech Terminal** direction: in
 - Shareable `/report/[symbol]` pages for public demos, plus reports placeholder for future market briefings and AI-generated PDFs.
 - Shareable report mode for `/report/[symbol]` with a compact summary strip, concise key points, CEDEAR reading guidance, news source-language note, grouped risk presentation and precise data limitations.
 - Heatmap Pro module with segment filters, movement/source sorting, real/manual-only filtering, source badges and accessible click-through cells.
+- Rankings API and homepage module for technical, fundamental, combined and performance lists with non-advisory wording.
+- Deployment parity diagnostics for local vs Vercel provider configuration.
+- CNV issuer and document context for Argentine equity asset pages and shareable reports.
+- Local watchlist behavior is browser-only and intentionally does not sync between devices until a future authenticated persistence layer exists.
 
 ## MVP Scope
 
@@ -77,6 +86,7 @@ The product now follows the **CMA Institutional Fintech Terminal** direction: in
 - Technical signal gauge using non-advisory defensive/neutral/constructive terminology.
 - Sprint 22 asset page hierarchy with a compact executive strip, distinct market signal, technical factor panel, secondary coverage disclosure and asset identity fallback logos.
 - Sprint 23 market heatmap and Argentina page panels for cross-segment browsing, local bonds, local equities and CEDEARs with compact source transparency.
+- Sprint 24 CNV documents intelligence with structured issuer/document context for Argentina coverage.
 - Public demo footer with informational disclaimer, data coverage note and core navigation links.
 - Vercel deployment readiness documentation and pre-deploy validation checklist.
 - Manual technical and fundamental validation guides for comparison against external market platforms.

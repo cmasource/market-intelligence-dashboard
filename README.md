@@ -20,21 +20,29 @@ The app is transparent about mixed coverage: selected USA and crypto instruments
 
 - Sprint 21 visual identity: CMA Institutional Fintech Terminal design system with premium dark fintech panels, market-grid background, sticky glass header and differentiated card families.
 - Sprint 22 asset page IA: compact executive strip, distinct market signal, technical factor panel, secondary coverage disclosure and first market heatmap.
+- Sprint 24 watchlist/universe UX: browser-local watchlist, broader Argentina/CEDEAR/bond universe and clearer signal-vs-technical module semantics.
+- Sprint 25 rankings and brand polish: refined CMA lockup/favicon/footer plus technical, fundamental, combined and performance rankings.
+- Sprint 26 brand/deployment polish: theme-aware logo contrast, padded favicons, hybrid asset logos and local/production parity diagnostics.
 - Dashboard overview
 - Markets universe page
 - Advanced instrument screener
+- Browser-local watchlist with no login and no database
 - Asset detail pages
 - Real/provider USA and crypto market data with fallback
 - Argentina data layer with validated manual quote loads, structured mock fallback and future BYMA/CNV/provider status
+- CNV issuer/document layer with structured demo filings and future official integration status
 - Server-side provider chain for FMP, Finnhub, Alpha Vantage, Yahoo/RSS and mock fallback
 - Provider quote hydration for asset pages, featured dashboard cards and visible dashboard search results
 - Technical analysis from OHLCV candles
+- Homepage market rankings for technical, fundamental, combined and period performance readings
+- Hybrid company/asset logo strategy with optional Logo.dev integration and premium fallback monograms
 - Integrated market signal gauge
 - USA fundamentals provider layer with fallback
 - Data audit and methodology pages for coverage transparency
 - Centralized currency display and contextual financial glossary tooltips
 - Fixed income analytics using mock structured bond data
 - Argentina bond species: AL30, AL30D, AL30C, GD30, GD30D, GD30C and TX26
+- Expanded Argentina universe for common local equities, CEDEAR references and additional sovereign bond species.
 - CEDEAR analytics with mock local ARS prices, ratio structure, underlying asset context and implied CCL
 - Asset Intelligence Reports on asset pages and shareable `/report/[symbol]` demo routes
 - English/Spanish language switcher
@@ -71,6 +79,10 @@ npm run test:e2e
 - `docs/design-system.md` documents the CMA Institutional Fintech Terminal tokens, utility classes and card families.
 - `docs/redesign-sprint-21.md` documents the Sprint 21 redesign direction and confirms external references were used only as inspiration.
 - `docs/sprint-22-asset-redesign.md`, `docs/heatmap-module.md` and `docs/ui-decisions.md` document the Sprint 22 asset IA, heatmap and signal/technical distinction.
+- `docs/cnv-layer.md` and `docs/sprint-24-cnv-documents.md` document the CNV documents layer and future official integration path.
+- `docs/watchlist-local-storage.md`, `docs/instrument-universe.md` and `docs/sprint-24-watchlist-universe-ux.md` document the local watchlist and expanded universe strategy.
+- `docs/rankings-module.md` and `docs/sprint-25-rankings-brand-fix.md` document Sprint 25 ranking methodology, brand fixes and source limitations.
+- `docs/asset-logo-strategy.md`, `docs/deployment-parity-checklist.md` and `docs/sprint-26-brand-deployment-logos.md` document Sprint 26 logo and deployment-parity decisions.
 
 ## Vercel Deployment
 

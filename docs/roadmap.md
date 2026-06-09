@@ -29,6 +29,38 @@
 - Improved the Argentina page with local snapshot, sovereign bonds, Argentine equities, featured CEDEARs and clearer source/limitation presentation.
 - Connected the screener to the heatmap so users can move from filtering to market scanning.
 
+## Sprint 24: CNV Documents Intelligence
+
+- Added a CNV issuer registry for main Argentine equities.
+- Added structured demo documents for financial statements, relevant events and corporate context.
+- Added safe CNV API routes for issuer, document and source status queries.
+- Added CNV context to Argentine asset pages, Argentina page, data audit, methodology and intelligence reports.
+- Kept CNV scoped to documents and issuer context, not live market prices.
+
+## Sprint 24: Watchlist, Universe and UX Clarity
+
+- Added a localStorage watchlist with no login, backend or database.
+- Added `Mi lista` / `Watchlist` navigation and client-safe count badge.
+- Expanded the structured Argentina universe with more local equities, CEDEAR references and sovereign bond species.
+- Improved search discoverability for CEDEARs, bonos, Merval/Argentina terms and bond species.
+- Reinforced the distinction between integrated market signal and the technical factor engine.
+
+## Sprint 25: Rankings and Brand Polish
+
+- Polished the header CMA lockup and regenerated padded favicon/app icons.
+- Refined footer brand attribution for CMA Consulting and cma_source.
+- Added technical, fundamental, combined and performance rankings to the homepage.
+- Added safe ranking API routes under `/api/rankings`.
+- Documented ranking methodology, limitations and Finviz-as-inspiration-only guidance.
+
+## Sprint 26: Brand, Logos and Deployment Parity
+
+- Improved dark/light header logo contrast with a theme-aware brand capsule.
+- Regenerated favicon/app icons from the institutional icon strategy.
+- Added curated asset logo domains with optional Logo.dev support and resilient monogram fallback.
+- Added runtime diagnostics and status-page parity messaging for Vercel env differences.
+- Refined source-confidence badges across rankings, heatmap and featured cards.
+
 ## Phase 1: UI Mock Dashboard
 
 - Build the responsive fintech dashboard.

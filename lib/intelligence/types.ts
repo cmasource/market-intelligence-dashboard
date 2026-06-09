@@ -98,6 +98,20 @@ export type FixedIncomeSummary = {
   sourceLabel: string;
 };
 
+export type CnvSummary = {
+  available: boolean;
+  issuerName: string;
+  documentsCount: number;
+  latestDocuments: Array<{
+    title: string;
+    documentType: string;
+    publishedAt: string;
+    sourceLabel: string;
+  }>;
+  interpretation: string;
+  sourceLabel: string;
+};
+
 export type DataCoverageSummary = {
   price: string;
   chart: string;
@@ -121,6 +135,7 @@ export type AssetIntelligenceReport = {
   newsSummary: NewsSummary;
   cedearSummary?: CedearSummary;
   fixedIncomeSummary?: FixedIncomeSummary;
+  cnvSummary?: CnvSummary;
   riskSummary: RiskSummary;
   dataCoverageSummary: DataCoverageSummary;
   finalReading: FinalReading;

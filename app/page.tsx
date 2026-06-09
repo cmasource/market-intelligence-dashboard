@@ -9,10 +9,10 @@ import { FeaturedAssets } from "@/components/dashboard/FeaturedAssets";
 import { FinancialEnginePreview } from "@/components/dashboard/FinancialEnginePreview";
 import { MarketOverview } from "@/components/dashboard/MarketOverview";
 import { ReportsPlaceholder } from "@/components/dashboard/ReportsPlaceholder";
-import { TechnicalOpportunities } from "@/components/dashboard/TechnicalOpportunities";
 import { FixedIncomeComparison } from "@/components/fixed-income/FixedIncomeComparison";
 import { AppShell } from "@/components/layout/AppShell";
 import { MarketHeatmap } from "@/components/market/MarketHeatmap";
+import { MarketRankings } from "@/components/rankings/MarketRankings";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { useTheme } from "@/lib/theme/useTheme";
 import { marketOverviewItems, mockAssets } from "@/lib/mock-data";
@@ -28,10 +28,10 @@ export default function Home() {
       <div className="space-y-10">
         <section className="grid gap-6 py-4 xl:grid-cols-[1.04fr_0.96fr] xl:items-stretch">
           <div
-            className={`cma-panel-elevated cma-glow-cyan relative flex h-full flex-col justify-between p-5 sm:p-8 ${
+            className={`cma-panel-elevated cma-hero-panel cma-glow-cyan relative flex h-full flex-col justify-between p-5 sm:p-8 ${
               isLight
                 ? "border-slate-300 bg-[linear-gradient(180deg,#ffffff_0%,#f7fbff_54%,#eef6fb_100%)]"
-                : "border-cyan-300/20 bg-gradient-to-br from-slate-900/95 via-slate-900/78 to-violet-950/50"
+                : "border-cyan-300/20 bg-[linear-gradient(135deg,rgba(2,6,23,0.98)_0%,rgba(15,23,42,0.94)_46%,rgba(30,27,75,0.72)_100%)]"
             }`}
           >
             <div
@@ -51,7 +51,6 @@ export default function Home() {
               <p className={`mt-4 max-w-3xl text-base leading-7 ${isLight ? "text-slate-700" : "text-slate-300"}`}>
                 {t("heroSubtitle")}
               </p>
-              <p className={`mt-4 text-sm font-medium ${isLight ? "text-cyan-900" : "text-cyan-100"}`}>{t("heroBrandingPhrase")}</p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <a href="#markets" className="rounded-full border border-cyan-300/40 bg-cyan-300/14 px-4 py-2 text-sm font-semibold text-cyan-50 shadow-[0_0_24px_rgba(34,211,238,0.12)] transition hover:bg-cyan-300/20">
                   {isSpanish ? "Buscar activo" : "Search asset"}
@@ -69,12 +68,20 @@ export default function Home() {
             </div>
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               <div className={`cma-card-analysis p-4 ${isLight ? "bg-white" : ""}`}>
-                <p className={`text-xs uppercase tracking-[0.16em] ${isLight ? "text-slate-600" : "text-slate-500"}`}>{t("createdBy")}</p>
-                <p className={`mt-2 font-semibold ${isLight ? "text-slate-950" : "text-white"}`}>{t("companyName")}</p>
+                <p className={`text-xs uppercase tracking-[0.16em] ${isLight ? "text-slate-600" : "text-slate-500"}`}>
+                  {isSpanish ? "Datos de mercado" : "Market data"}
+                </p>
+                <p className={`mt-2 text-sm font-semibold ${isLight ? "text-slate-950" : "text-white"}`}>
+                  {isSpanish ? "Proveedor real con respaldo compatible" : "Real provider data with compatible fallback"}
+                </p>
               </div>
               <div className={`cma-card-analysis p-4 ${isLight ? "bg-white" : ""}`}>
-                <p className={`text-xs uppercase tracking-[0.16em] ${isLight ? "text-slate-600" : "text-slate-500"}`}>{t("developedBy")}</p>
-                <p className={`mt-2 font-semibold ${isLight ? "text-slate-950" : "text-white"}`}>{t("technologyDivision")}</p>
+                <p className={`text-xs uppercase tracking-[0.16em] ${isLight ? "text-slate-600" : "text-slate-500"}`}>
+                  {isSpanish ? "Lectura integrada" : "Integrated reading"}
+                </p>
+                <p className={`mt-2 text-sm font-semibold ${isLight ? "text-slate-950" : "text-white"}`}>
+                  {isSpanish ? "Técnico, fundamentos, cobertura y riesgo" : "Technical, fundamentals, coverage and risk"}
+                </p>
               </div>
               <div className={`cma-card-price p-4 ${isLight ? "bg-cyan-50" : ""}`}>
                 <p className={`text-xs uppercase tracking-[0.16em] ${isLight ? "text-cyan-900" : "text-slate-500"}`}>
@@ -97,6 +104,7 @@ export default function Home() {
         </section>
 
         <MarketOverview items={marketOverviewItems} />
+        <MarketRankings />
         <MarketHeatmap compact />
         <FeaturedAssets assets={mockAssets} />
         <section className="cma-panel cma-card-argentina p-5 sm:p-6">
@@ -115,7 +123,6 @@ export default function Home() {
             <ArgentinaMarket />
           </div>
         </section>
-        <TechnicalOpportunities assets={mockAssets} />
         <FixedIncomeComparison />
         <CryptoMonitor />
         <FinancialEnginePreview />

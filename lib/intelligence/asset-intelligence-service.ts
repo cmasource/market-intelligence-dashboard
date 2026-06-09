@@ -1,6 +1,7 @@
 import { calculateMarketSignalScore } from "@/lib/analysis/market-signal";
 import { getTechnicalAnalysis } from "@/lib/analysis/technical-analysis-service";
 import { getCedearAnalytics, isCedearSymbol } from "@/lib/cedears";
+import { getCnvDocumentsForSymbol, getCnvIssuer } from "@/lib/cnv";
 import { getCoverageStatusLabel, getInstrumentDataCoverage } from "@/lib/data-coverage";
 import { getFixedIncomeAnalytics } from "@/lib/fixed-income";
 import { getFundamentals } from "@/lib/fundamentals-data";
@@ -151,11 +152,22 @@ export async function getAssetIntelligenceReport(
   const news = newsResult.status === "fulfilled" ? newsResult.value : null;
   const cedear = cedearResult.status === "fulfilled" ? cedearResult.value : null;
   const fixedIncome = fixedIncomeResult.status === "fulfilled" ? fixedIncomeResult.value : null;
+  const cnvIssuer = getCnvIssuer(normalized);
+  const cnvDocuments = cnvIssuer ? getCnvDocumentsForSymbol(normalized) : [];
 
   const priceSummary = buildPriceSummary(asset, quote);
   if (priceSummary.isFallback) warnings.push(l(language, "Price layer is fallback or mock.", "La capa de precio es fallback o simulada."));
   if (cedear?.isMock) warnings.push(l(language, "Local CEDEAR data is mock.", "Los datos locales CEDEAR son simulados."));
   if (fixedIncome?.isMock) warnings.push(l(language, "Fixed income data is structured mock local data.", "Los datos de renta fija son locales estructurados simulados."));
+  if (cnvIssuer) {
+    warnings.push(
+      l(
+        language,
+        "CNV corporate documents are structured demo context until real integration is enabled.",
+        "Documentacion societaria estructurada de demostracion hasta integracion CNV real.",
+      ),
+    );
+  }
 
   const technicalSummary: TechnicalSummary = {
     available: Boolean(technical),
@@ -315,6 +327,27 @@ export async function getAssetIntelligenceReport(
           },
         }
       : {}),
+    ...(cnvIssuer
+      ? {
+          cnvSummary: {
+            available: true,
+            issuerName: cnvIssuer.issuerName,
+            documentsCount: cnvDocuments.length,
+            latestDocuments: cnvDocuments.slice(0, 3).map((document) => ({
+              title: document.title,
+              documentType: document.documentType,
+              publishedAt: document.publishedAt,
+              sourceLabel: l(language, "Structured demo document", "Documento estructurado de demostracion"),
+            })),
+            interpretation: l(
+              language,
+              "Structured demo corporate documentation until real CNV integration is enabled.",
+              "Documentacion societaria estructurada de demostracion hasta integracion CNV real.",
+            ),
+            sourceLabel: l(language, "Future CNV integration", "Integracion CNV futura"),
+          },
+        }
+      : {}),
     riskSummary: buildRiskSummary({ asset, cedear, fixedIncome, language }),
     dataCoverageSummary: buildCoverageSummary(normalized, language),
     warnings: Array.from(new Set(warnings)),
@@ -326,6 +359,7 @@ export async function getAssetIntelligenceReport(
         newsSummary.sourceLabel,
         cedear?.sourceLabel,
         fixedIncome?.sourceLabel,
+        cnvIssuer ? l(language, "Future CNV integration", "Integracion CNV futura") : undefined,
       ].filter(Boolean) as string[]),
     ),
     generatedAt: new Date().toISOString(),

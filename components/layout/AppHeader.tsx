@@ -1,9 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { useTheme } from "@/lib/theme/useTheme";
+import { getWatchlistCount, WATCHLIST_UPDATED_EVENT } from "@/lib/watchlist";
 import { AppearanceToggle } from "./AppearanceToggle";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
@@ -13,6 +16,7 @@ const navItems = [
   { labelKey: "navScreener", href: "/screener" },
   { labelKey: "navArgentina", href: "/argentina" },
   { labelKey: "navCrypto", href: "/crypto" },
+  { labelKey: "navWatchlist", href: "/watchlist" },
   { labelKey: "navReports", href: "/reports" },
   { labelKey: "navAgents", href: "/agents" },
 ];
@@ -22,27 +26,44 @@ export function AppHeader() {
   const { resolvedMode } = useTheme();
   const pathname = usePathname();
   const isLight = resolvedMode === "light";
+  const [watchlistCount, setWatchlistCount] = useState(0);
+
+  useEffect(() => {
+    const sync = () => setWatchlistCount(getWatchlistCount());
+    sync();
+    window.addEventListener(WATCHLIST_UPDATED_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(WATCHLIST_UPDATED_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
 
   return (
     <header className={`sticky top-0 z-30 border-b backdrop-blur-2xl ${isLight ? "border-slate-200/80 bg-white/78 shadow-sm shadow-slate-900/5" : "border-white/10 bg-[#020617]/72 shadow-2xl shadow-black/20"}`}>
-      <div className="mx-auto flex max-w-[1520px] flex-col gap-3 px-4 py-3 sm:px-6 lg:px-10 xl:flex-row xl:items-center xl:justify-between">
-        <Link href="/" className="group flex items-center gap-3">
+      <div className="mx-auto flex max-w-[1520px] flex-col gap-3 px-4 py-2.5 sm:px-6 lg:px-10 xl:flex-row xl:items-center xl:justify-between">
+        <Link href="/" className="group flex min-w-0 items-center gap-3" aria-label="CMA Market Intelligence">
+          <span aria-label="CMA" className="sr-only">CMA</span>
           <span
-            aria-label="CMA"
-            className={`grid h-10 w-12 place-items-center rounded-xl border text-[0.68rem] font-black tracking-[0.16em] shadow-lg transition ${
+            className={`relative grid h-11 w-16 shrink-0 place-items-center overflow-hidden rounded-lg border px-2 shadow-lg transition ${
               isLight
-                ? "border-cyan-200 bg-gradient-to-br from-cyan-50 via-white to-blue-100 text-cyan-900 shadow-cyan-900/10"
-                : "border-cyan-300/35 bg-gradient-to-br from-cyan-300/25 via-slate-900/80 to-violet-400/20 text-cyan-100 shadow-cyan-950/40"
+                ? "border-slate-200 bg-white shadow-slate-900/10"
+                : "border-cyan-200/25 bg-white shadow-cyan-950/30"
             }`}
           >
-            CMA
+            <Image
+              src="/brand/cma-monogram-transparent.png"
+              alt="CMA Market Intelligence"
+              width={355}
+              height={144}
+              priority
+              className="h-7 w-full object-contain"
+            />
+            <span className={`pointer-events-none absolute inset-0 rounded-lg ${isLight ? "ring-1 ring-slate-950/5" : "ring-1 ring-cyan-200/15"}`} />
           </span>
-          <span>
-            <span className={`block text-base font-semibold tracking-tight group-hover:text-cyan-300 ${isLight ? "text-slate-950" : "text-white"}`}>
+          <span className="min-w-0">
+            <span className={`block truncate text-base font-semibold tracking-tight group-hover:text-cyan-300 ${isLight ? "text-slate-950" : "text-white"}`}>
               {t("productName")}
-            </span>
-            <span className={`block text-xs ${isLight ? "text-slate-600" : "text-slate-400"}`}>
-              {t("headerSubtitle")}
             </span>
           </span>
         </Link>
@@ -69,6 +90,11 @@ export function AppHeader() {
                   }`}
                 >
                   {t(item.labelKey)}
+                  {item.labelKey === "navWatchlist" && watchlistCount > 0 ? (
+                    <span className="ml-1 inline-flex min-w-5 justify-center rounded-full bg-cyan-300/15 px-1.5 text-[0.68rem] text-cyan-100">
+                      {watchlistCount}
+                    </span>
+                  ) : null}
                   {isActive ? <span className="absolute inset-x-4 -bottom-1 h-px bg-cyan-300/70" /> : null}
                 </Link>
               );

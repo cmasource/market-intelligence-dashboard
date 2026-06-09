@@ -2,11 +2,16 @@
 
 import { DataCoveragePanel } from "@/components/data-coverage/DataCoveragePanel";
 import { DataTransparencyNote } from "@/components/data-coverage/DataTransparencyNote";
+import { CnvDocumentsPanel } from "@/components/cnv/CnvDocumentsPanel";
+import { CnvIssuerCard } from "@/components/cnv/CnvIssuerCard";
+import { getCnvDocumentsForSymbol, getCnvIssuer } from "@/lib/cnv";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 
 export function AssetSecondaryDetails({ symbol }: { symbol: string }) {
   const { language } = useLanguage();
   const isSpanish = language === "es";
+  const cnvIssuer = getCnvIssuer(symbol);
+  const cnvDocuments = cnvIssuer ? getCnvDocumentsForSymbol(symbol) : [];
 
   return (
     <section className="cma-panel p-5">
@@ -15,6 +20,12 @@ export function AssetSecondaryDetails({ symbol }: { symbol: string }) {
         {isSpanish ? "Detalle secundario" : "Secondary detail zone"}
       </h2>
       <div className="mt-4 grid gap-4 xl:grid-cols-2">
+        {cnvIssuer ? (
+          <>
+            <CnvIssuerCard issuer={cnvIssuer} />
+            <CnvDocumentsPanel documents={cnvDocuments} compact />
+          </>
+        ) : null}
         <details className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
           <summary className="cursor-pointer font-semibold text-white">
             {isSpanish ? "Detalle tecnico" : "Technical detail"}

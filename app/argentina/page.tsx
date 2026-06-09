@@ -5,12 +5,15 @@ import { useEffect, useState } from "react";
 import { ArgentinaMarket } from "@/components/dashboard/ArgentinaMarket";
 import { BondSpeciesGuide } from "@/components/fixed-income/BondSpeciesGuide";
 import { FixedIncomeComparison } from "@/components/fixed-income/FixedIncomeComparison";
+import { CnvDocumentsPanel } from "@/components/cnv/CnvDocumentsPanel";
+import { CnvIssuerCard } from "@/components/cnv/CnvIssuerCard";
 import { AppShell } from "@/components/layout/AppShell";
 import { MarketHeatmap } from "@/components/market/MarketHeatmap";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { InstrumentUniverseGroups } from "@/components/screener/InstrumentUniverseGroups";
 import { ARGENTINA_INSTRUMENT_UNIVERSE } from "@/lib/instrument-universe";
 import { formatCurrencyValue, formatNumber, formatPercent } from "@/lib/formatters";
+import { cnvIssuers, getLatestCnvDocuments } from "@/lib/cnv";
 import type { ArgentinaInstrument, ArgentinaQuote, ArgentinaSourceStatus } from "@/lib/argentina";
 
 const universeGroups = [
@@ -141,6 +144,7 @@ export default function ArgentinaPage() {
   const tableInstruments = argentinaTableSymbols
     .map((symbol) => instruments.find((instrument) => instrument.symbol === symbol))
     .filter((instrument): instrument is ArgentinaInstrument => Boolean(instrument));
+  const latestCnvDocuments = getLatestCnvDocuments(5);
 
   function renderInstrumentCard(symbol: string) {
     const instrument = instruments.find((item) => item.symbol === symbol);
@@ -225,6 +229,27 @@ export default function ArgentinaPage() {
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{section.symbols.map(renderInstrumentCard)}</div>
               </div>
             ))}
+          </div>
+        </section>
+        <section className="cma-panel cma-card-argentina p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-200">
+            {isSpanish ? "Capa CNV" : "CNV layer"}
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            {isSpanish ? "Emisoras y documentos CNV" : "CNV issuers and documents"}
+          </h2>
+          <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
+            {isSpanish
+              ? "Primer contexto estructurado para emisoras locales, estados financieros y hechos relevantes. La version actual usa documentos de demostracion hasta integrar fuentes oficiales o publicas autorizadas."
+              : "First structured context for local issuers, financial statements and relevant events. The current version uses demo documents until official or authorized public sources are integrated."}
+          </p>
+          <div className="mt-5 grid gap-4 xl:grid-cols-[1fr_1fr]">
+            <div className="grid gap-3 md:grid-cols-2">
+              {cnvIssuers.slice(0, 4).map((issuer) => (
+                <CnvIssuerCard key={issuer.symbol} issuer={issuer} />
+              ))}
+            </div>
+            <CnvDocumentsPanel documents={latestCnvDocuments} />
           </div>
         </section>
         <section className="cma-panel cma-card-argentina p-5">
