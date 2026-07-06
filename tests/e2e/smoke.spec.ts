@@ -1068,6 +1068,21 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(footer.getByRole("link", { name: /Methodology|Metodología|Metodologia/ })).toHaveAttribute("href", "/methodology");
   });
 
+  test("status runtime diagnostics initial render stays neutral", async ({ page }) => {
+    await page.route("**/api/diagnostics/runtime", (route) => route.abort());
+    await page.goto("/status");
+
+    const diagnosticsPanel = page.getByTestId("deployment-parity-panel");
+    await expect(diagnosticsPanel).toBeVisible();
+    await expect(diagnosticsPanel.locator('[data-diagnostic-label="NODE_ENV"]')).not.toContainText(/^unknown$/i);
+    await expect(diagnosticsPanel.locator('[data-diagnostic-label="Vercel"]')).not.toContainText(/^local$/i);
+    await expect(diagnosticsPanel.locator('[data-diagnostic-label="Market"]')).not.toContainText(/^unknown$/i);
+    await expect(diagnosticsPanel.locator('[data-diagnostic-label="FMP key"]')).not.toContainText(/^no$/i);
+    await expect(diagnosticsPanel.locator('[data-diagnostic-label="Logo.dev"]')).not.toContainText(/^no$/i);
+    await expect(diagnosticsPanel.locator('[data-diagnostic-label="Fallback"]')).not.toContainText(/^disabled$/i);
+    await expect(diagnosticsPanel).toContainText(/Checking|Verificando/);
+  });
+
   test("technical analysis source and API stay fallback-safe", async ({ page, request }) => {
     await page.goto("/asset/AAPL");
     await expect(page.locator("body")).toContainText(/Integrated market signal|Market signal|Senal integrada de mercado|Senal de mercado/);

@@ -104,9 +104,18 @@ function DeploymentParityPanel({ isSpanish }: { isSpanish: boolean }) {
   }, []);
 
   const flags = diagnostics?.providerFlags;
+  const pendingValue = isSpanish ? "Verificando..." : "Checking...";
+  const booleanValue = (value: boolean | undefined) => {
+    if (!diagnostics || value === undefined) return pendingValue;
+    return value ? "yes" : "no";
+  };
+  const fallbackValue = () => {
+    if (!diagnostics || !flags) return pendingValue;
+    return flags.yahooFallbackEnabled || flags.mockFallbackEnabled ? "enabled" : "disabled";
+  };
 
   return (
-    <section className="cma-panel cma-glow-violet p-5">
+    <section className="cma-panel cma-glow-violet p-5" data-testid="deployment-parity-panel">
       <p className="cma-kicker">{isSpanish ? "Produccion" : "Production"}</p>
       <h2 className="mt-2 text-xl font-semibold text-white">
         {isSpanish ? "Paridad local/producción" : "Local/production parity"}
@@ -118,16 +127,20 @@ function DeploymentParityPanel({ isSpanish }: { isSpanish: boolean }) {
       </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          ["NODE_ENV", diagnostics?.nodeEnvironment ?? "unknown"],
-          ["Vercel", diagnostics?.vercelEnvironment ?? "local"],
-          [isSpanish ? "Mercado" : "Market", diagnostics?.configuredMarketProvider ?? "unknown"],
-          [isSpanish ? "Noticias" : "News", diagnostics?.configuredNewsProvider ?? "unknown"],
-          [isSpanish ? "Fundamentos" : "Fundamentals", diagnostics?.configuredFundamentalsProvider ?? "unknown"],
-          ["FMP key", flags?.fmpKeyPresent ? "yes" : "no"],
-          ["Logo.dev", flags?.logoDevTokenPresent ? "yes" : "no"],
-          [isSpanish ? "Fallback" : "Fallback", flags?.yahooFallbackEnabled || flags?.mockFallbackEnabled ? "enabled" : "disabled"],
+          ["NODE_ENV", diagnostics?.nodeEnvironment ?? pendingValue],
+          ["Vercel", diagnostics?.vercelEnvironment ?? pendingValue],
+          [isSpanish ? "Mercado" : "Market", diagnostics?.configuredMarketProvider ?? pendingValue],
+          [isSpanish ? "Noticias" : "News", diagnostics?.configuredNewsProvider ?? pendingValue],
+          [isSpanish ? "Fundamentos" : "Fundamentals", diagnostics?.configuredFundamentalsProvider ?? pendingValue],
+          ["FMP key", booleanValue(flags?.fmpKeyPresent)],
+          ["Logo.dev", booleanValue(flags?.logoDevTokenPresent)],
+          [isSpanish ? "Fallback" : "Fallback", fallbackValue()],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-lg border border-white/10 bg-white/[0.035] p-3">
+          <div
+            key={label}
+            className="rounded-lg border border-white/10 bg-white/[0.035] p-3"
+            data-diagnostic-label={label}
+          >
             <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
             <p className="mt-2 text-sm font-semibold text-white">{value}</p>
           </div>
