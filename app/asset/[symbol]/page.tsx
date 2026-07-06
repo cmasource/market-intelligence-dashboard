@@ -10,6 +10,7 @@ import { TechnicalAnalysisCard } from "@/components/asset/TechnicalAnalysisCard"
 import { MarketSignalGauge } from "@/components/analysis/MarketSignalGauge";
 import { CedearAnalyticsCard } from "@/components/cedears/CedearAnalyticsCard";
 import { InteractiveAssetChart } from "@/components/charts/InteractiveAssetChart";
+import { TradingViewAdvancedChart } from "@/components/charts/TradingViewAdvancedChart";
 import { DataCoveragePanel } from "@/components/data-coverage/DataCoveragePanel";
 import { AssetExecutiveSummary } from "@/components/intelligence/AssetExecutiveSummary";
 import { AssetIntelligenceReport } from "@/components/intelligence/AssetIntelligenceReport";
@@ -19,6 +20,7 @@ import Link from "next/link";
 import { getInstrumentBySymbol } from "@/lib/instrument-universe";
 import { isCedearSymbol } from "@/lib/cedears";
 import { findAsset, mockAssets } from "@/lib/mock-data";
+import { getTradingViewSymbol } from "@/lib/tradingview/symbol-map";
 
 function formatCategory(category: string) {
   return category.replaceAll("_", " ");
@@ -99,14 +101,39 @@ export default async function AssetDetailPage({
     );
   }
 
+  const tradingViewMapping = getTradingViewSymbol(asset.symbol);
+
   return (
     <AppShell width="asset">
       <div className="space-y-6">
         <AssetHeader asset={asset} />
+        {tradingViewMapping.verified ? (
+          <TradingViewAdvancedChart symbol={asset.symbol} height={620} />
+        ) : (
+          <section className="cma-panel-elevated cma-glow-cyan p-4 sm:p-5" data-testid="price-action-section">
+            <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">Acción del precio</p>
+                <h2 className="mt-1 text-xl font-semibold text-white">Acción del precio</h2>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+                  Símbolo TradingView no verificado. Se muestra un gráfico interno de respaldo como referencia secundaria.
+                </p>
+              </div>
+              <span className="w-fit rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-xs font-medium text-amber-100">
+                {tradingViewMapping.tradingViewSymbol}
+              </span>
+            </div>
+            <details className="rounded-lg border border-white/10 bg-slate-950/45 p-4" data-testid="legacy-chart-fallback">
+              <summary className="cursor-pointer text-sm font-semibold text-cyan-100">Gráfico interno de respaldo</summary>
+              <div className="mt-4">
+                <InteractiveAssetChart symbol={asset.symbol} name={asset.name} currency={asset.currency} />
+              </div>
+            </details>
+          </section>
+        )}
         <AssetExecutiveSummary symbol={asset.symbol} />
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.85fr)] xl:items-start">
           <div className="space-y-6">
-            <InteractiveAssetChart symbol={asset.symbol} name={asset.name} currency={asset.currency} />
             <TechnicalAnalysisCard asset={asset} />
             <NewsPanel news={asset.news} symbol={asset.symbol} />
           </div>

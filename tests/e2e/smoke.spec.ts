@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { getTradingViewSymbol } from "../../lib/tradingview/symbol-map";
 
 const assetRoutes = [
   { route: "/asset/AAPL", symbol: "AAPL" },
@@ -27,17 +28,37 @@ const realRoutes = [
   { route: "/status", heading: /Development Status|Estado del desarrollo/ },
 ];
 
-const timeframes = ["1D", "5D", "1M", "6M", "YTD", "1Y", "5Y"];
 const forbiddenLegacyBrand = new RegExp(["Se", "mia"].join(""), "i");
-const marketDataStatus = /Real market data|Fallback mock data|Mock OHLCV data/;
+const marketDataStatus = /Real market data|Fallback mock data|Mock OHLCV data|Provider price|Mock fallback price|Precio proveedor|Precio simulado de respaldo/;
 const technicalSourceStatus = /Calculated from real market data|Calculated from fallback mock data/;
 const fundamentalsSourceStatus = /Provider fundamentals|Fallback mock fundamentals/;
 const fixedIncomeSourceStatus = /Mock fixed income analytics|Calculating fixed income analytics/;
 const forbiddenCurrencyLabels = [/ARS\/USD/, /USD\/ARS/, new RegExp(["ARS", "SAR"].join(" "))];
 const forbiddenCurrencyLabelsWhenCclIsAllowed = [/USD\/ARS/, new RegExp(["ARS", "SAR"].join(" "))];
 
+async function getJsonWithRetry(request: { get: (url: string) => Promise<{ ok: () => boolean; json: () => Promise<unknown> }> }, url: string) {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const response = await request.get(url);
+      if (!response.ok()) throw new Error(`Request failed for ${url}`);
+      return response.json();
+    } catch (error) {
+      lastError = error;
+      await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+    }
+  }
+
+  throw lastError;
+}
+
 test.describe("CMA Market Intelligence smoke tests", () => {
   test.beforeEach(async ({ page }) => {
+    await page.route("https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js", (route) =>
+      route.abort(),
+    );
+
     await page.addInitScript(() => {
       if (!window.sessionStorage.getItem("cma-e2e-local-storage-cleared")) {
         window.localStorage.clear();
@@ -182,30 +203,57 @@ test.describe("CMA Market Intelligence smoke tests", () => {
 
       await expect(page.getByText(asset.symbol).first()).toBeVisible();
       await expect(page.getByTestId("asset-logo").first()).toBeVisible();
-      await expect(page.locator("body")).toContainText(marketDataStatus);
-      await expect(page.getByTestId("asset-chart-container")).toBeVisible();
+      await expect(page.getByTestId("price-action-section")).toBeVisible();
+      await expect(page.locator("body")).toContainText(/Price action|Acci(?:\u00f3|o)n del precio/);
       await expect(page.locator("body")).not.toContainText(forbiddenLegacyBrand);
       await expect(page.locator("body")).not.toContainText(/Asset not found|Activo no encontrado/i);
     });
   }
 
-  test("chart module timeframes remain interactive", async ({ page }) => {
-    await page.goto("/asset/AAPL");
+  test("TradingView symbol mapping covers core assets", () => {
+    expect(getTradingViewSymbol("AAPL")).toMatchObject({ tradingViewSymbol: "NASDAQ:AAPL", verified: true });
+    expect(getTradingViewSymbol("GGAL")).toMatchObject({ tradingViewSymbol: "BCBA:GGAL", verified: true });
+    expect(getTradingViewSymbol("BTC-USD")).toMatchObject({ tradingViewSymbol: "BINANCE:BTCUSDT", verified: true });
+    expect(getTradingViewSymbol("UNKNOWN")).toMatchObject({ tradingViewSymbol: "UNKNOWN", verified: false });
+  });
 
-    const chart = page.getByTestId("asset-chart-container");
-    await expect(chart).toBeVisible();
+  test("mapped assets render TradingView as the main price action chart", async ({ page }) => {
+    const expectedSymbols = [
+      ["/asset/AAPL", "NASDAQ:AAPL"],
+      ["/asset/GGAL", "BCBA:GGAL"],
+      ["/asset/BTC-USD", "BINANCE:BTCUSDT"],
+    ] as const;
 
-    for (const timeframe of timeframes) {
-      await expect(page.getByRole("button", { name: timeframe })).toBeVisible();
+    for (const [route, tradingViewSymbol] of expectedSymbols) {
+      await page.goto(route);
+      const priceAction = page.getByTestId("price-action-section");
+      const tradingViewChart = priceAction.getByTestId("tradingview-chart");
+
+      await expect(priceAction).toBeVisible();
+      await expect(priceAction).toHaveAttribute("data-chart-provider", "tradingview");
+      await expect(priceAction).toContainText(/Price action|Acci(?:\u00f3|o)n del precio/);
+      await expect(priceAction).toContainText(tradingViewSymbol);
+      await expect(tradingViewChart).toBeVisible();
+      await expect(tradingViewChart).toHaveAttribute("data-chart-provider", "tradingview");
+      await expect(tradingViewChart).toHaveAttribute("data-tradingview-symbol", tradingViewSymbol);
+      await expect(tradingViewChart).toHaveAttribute("data-tradingview-verified", "true");
+      const tradingViewBox = await tradingViewChart.boundingBox();
+      expect(tradingViewBox?.height).toBeGreaterThanOrEqual(420);
+
+      await expect(page.getByRole("heading", { name: /Gr(?:\u00e1|a)fico interactivo|Interactive chart/ })).toHaveCount(0);
+      await expect(priceAction.getByTestId("asset-chart-container")).toHaveCount(0);
+      await expect(priceAction).not.toContainText(/Datos simulados de respaldo|Datos OHLCV simulados|Preparado para proveedores licenciados de datos de mercado/);
     }
+  });
 
-    await page.getByRole("button", { name: "1M" }).click();
-    await expect(page.getByRole("button", { name: "1M" })).toHaveAttribute("aria-pressed", "true");
-    await expect(chart).toBeVisible();
+  test("unverified TradingView symbols keep the internal chart as labeled fallback only", async ({ page }) => {
+    await page.goto("/asset/AL30");
 
-    await page.getByRole("button", { name: "1Y" }).click();
-    await expect(page.getByRole("button", { name: "1Y" })).toHaveAttribute("aria-pressed", "true");
-    await expect(chart).toBeVisible();
+    const priceAction = page.getByTestId("price-action-section");
+    await expect(priceAction).toBeVisible();
+    await expect(priceAction).toContainText("Símbolo TradingView no verificado");
+    await expect(priceAction.getByTestId("tradingview-chart")).toHaveCount(0);
+    await expect(priceAction.getByTestId("legacy-chart-fallback")).toContainText("Gráfico interno de respaldo");
   });
 
   test("language switcher toggles dashboard copy", async ({ page }) => {
@@ -523,7 +571,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.locator("body")).toContainText(marketDataStatus);
 
     await page.goto("/asset/AL30");
-    await expect(page.getByText("Mock data until Argentina market integration is enabled.")).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Validated manual load|Price: Mock|Fixed income: Mock|Mock data|Datos simulados|Simulado/);
   });
 
   test("asset pages show data coverage badges", async ({ page }) => {
@@ -711,9 +759,21 @@ test.describe("CMA Market Intelligence smoke tests", () => {
   });
 
   test("runtime diagnostics expose safe provider parity metadata", async ({ request }) => {
-    const response = await request.get("/api/diagnostics/runtime");
-    expect(response.ok()).toBeTruthy();
-    const data = await response.json();
+    const data = (await getJsonWithRetry(request, "/api/diagnostics/runtime")) as {
+      app: string;
+      configuredMarketProvider: unknown;
+      configuredNewsProvider: unknown;
+      configuredFundamentalsProvider: unknown;
+      fmpEnabled: unknown;
+      fmpKeyPresent: unknown;
+      logoDevTokenPresent: unknown;
+      yahooFallbackEnabled: unknown;
+      mockFallbackEnabled: unknown;
+      providerFlags: {
+        fmpKeyPresent: unknown;
+        logoDevTokenPresent: unknown;
+      };
+    };
     const payload = JSON.stringify(data);
 
     expect(data.app).toBe("CMA Market Intelligence");
