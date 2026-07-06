@@ -11,6 +11,10 @@ const realSupported = new Set([
   "AVAX-USD",
   "LINK-USD",
   "DOT-USD",
+  "MATIC-USD",
+  "POL-USD",
+  "LTC-USD",
+  "BCH-USD",
 ]);
 const cryptoNames: Record<string, string> = {
   "BTC-USD": "Bitcoin",
@@ -23,6 +27,10 @@ const cryptoNames: Record<string, string> = {
   "AVAX-USD": "Avalanche",
   "LINK-USD": "Chainlink",
   "DOT-USD": "Polkadot",
+  "MATIC-USD": "Polygon",
+  "POL-USD": "Polygon Ecosystem Token",
+  "LTC-USD": "Litecoin",
+  "BCH-USD": "Bitcoin Cash",
 };
 
 // TODO: expand this mock roadmap toward the top 50 crypto assets by market relevance.
@@ -37,6 +45,10 @@ export const CRYPTO_INSTRUMENT_UNIVERSE: InstrumentUniverseItem[] = [
   "AVAX-USD",
   "LINK-USD",
   "DOT-USD",
+  "MATIC-USD",
+  "POL-USD",
+  "LTC-USD",
+  "BCH-USD",
 ].map((symbol, index) => ({
   symbol,
   displayName: cryptoNames[symbol] ?? symbol.replace("-USD", ""),

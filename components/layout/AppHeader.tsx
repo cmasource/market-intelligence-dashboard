@@ -14,6 +14,7 @@ const navItems = [
   { labelKey: "navDashboard", href: "/" },
   { labelKey: "navMarkets", href: "/markets" },
   { labelKey: "navScreener", href: "/screener" },
+  { labelKey: "navTradeRadar", href: "/trade-radar" },
   { labelKey: "navArgentina", href: "/argentina" },
   { labelKey: "navCrypto", href: "/crypto" },
   { labelKey: "navWatchlist", href: "/watchlist" },

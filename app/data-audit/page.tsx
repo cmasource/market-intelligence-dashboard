@@ -8,6 +8,7 @@ import { DataCoverageBadges } from "@/components/data-coverage/DataCoverageBadge
 import { ProviderStatusPanel } from "@/components/providers/ProviderStatusPanel";
 import { cnvIssuers, getCnvSourceStatus, getLatestCnvDocuments } from "@/lib/cnv";
 import { getInstrumentContextCoverage, getCoverageStatusLabel } from "@/lib/data-coverage";
+import { getAnalysisCoverage, getAnalysisCoverageSummary } from "@/lib/analysis/analysis-coverage";
 import { instrumentUniverse } from "@/lib/instrument-universe/universe";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { formatCurrencyValue } from "@/lib/formatters";
@@ -169,6 +170,10 @@ export default function DataAuditPage() {
       auditSymbols.has(instrument.symbol) ||
       (instrument.symbol === "AAPL" && instrument.category === "cedear"),
   );
+  const analysisCoverageItems = instrumentUniverse
+    .filter((instrument) => auditSymbols.has(instrument.symbol) || instrument.priority && instrument.priority >= 7)
+    .map((instrument) => getAnalysisCoverage(instrument.symbol));
+  const analysisSummary = getAnalysisCoverageSummary(analysisCoverageItems);
 
   useEffect(() => {
     let active = true;
@@ -318,6 +323,75 @@ export default function DataAuditPage() {
           <Link href="/methodology" className="mt-4 inline-flex text-sm font-medium text-emerald-100">
             {isSpanish ? "Ver metodologia y checklist operativo" : "View methodology and operating checklist"}
           </Link>
+        </section>
+
+        <section className="cma-panel overflow-hidden" data-testid="analysis-coverage-matrix">
+          <div className="border-b border-white/10 bg-white/[0.04] p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
+              {isSpanish ? "Matriz de cobertura analitica" : "Analysis coverage matrix"}
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-white">
+              {isSpanish ? "Tecnico, fundamentos, renta fija y grafico" : "Technical, fundamentals, fixed income and chart"}
+            </h2>
+            <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
+              {isSpanish
+                ? "Esta matriz separa disponibilidad analitica por instrumento. No mezcla configuracion de proveedor con cobertura efectiva por simbolo."
+                : "This matrix separates analytical availability by instrument. It does not mix provider configuration with per-symbol coverage."}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2 text-xs">
+              <span className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-cyan-100">
+                Technical: {analysisSummary.technicalCount}
+              </span>
+              <span className="rounded-full border border-violet-300/25 bg-violet-300/10 px-3 py-1 text-violet-100">
+                Fundamentals: {analysisSummary.fundamentalCount}
+              </span>
+              <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-amber-100">
+                Fixed income: {analysisSummary.fixedIncomeCount}
+              </span>
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-slate-300">
+                Chart: {analysisSummary.chartCount}
+              </span>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-[1080px] w-full text-left text-sm">
+              <thead className="border-b border-white/10 text-xs uppercase tracking-[0.12em] text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Symbol</th>
+                  <th className="px-4 py-3">{isSpanish ? "Tipo" : "Type"}</th>
+                  <th className="px-4 py-3">{isSpanish ? "Mercado" : "Market"}</th>
+                  <th className="px-4 py-3">{isSpanish ? "Tecnico" : "Technical"}</th>
+                  <th className="px-4 py-3">{isSpanish ? "Fundamentos" : "Fundamentals"}</th>
+                  <th className="px-4 py-3">{isSpanish ? "Renta fija" : "Fixed income"}</th>
+                  <th className="px-4 py-3">{isSpanish ? "Grafico" : "Chart"}</th>
+                  <th className="px-4 py-3">{isSpanish ? "Notas" : "Notes"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analysisCoverageItems.map((coverage) => (
+                  <tr key={`${coverage.symbol}-${coverage.assetType}`} className="border-b border-white/10 last:border-b-0">
+                    <td className="px-4 py-4 font-semibold text-white">{coverage.symbol}</td>
+                    <td className="px-4 py-4 text-slate-300">{formatCategory(coverage.assetType)}</td>
+                    <td className="px-4 py-4 text-slate-400">{coverage.market ?? "N/D"}</td>
+                    <td className="px-4 py-4 text-slate-300">{coverage.technical.status}</td>
+                    <td className="px-4 py-4 text-slate-300">
+                      {coverage.fundamentals.status}
+                      {coverage.fundamentals.underlyingSymbol ? (
+                        <span className="ml-2 text-xs text-violet-200">({coverage.fundamentals.underlyingSymbol})</span>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-4 text-slate-300">{coverage.fixedIncome.status}</td>
+                    <td className="px-4 py-4 text-slate-300">
+                      {coverage.chart.verified ? coverage.chart.tradingViewSymbol : isSpanish ? "No verificado" : "Unverified"}
+                    </td>
+                    <td className="px-4 py-4 text-xs leading-5 text-slate-400">
+                      {coverage.technical.reason} {coverage.fundamentals.reason} {coverage.fixedIncome.reason}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section className="cma-panel cma-card-argentina p-5">

@@ -15,6 +15,17 @@ The product now follows the **CMA Institutional Fintech Terminal** direction: in
 - Technology division: cma_source
 - cma_source must always be written in lowercase with the underscore.
 
+## Sprint 28 Analysis Coverage
+
+CMA Market Intelligence separates instrument coverage by analytical layer. Technical analysis is available when provider, fallback or structured OHLCV data exists. Equity fundamentals apply only to equities, ADRs, CEDEAR underlyings and ETFs with provider or verified fallback coverage. Crypto and bonds do not receive equity-ratio treatment; bonds use fixed income analytics where structured metrics exist.
+
+Coverage APIs:
+
+- `/api/analysis/coverage`
+- `/api/analysis/coverage/[symbol]`
+- `/api/analysis/batch`
+- `/api/analysis/universe`
+
 ## Target Users
 
 - Business consultants who need fast market context for client conversations.

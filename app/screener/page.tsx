@@ -15,6 +15,7 @@ type ScreenerSearchParams = {
   currency?: string;
   sourceStatus?: string;
   coverageGroup?: string;
+  analysisCoverage?: string;
 };
 
 export default async function ScreenerPage({

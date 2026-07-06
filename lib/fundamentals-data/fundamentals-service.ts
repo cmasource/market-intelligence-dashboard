@@ -5,6 +5,7 @@ import {
   getYahooFundamentalsSymbol,
   normalizeFundamentalsSymbol,
 } from "./symbol-map";
+import { getFundamentalProviderSymbol } from "@/lib/instruments";
 import type { FundamentalsProviderName, FundamentalsProviderTraceEntry, FundamentalsRequest, FundamentalsResponse, FundamentalsSnapshot } from "./types";
 import { buildFundamentalsInterpretation, calculateFundamentalScore } from "./fundamentals-score";
 import { getAlphaVantageFundamentals, getFinnhubFundamentals, getFmpFundamentals } from "@/lib/providers";
@@ -142,8 +143,11 @@ function combinedSourceLabel(responses: FundamentalsResponse[]) {
 }
 
 export async function getFundamentals(request: FundamentalsRequest): Promise<FundamentalsResponse> {
-  const symbol = normalizeFundamentalsSymbol(request.symbol);
-  const assetClass = request.assetClass ?? getFundamentalsAssetClass(symbol);
+  const requestedSymbol = normalizeFundamentalsSymbol(request.symbol);
+  const providerMapping = getFundamentalProviderSymbol(requestedSymbol);
+  const symbol = providerMapping.provider !== "unavailable" ? providerMapping.providerSymbol : requestedSymbol;
+  const requestedAssetClass = getFundamentalsAssetClass(requestedSymbol);
+  const assetClass = request.assetClass ?? (requestedAssetClass === "argentine_equity" && providerMapping.provider !== "unavailable" ? "stock" : getFundamentalsAssetClass(symbol));
   const normalizedRequest = { ...request, symbol, assetClass };
 
   try {
@@ -218,8 +222,13 @@ export async function getFundamentals(request: FundamentalsRequest): Promise<Fun
       };
     }
 
-    const fallback = getMockFundamentals(normalizedRequest);
-    return { ...fallback, missingFields: missingFields(fallback.snapshot), coverageRatio: coverageRatio(fallback.snapshot) };
+    return unavailableResponse(
+      requestedSymbol,
+      providerMapping.reason === "No verified fundamentals provider symbol configured."
+        ? "Fundamentals are unavailable from the current provider for this instrument."
+        : providerMapping.reason,
+      requestedAssetClass,
+    );
   } catch (error) {
     const fallback = getMockFundamentals(
       normalizedRequest,

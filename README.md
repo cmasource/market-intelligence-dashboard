@@ -4,6 +4,17 @@ CMA Market Intelligence is a public-demo MVP financial intelligence dashboard cr
 
 It combines market universe exploration, asset detail pages, interactive charts, technical analysis, fundamentals, fixed income analytics, a screener, bilingual UI and transparent data coverage labels.
 
+## Analysis Coverage
+
+Sprint 28 adds structured analysis coverage for the curated instrument universe. The app distinguishes technical, fundamental, fixed income and chart availability per symbol so unsupported analysis is labeled as not applicable or unavailable instead of being implied.
+
+Useful endpoints:
+
+- `/api/analysis/coverage`
+- `/api/analysis/coverage/AAPL`
+- `/api/analysis/batch?symbols=AAPL,MSFT,GGAL,BTC-USD`
+- `/api/analysis/universe?type=crypto`
+
 ## Branding
 
 - Product: CMA Market Intelligence

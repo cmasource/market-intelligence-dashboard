@@ -1,4 +1,5 @@
 import { instrumentUniverse } from "@/lib/instrument-universe";
+import { getAnalysisCoverage } from "@/lib/analysis/analysis-coverage";
 import { mockAssets } from "@/lib/mock-data";
 import type { Asset } from "@/types/asset";
 import {
@@ -47,7 +48,7 @@ function baseResponse(type: RankingType, items: RankingResponse["items"], period
 
 export function getTechnicalRanking(limit = defaultLimit) {
   const items = uniqueRankingUniverse()
-    .filter((asset) => typeof asset.technicalScore === "number")
+    .filter((asset) => typeof asset.technicalScore === "number" && getAnalysisCoverage(asset.symbol).technical.status !== "unavailable")
     .map((asset) => toRankingItem(asset, scoreTechnical(asset), buildTechnicalReason(asset), "Lectura informativa", "technical", asset.dailyChange))
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
@@ -59,6 +60,8 @@ export function getFundamentalRanking(limit = defaultLimit) {
   const items = uniqueRankingUniverse()
     .map((asset) => {
       const score = scoreFundamental(asset);
+      const coverage = getAnalysisCoverage(asset.symbol);
+      if (!["provider", "fallback", "manual", "mock"].includes(coverage.fundamentals.status)) return null;
       if (score === null) return null;
       return toRankingItem(asset, score, buildFundamentalReason(asset), "Calidad fundamental estimada", "fundamental", asset.dailyChange);
     })
@@ -73,8 +76,14 @@ export function getCombinedRanking(limit = defaultLimit) {
   const items = uniqueRankingUniverse()
     .map((asset) => {
       const result = scoreCombined(asset);
+      const coverage = getAnalysisCoverage(asset.symbol);
+      const hasRelevantSecondPillar =
+        ["provider", "fallback", "manual", "mock"].includes(coverage.fundamentals.status) ||
+        ["provider", "fallback", "manual", "mock"].includes(coverage.fixedIncome.status);
+      if (coverage.technical.status === "unavailable" || !hasRelevantSecondPillar) return null;
       return toRankingItem(asset, result.score, buildCombinedReason(asset, result.confidence), "Ranking combinado", "combined", asset.dailyChange);
     })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item))
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 

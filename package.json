@@ -10,6 +10,7 @@
     "audit:i18n": "tsx scripts/audit-visible-english.ts",
     "validate:finance": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/validate-financial-engine.ts",
     "validate:argentina": "tsx scripts/validate-argentina-data.ts",
+    "test:technical": "node --import tsx --test tests/technical/*.test.ts tests/market-data/*.test.ts tests/api/*.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },

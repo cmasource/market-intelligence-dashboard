@@ -7,6 +7,16 @@
 - Technology division: cma_source
 - cma_source must always remain lowercase.
 
+## Sprint 28: Analysis Coverage
+
+- Added a central analysis coverage model.
+- Expanded the curated demo universe for USA equities, ETFs, Argentina/ADR-linked names, bonds and crypto.
+- Added coverage and batch analysis APIs without exposing secrets.
+- Added screener filters for technical, fundamental, fixed income, provider-backed and fallback/manual/mock coverage.
+- Added data audit matrix for technical, fundamentals, fixed income and TradingView chart status.
+
+Next recommended sprint: provider-quality hardening for historical candles and fundamentals, with cache observability and per-symbol provider traces.
+
 ## Sprint 21: Visual Identity Upgrade
 
 - Implemented the CMA Institutional Fintech Terminal visual direction.

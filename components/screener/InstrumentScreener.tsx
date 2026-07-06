@@ -78,6 +78,13 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
   const currencies = getInstrumentCurrencies();
   const sourceStatuses = getInstrumentSourceStatuses();
   const coverageGroups = getCoverageGroupOptions(language);
+  const analysisCoverageOptions = [
+    { value: "technical", label: isSpanish ? "Tecnico disponible" : "Technical available" },
+    { value: "fundamentals", label: isSpanish ? "Fundamental disponible" : "Fundamental available" },
+    { value: "fixed_income", label: isSpanish ? "Renta fija disponible" : "Fixed income available" },
+    { value: "provider_backed", label: isSpanish ? "Con proveedor" : "Provider-backed" },
+    { value: "fallback_manual_mock", label: isSpanish ? "Fallback/manual/simulado" : "Fallback/manual/mock" },
+  ];
 
   const results = useMemo(() => filterInstrumentUniverse(filters), [filters]);
   const groupedResults = useMemo(() => {
@@ -108,7 +115,7 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
           : "border-cyan-300/20 bg-slate-950/55"
       }`}
     >
-      <div className="grid gap-3 lg:grid-cols-[1.5fr_repeat(6,1fr)_auto]">
+      <div className="grid gap-3 lg:grid-cols-[1.5fr_repeat(7,1fr)_auto]">
         <label className="block">
           <span className={`text-xs uppercase tracking-[0.14em] ${isLight ? "text-slate-600" : "text-slate-500"}`}>
             {isSpanish ? "Buscar" : "Search"}
@@ -131,6 +138,7 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
           ["currency", isSpanish ? "Moneda" : "Currency", currencies],
           ["sourceStatus", isSpanish ? "Estado" : "Data status", sourceStatuses],
           ["coverageGroup", isSpanish ? "Cobertura" : "Coverage", coverageGroups],
+          ["analysisCoverage", isSpanish ? "Analisis" : "Analysis", analysisCoverageOptions],
         ].map(([key, label, options]) => (
           <label key={key as string} className="block">
             <span className={`text-xs uppercase tracking-[0.14em] ${isLight ? "text-slate-600" : "text-slate-500"}`}>{label as string}</span>

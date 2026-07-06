@@ -137,6 +137,7 @@ export function FundamentalAnalysisCard({
           ? t("fundamentalsFallback")
           : t("fundamentalsNotApplicable");
   const isNotApplicable = fundamentals?.provider === "unavailable" || (!hasAnyFundamental(snapshot) && !loading);
+  const usesUnderlying = Boolean(fundamentals?.symbol && symbol && fundamentals.symbol.toUpperCase() !== symbol.toUpperCase());
   const missingFieldList = fundamentals?.missingFields ?? unavailableFields(snapshot);
   const hasPartialCoverage = hasAnyFundamental(snapshot) && missingFieldList.length >= 6;
   const coveragePercent =
@@ -280,6 +281,13 @@ export function FundamentalAnalysisCard({
         {hasPartialCoverage ? (
           <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 font-medium text-amber-100">
             {language === "es" ? "Cobertura fundamental parcial" : "Partial fundamental coverage"}
+          </span>
+        ) : null}
+        {usesUnderlying ? (
+          <span className="rounded-full border border-violet-300/30 bg-violet-300/10 px-3 py-1 font-medium text-violet-100">
+            {language === "es"
+              ? `Fundamentos basados en subyacente: ${fundamentals?.symbol}`
+              : `Fundamentals based on underlying: ${fundamentals?.symbol}`}
           </span>
         ) : null}
       </div>

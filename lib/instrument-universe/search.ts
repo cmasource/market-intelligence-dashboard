@@ -1,6 +1,7 @@
 import { instrumentUniverse } from "./universe";
 import type { InstrumentCountry, InstrumentMarket, InstrumentSourceStatus, InstrumentUniverseItem } from "./types";
 import { instrumentMatchesCoverageGroup } from "@/lib/data-coverage";
+import { getAnalysisCoverage } from "@/lib/analysis/analysis-coverage";
 
 export type InstrumentUniverseFilters = {
   query?: string;
@@ -10,6 +11,7 @@ export type InstrumentUniverseFilters = {
   currency?: string;
   sourceStatus?: string;
   coverageGroup?: string;
+  analysisCoverage?: string;
 };
 
 function normalize(value: string) {
@@ -76,6 +78,29 @@ export function filterInstrumentUniverse(filters: InstrumentUniverseFilters = {}
       })
     ) {
       return false;
+    }
+    if (filters.analysisCoverage) {
+      const coverage = getAnalysisCoverage(instrument.symbol);
+      if (filters.analysisCoverage === "technical" && coverage.technical.status === "unavailable") return false;
+      if (
+        filters.analysisCoverage === "fundamentals" &&
+        !["provider", "fallback", "manual", "mock"].includes(coverage.fundamentals.status)
+      ) {
+        return false;
+      }
+      if (
+        filters.analysisCoverage === "fixed_income" &&
+        !["provider", "fallback", "manual", "mock"].includes(coverage.fixedIncome.status)
+      ) {
+        return false;
+      }
+      if (filters.analysisCoverage === "provider_backed" && coverage.technical.status !== "provider" && coverage.fundamentals.status !== "provider") {
+        return false;
+      }
+      if (filters.analysisCoverage === "fallback_manual_mock") {
+        const statuses = [coverage.technical.status, coverage.fundamentals.status, coverage.fixedIncome.status];
+        if (!statuses.some((status) => status === "fallback" || status === "manual" || status === "mock")) return false;
+      }
     }
     return true;
   });

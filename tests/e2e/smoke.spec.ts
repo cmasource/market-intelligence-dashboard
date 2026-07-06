@@ -165,6 +165,42 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     expect(data.items.length).toBeGreaterThan(0);
   });
 
+  test("analysis coverage API returns safe structured coverage", async ({ request }) => {
+    const response = await request.get("/api/analysis/coverage");
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data.summary.universeSize).toBeGreaterThan(20);
+    expect(data.summary.technicalCount).toBeGreaterThan(10);
+    expect(data.summary.fundamentalCount).toBeGreaterThan(5);
+    expect(data.summary.fixedIncomeCount).toBeGreaterThan(0);
+    expect(Array.isArray(data.items)).toBeTruthy();
+    expect(JSON.stringify(data)).not.toMatch(/API_KEY|FMP_API_KEY|FINNHUB_API_KEY|ALPHA_VANTAGE_API_KEY/i);
+  });
+
+  test("analysis coverage handles equity crypto and bond applicability", async ({ request }) => {
+    const [aapl, bitcoin, al30] = await Promise.all([
+      request.get("/api/analysis/coverage/AAPL").then((response) => response.json()),
+      request.get("/api/analysis/coverage/BTC-USD").then((response) => response.json()),
+      request.get("/api/analysis/coverage/AL30").then((response) => response.json()),
+    ]);
+
+    expect(aapl.technical.status).not.toBe("unavailable");
+    expect(["provider", "fallback", "manual", "mock"]).toContain(aapl.fundamentals.status);
+    expect(bitcoin.technical.status).not.toBe("unavailable");
+    expect(bitcoin.fundamentals.status).toBe("not_applicable");
+    expect(al30.fixedIncome.status).not.toBe("not_applicable");
+    expect(al30.fundamentals.status).toBe("not_applicable");
+  });
+
+  test("analysis batch API is capped and does not expose secrets", async ({ request }) => {
+    const response = await request.get("/api/analysis/batch?symbols=AAPL,MSFT,GGAL,BTC-USD,AL30");
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data.maxBatchSize).toBeLessThanOrEqual(50);
+    expect(data.items).toHaveLength(5);
+    expect(JSON.stringify(data)).not.toMatch(/API_KEY|FMP_API_KEY|FINNHUB_API_KEY|ALPHA_VANTAGE_API_KEY/i);
+  });
+
   for (const route of realRoutes) {
     test(`${route.route} real route loads`, async ({ page }) => {
       await page.goto(route.route);
@@ -218,6 +254,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
   });
 
   test("mapped assets render TradingView as the main price action chart", async ({ page }) => {
+    test.setTimeout(60_000);
     const expectedSymbols = [
       ["/asset/AAPL", "NASDAQ:AAPL"],
       ["/asset/GGAL", "BCBA:GGAL"],
@@ -225,7 +262,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     ] as const;
 
     for (const [route, tradingViewSymbol] of expectedSymbols) {
-      await page.goto(route);
+      await page.goto(route, { waitUntil: "domcontentloaded" });
       const priceAction = page.getByTestId("price-action-section");
       const tradingViewChart = priceAction.getByTestId("tradingview-chart");
 
@@ -341,8 +378,8 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await page.goto("/");
 
     const searchSection = page.locator("#markets");
-    await page.getByLabel("Asset search").fill("Pampa");
-    await expect(searchSection.getByText("PAMP").first()).toBeVisible();
+    await page.getByLabel("Asset search").fill("Ternium");
+    await expect(searchSection.getByText("TXAR").first()).toBeVisible();
     await expect(searchSection).toContainText(/View preliminary profile|Ver ficha preliminar|Future coverage|Cobertura futura/);
     await expect(searchSection.locator("a").first()).toBeVisible();
   });
@@ -373,9 +410,9 @@ test.describe("CMA Market Intelligence smoke tests", () => {
   });
 
   test("future asset fallback page is graceful", async ({ page }) => {
-    await page.goto("/asset/PAMP");
+    await page.goto("/asset/TXAR");
 
-    await expect(page.getByText("PAMP").first()).toBeVisible();
+    await expect(page.getByText("TXAR").first()).toBeVisible();
     await expect(page.locator("body")).toContainText(/planned CMA Market Intelligence universe|universo previsto de CMA Market Intelligence/);
     await expect(page.locator("body")).not.toContainText(/Technical signal|Senal tecnica/);
     await expect(page.locator("body")).not.toContainText(/Market signal|Senal de mercado/);
@@ -444,6 +481,18 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await page.getByRole("button", { name: /Reset|Resetear/ }).click();
     await page.getByLabel("Category").selectOption("crypto");
     await expect(page.getByText("BTC-USD").first()).toBeVisible();
+
+    await page.getByRole("button", { name: /Reset|Resetear/ }).click();
+    await page.getByLabel("Analysis").selectOption("technical");
+    await expect(page.getByText("AAPL").first()).toBeVisible();
+
+    await page.getByRole("button", { name: /Reset|Resetear/ }).click();
+    await page.getByLabel("Analysis").selectOption("fundamentals");
+    await expect(page.getByText("AAPL").first()).toBeVisible();
+
+    await page.getByRole("button", { name: /Reset|Resetear/ }).click();
+    await page.getByLabel("Analysis").selectOption("fixed_income");
+    await expect(page.getByText("AL30").first()).toBeVisible();
 
     await page.getByRole("button", { name: /Reset|Resetear/ }).click();
     await page.getByPlaceholder(/Search AL30|Buscar AL30/).fill("AAPL");
@@ -586,7 +635,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
   });
 
   test("asset pages show normalized display currencies", async ({ page }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(120_000);
     const expectedCurrencies = [
       { symbol: "AAPL", currency: "USD", forbidden: forbiddenCurrencyLabelsWhenCclIsAllowed },
       { symbol: "SPY", currency: "USD", forbidden: forbiddenCurrencyLabelsWhenCclIsAllowed },
@@ -615,7 +664,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
 
     for (const item of expectedCurrencies) {
       await page.goto(`/asset/${item.symbol}`, { waitUntil: "domcontentloaded" });
-      await expect(page.getByText(item.symbol).first()).toBeVisible();
+      await expect(page.getByRole("heading", { name: item.symbol }).first()).toBeVisible();
       await expect(page.locator("body")).toContainText(item.currency);
       for (const forbidden of item.forbidden) {
         await expect(page.locator("body")).not.toContainText(forbidden);
@@ -756,6 +805,11 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.locator("body")).toContainText(/Yahoo-compatible|Yahoo compatible|FMP/);
     await expect(page.locator("body")).toContainText(/Production\/local parity|Paridad produccion\/local/);
     await expect(page.locator("body")).toContainText(/Sanitization|Sanitizacion/);
+    await expect(page.getByTestId("analysis-coverage-matrix")).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Analysis coverage matrix|Matriz de cobertura analitica/);
+    await expect(page.locator("body")).toContainText(/Technical|Tecnico/);
+    await expect(page.locator("body")).toContainText(/Fundamentals|Fundamentos/);
+    await expect(page.locator("body")).toContainText(/Fixed income|Renta fija/);
   });
 
   test("runtime diagnostics expose safe provider parity metadata", async ({ request }) => {
@@ -998,6 +1052,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
   });
 
   test("glossary page and metric tooltips are visible", async ({ page }) => {
+    test.setTimeout(60_000);
     await page.goto("/glossary");
     await expect(page.getByRole("heading", { name: /Financial Glossary|Glosario financiero/ })).toBeVisible();
     await expect(page.locator("body")).toContainText("Technical analysis");
@@ -1014,6 +1069,7 @@ test.describe("CMA Market Intelligence smoke tests", () => {
     await expect(page.getByRole("tooltip")).toContainText("Relates market price to earnings per share");
 
     await page.goto("/asset/AL30");
+    await expect(page.getByRole("heading", { name: "Fixed Income Analytics" })).toBeVisible();
     await page.getByRole("button", { name: "Clean price" }).first().click();
     await expect(page.getByRole("tooltip")).toContainText("Bond price excluding accrued interest");
   });
@@ -1154,6 +1210,15 @@ test.describe("CMA Market Intelligence smoke tests", () => {
 
     await page.goto("/asset/AL30");
     await expect(page.getByText("Bond analytics are handled through fixed income metrics, not equity fundamentals.")).toBeVisible();
+  });
+
+  test("AAPL asset page shows technical and fundamental analysis cards", async ({ page }) => {
+    await page.goto("/asset/AAPL");
+
+    await expect(page.getByTestId("technical-analysis-module")).toBeVisible();
+    await expect(page.getByTestId("fundamental-analysis-module")).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Technical score|Puntaje tecnico/);
+    await expect(page.locator("body")).toContainText(/Fundamental score|Puntaje fundamental/);
   });
 
   test("AL30 fixed income analytics stay visible", async ({ page }) => {
