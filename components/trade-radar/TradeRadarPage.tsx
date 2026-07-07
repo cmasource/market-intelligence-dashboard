@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
+import type { InstrumentMarket, InstrumentSearchResult } from "@/lib/instruments/types";
 import type { TradeRadarInterval, TradeRadarMarket, TradeRadarProviderName } from "@/lib/market-data/providers/base";
-import type { SymbolCatalogItem } from "@/lib/market-data/symbol-catalog";
 import type { TradeRadarProviderStatus } from "@/lib/market-data/trade-radar-provider-status";
 import type { TradeRadarAnalysis } from "@/lib/technical/trade-radar";
 import { AnalysisResult } from "./AnalysisResult";
@@ -16,7 +16,7 @@ export function TradeRadarPage() {
   const [interval, setInterval] = useState<TradeRadarInterval>("4h");
   const [provider, setProvider] = useState<TradeRadarProviderName>("auto");
   const [analysis, setAnalysis] = useState<TradeRadarAnalysis | null>(null);
-  const [selectedSuggestion, setSelectedSuggestion] = useState<SymbolCatalogItem | null>(null);
+  const [selectedSuggestion, setSelectedSuggestion] = useState<InstrumentSearchResult | null>(null);
   const [providerStatus, setProviderStatus] = useState<TradeRadarProviderStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -44,7 +44,13 @@ export function TradeRadarPage() {
       const response = await fetch("/api/trade-radar/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol: selectedSuggestion?.providerSymbol ?? symbol, market, interval, provider }),
+        body: JSON.stringify({
+          instrumentId: selectedSuggestion?.id,
+          symbol: selectedSuggestion?.providerSymbol ?? selectedSuggestion?.bymaSymbol ?? symbol,
+          market,
+          interval,
+          provider,
+        }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
@@ -62,10 +68,10 @@ export function TradeRadarPage() {
     setSelectedSuggestion(null);
   }
 
-  function handleSuggestionSelect(suggestion: SymbolCatalogItem) {
+  function handleSuggestionSelect(suggestion: InstrumentSearchResult) {
     setSelectedSuggestion(suggestion);
     setSymbol(suggestion.symbol);
-    setMarket(suggestion.market);
+    setMarket(marketFromInstrument(suggestion.market, suggestion.assetClass));
   }
 
   return (
@@ -112,4 +118,15 @@ export function TradeRadarPage() {
       </div>
     </AppShell>
   );
+}
+
+function marketFromInstrument(
+  instrumentMarket: InstrumentMarket,
+  assetClass: InstrumentSearchResult["assetClass"],
+): TradeRadarMarket {
+  if (instrumentMarket === "crypto") return "crypto";
+  if (assetClass === "bond" || assetClass === "bill" || assetClass === "corporate_bond") return "bond";
+  if (assetClass === "cedear" || assetClass === "cedear_etf") return "cedear";
+  if (instrumentMarket === "argentina") return "argentina";
+  return "us";
 }

@@ -8,6 +8,7 @@ const intervals: TradeRadarInterval[] = ["1h", "4h", "1d"];
 const providers: TradeRadarProviderName[] = ["auto", "twelveData", "alphaVantage", "fmp", "byma", "binance"];
 
 type AnalyzeBody = {
+  instrumentId?: unknown;
   symbol?: unknown;
   market?: unknown;
   interval?: unknown;
@@ -19,15 +20,16 @@ function parseParams(input: URLSearchParams | AnalyzeBody) {
     input instanceof URLSearchParams ? input.get(name) : input[name];
 
   const symbol = String(getValue("symbol") ?? "").trim().toUpperCase();
+  const instrumentId = String(getValue("instrumentId") ?? "").trim();
   const market = String(getValue("market") ?? "auto") as TradeRadarMarket;
   const interval = String(getValue("interval") ?? "4h") as TradeRadarInterval;
   const provider = String(getValue("provider") ?? "auto") as TradeRadarProviderName;
 
-  return { symbol, market, interval, provider };
+  return { instrumentId: instrumentId || undefined, symbol, market, interval, provider };
 }
 
 function validate(params: ReturnType<typeof parseParams>) {
-  if (!params.symbol) return "symbol is required.";
+  if (!params.symbol && !params.instrumentId) return "symbol or instrumentId is required.";
   if (!markets.includes(params.market)) return `Unsupported market. Use: ${markets.join(", ")}.`;
   if (!intervals.includes(params.interval)) return `Unsupported interval. Use: ${intervals.join(", ")}.`;
   if (!providers.includes(params.provider)) return `Unsupported provider. Use: ${providers.join(", ")}.`;

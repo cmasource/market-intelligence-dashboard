@@ -112,11 +112,15 @@ export function formatProviderUnavailableMessage(
 }
 
 export async function fetchBymaCedearLocalQuote(symbol: string) {
+  return fetchBymaInstrumentLocalQuote(symbol, "CEDEARS");
+}
+
+export async function fetchBymaInstrumentLocalQuote(symbol: string, group: "ACCIONES" | "CEDEARS" = "ACCIONES") {
   const status = getTradeRadarProviderStatus();
   if (!status.hasBymaKey) return { quote: null, failure: missingFailure("byma", "BYMA_CLIENT_ID/BYMA_CLIENT_SECRET") };
 
   try {
-    return { quote: await getBymaLocalQuote(symbol, { group: "CEDEARS" }), failure: null };
+    return { quote: await getBymaLocalQuote(symbol, { group }), failure: null };
   } catch (error) {
     return { quote: null, failure: providerFailure(error, "byma") };
   }

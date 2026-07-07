@@ -67,6 +67,25 @@ export function AnalysisResult({ analysis }: AnalysisResultProps) {
                 ))}
               </ul>
             ) : null}
+            {analysis.warnings.length ? (
+              <div className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/10 p-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-amber-100">Advertencias del instrumento</p>
+                <ul className="mt-2 space-y-1 text-xs leading-5 text-amber-50/90">
+                  {analysis.warnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {analysis.dataCoverage.length ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {analysis.dataCoverage.map((capability) => (
+                  <span key={capability} className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[0.68rem] text-slate-300">
+                    {capability}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </section>
           <p className="rounded-lg border border-white/10 bg-white/[0.035] p-4 text-xs leading-5 text-slate-400">
             {analysis.disclaimer}

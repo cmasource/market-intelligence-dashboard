@@ -1,4 +1,6 @@
-import { fetchBymaCedearLocalQuote, fetchTradeRadarOhlcv } from "@/lib/market-data/providerRouter";
+import { resolveInstrument } from "@/lib/instruments/resolveInstrument";
+import type { InstrumentResolution } from "@/lib/instruments/types";
+import { fetchBymaInstrumentLocalQuote, fetchTradeRadarOhlcv } from "@/lib/market-data/providerRouter";
 import { resolveTradeRadarSymbol } from "@/lib/market-data/resolveSymbol";
 import {
   type BymaQuote,
@@ -60,6 +62,14 @@ export type TradeRadarAnalysis = {
     quote: BymaQuote;
     message: string;
   };
+  instrument?: InstrumentResolution["instrument"];
+  instrumentResolution?: {
+    technicalLayer: InstrumentResolution["technicalLayer"];
+    localLayer: InstrumentResolution["localLayer"];
+    localAlternatives: InstrumentResolution["localAlternatives"];
+  };
+  warnings: string[];
+  dataCoverage: string[];
 };
 
 function round(value: number | null, decimals = 2) {
@@ -121,13 +131,48 @@ function emptyIndicators(volume: number | null = null) {
   };
 }
 
+function instrumentBadges(resolution: InstrumentResolution | null) {
+  if (!resolution) return [];
+
+  const badges: string[] = [];
+  const { assetClass, market } = resolution.instrument;
+
+  if (market === "argentina") badges.push("BYMA");
+  if (assetClass === "adr") badges.push("ADR");
+  if (assetClass === "cedear") badges.push("CEDEAR");
+  if (assetClass === "cedear_etf") badges.push("CEDEAR ETF");
+  if (assetClass === "bond" || assetClass === "bill") badges.push("Bono");
+  if (assetClass === "corporate_bond") badges.push("ON");
+  if (assetClass === "crypto") badges.push("Crypto");
+  if (resolution.dataCoverage.includes("technical_underlying")) badges.push("Technical underlying");
+  if (resolution.dataCoverage.includes("quote_only") && !resolution.dataCoverage.includes("technical_full")) badges.push("Quote only");
+
+  return badges;
+}
+
 export async function analyzeTradeRadar(params: {
+  instrumentId?: string;
   symbol: string;
   market: TradeRadarMarket;
   interval: TradeRadarInterval;
   provider: TradeRadarProviderName;
 }): Promise<TradeRadarAnalysis> {
-  const resolved = resolveTradeRadarSymbol(params.symbol, params.market);
+  const instrumentResolution = resolveInstrument({ instrumentId: params.instrumentId, symbol: params.symbol });
+  const effectiveSymbol = instrumentResolution?.technicalLayer?.symbol
+    ?? instrumentResolution?.instrument.providerSymbol
+    ?? instrumentResolution?.instrument.bymaSymbol
+    ?? params.symbol;
+  const effectiveMarket = instrumentResolution?.technicalLayer?.market
+    ?? (instrumentResolution?.instrument.assetClass === "bond"
+      || instrumentResolution?.instrument.assetClass === "bill"
+      || instrumentResolution?.instrument.assetClass === "corporate_bond"
+      ? "bond"
+      : instrumentResolution?.instrument.market === "crypto"
+        ? "crypto"
+        : instrumentResolution?.instrument.market === "argentina"
+          ? "argentina"
+          : params.market);
+  const resolved = resolveTradeRadarSymbol(effectiveSymbol, effectiveMarket);
   const { response, failures } = await fetchTradeRadarOhlcv(resolved, params.interval, params.provider);
   const bars = response.ohlcv.slice(-260);
   const closes = bars.map((bar) => bar.close);
@@ -142,13 +187,19 @@ export async function analyzeTradeRadar(params: {
       }
     : undefined;
 
-  if (resolved.market === "cedear") {
-    const local = await fetchBymaCedearLocalQuote(resolved.inputSymbol);
+  const localInstrument = instrumentResolution?.instrument.market === "argentina" ? instrumentResolution.instrument : null;
+  if (localInstrument) {
+    const local = await fetchBymaInstrumentLocalQuote(
+      localInstrument.bymaSymbol ?? localInstrument.symbol,
+      localInstrument.assetClass === "cedear" || localInstrument.assetClass === "cedear_etf" ? "CEDEARS" : "ACCIONES",
+    );
     if (local.quote) {
       localLayer = {
         provider: "byma",
         quote: local.quote,
-        message: "Cotizacion local CEDEAR BYMA.",
+        message: localInstrument.assetClass === "cedear" || localInstrument.assetClass === "cedear_etf"
+          ? "Cotizacion local CEDEAR BYMA."
+          : "Cotizacion local BYMA.",
       };
     }
     if (local.failure) extraFailures.push(local.failure);
@@ -186,11 +237,22 @@ export async function analyzeTradeRadar(params: {
         "BYMA entrego cotizacion local, pero no hay historico OHLCV suficiente para indicadores 4H. Para analisis tecnico usar ADR/subyacente o activar almacenamiento historico.",
       ],
       badges: [
+        ...instrumentBadges(instrumentResolution),
         `BYMA ${quote.feed === "delay20" ? "Delay20" : quote.feed === "snapshot" ? "Snapshot" : "EOD"}`,
         "Local Quote Only",
         "Technical indicators unavailable",
       ],
       localLayer,
+      instrument: instrumentResolution?.instrument,
+      instrumentResolution: instrumentResolution
+        ? {
+            technicalLayer: instrumentResolution.technicalLayer,
+            localLayer: instrumentResolution.localLayer,
+            localAlternatives: instrumentResolution.localAlternatives,
+          }
+        : undefined,
+      warnings: instrumentResolution?.warnings ?? resolved.notes,
+      dataCoverage: instrumentResolution?.dataCoverage ?? [],
     };
   }
 
@@ -251,6 +313,7 @@ export async function analyzeTradeRadar(params: {
     disclaimer: "Analisis informativo. No constituye recomendacion personalizada de inversion.",
     notes: resolved.notes,
     badges: [
+      ...instrumentBadges(instrumentResolution),
       response.provider === "byma"
         ? `BYMA ${response.localQuote?.feed === "delay20" ? "Delay20" : response.localQuote?.feed === "snapshot" ? "Snapshot" : "EOD"}`
         : response.market === "cedear"
@@ -267,8 +330,18 @@ export async function analyzeTradeRadar(params: {
       symbol: response.resolvedSymbol,
       provider: response.provider,
       currency: response.currency,
-      description: response.market === "cedear" ? "subyacente USD" : "serie OHLCV principal",
+      description: instrumentResolution?.technicalLayer?.description ?? (response.market === "cedear" ? "subyacente USD" : "serie OHLCV principal"),
     },
     localLayer,
+    instrument: instrumentResolution?.instrument,
+    instrumentResolution: instrumentResolution
+      ? {
+          technicalLayer: instrumentResolution.technicalLayer,
+          localLayer: instrumentResolution.localLayer,
+          localAlternatives: instrumentResolution.localAlternatives,
+        }
+      : undefined,
+    warnings: instrumentResolution?.warnings ?? resolved.notes,
+    dataCoverage: instrumentResolution?.dataCoverage ?? [],
   };
 }

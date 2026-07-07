@@ -16,6 +16,14 @@ test("symbol catalog search supports crypto provider symbols", () => {
   assert.equal(results[0].exchange, "Binance");
 });
 
+test("symbol catalog search can search across all markets", () => {
+  const results = searchSymbolCatalog({ query: "T", limit: 25 });
+  const symbols = results.map((item) => item.symbol);
+  assert.equal(symbols.includes("TSLA"), true);
+  assert.equal(symbols.includes("TSM"), true);
+  assert.equal(symbols.includes("BTCUSDT"), true);
+});
+
 test("findSymbolCatalogItem resolves provider symbols", () => {
   const item = findSymbolCatalogItem("ETHUSDT");
   assert.equal(item?.market, "crypto");

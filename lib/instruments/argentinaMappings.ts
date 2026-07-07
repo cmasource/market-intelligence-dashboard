@@ -1,0 +1,28 @@
+export const localToAdrSymbol: Record<string, string> = {
+  GGAL: "GGAL",
+  YPFD: "YPF",
+  PAMP: "PAM",
+  TGSU2: "TGS",
+  CEPU: "CEPU",
+  EDN: "EDN",
+  LOMA: "LOMA",
+  BBAR: "BBAR",
+  BMA: "BMA",
+  SUPV: "SUPV",
+  CRES: "CRESY",
+  IRSA: "IRS",
+};
+
+export const adrToLocalSymbol: Record<string, string> = {
+  GGAL: "GGAL",
+  YPF: "YPFD",
+  PAM: "PAMP",
+  TGS: "TGSU2",
+  CEPU: "CEPU",
+  EDN: "EDN",
+  LOMA: "LOMA",
+  BBAR: "BBAR",
+  BMA: "BMA",
+  SUPV: "SUPV",
+  IRS: "IRSA",
+};
