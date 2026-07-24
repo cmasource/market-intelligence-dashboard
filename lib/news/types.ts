@@ -6,6 +6,7 @@ export type NewsArticle = {
   url: string;
   publishedAt?: string;
   summary?: string;
+  imageUrl?: string;
   relatedSymbols?: string[];
   provider: ProviderName | "rss";
   isFallback: boolean;

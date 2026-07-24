@@ -32,6 +32,11 @@ export type TradeRadarAnalysis = {
   sourceLabel: string;
   fetchedAt: string;
   ohlcv: OhlcvBar[];
+  chartSeries: {
+    ema20: Array<{ time: string; value: number }>;
+    ema50: Array<{ time: string; value: number }>;
+    ma200: Array<{ time: string; value: number }>;
+  };
   indicators: {
     ema20: number | null;
     ema50: number | null;
@@ -131,6 +136,15 @@ function emptyIndicators(volume: number | null = null) {
   };
 }
 
+function toChartSeries(bars: OhlcvBar[], values: Array<number | null>) {
+  return bars.flatMap((bar, index) => {
+    const value = values[index];
+    return typeof value === "number" && Number.isFinite(value)
+      ? [{ time: bar.time, value: round(value, 4) ?? value }]
+      : [];
+  });
+}
+
 function instrumentBadges(resolution: InstrumentResolution | null) {
   if (!resolution) return [];
 
@@ -226,6 +240,7 @@ export async function analyzeTradeRadar(params: {
       sourceLabel: response.sourceLabel,
       fetchedAt: response.fetchedAt,
       ohlcv: [],
+      chartSeries: { ema20: [], ema50: [], ma200: [] },
       indicators: emptyIndicators(quote.volume),
       levels: { supports: [], resistances: [] },
       signals: null,
@@ -256,9 +271,12 @@ export async function analyzeTradeRadar(params: {
     };
   }
 
-  const ema20 = latestNumber(ema(closes, 20));
-  const ema50 = latestNumber(ema(closes, 50));
-  const ma200 = latestNumber(sma(closes, 200));
+  const ema20Series = ema(closes, 20);
+  const ema50Series = ema(closes, 50);
+  const ma200Series = sma(closes, 200);
+  const ema20 = latestNumber(ema20Series);
+  const ema50 = latestNumber(ema50Series);
+  const ma200 = latestNumber(ma200Series);
   const rsi14 = latestNumber(rsiWilder(closes, 14));
   const atr14 = latestNumber(atrWilder(bars, 14));
   const avgVolume20 = latestNumber(avgVolume(bars, 20));
@@ -297,6 +315,11 @@ export async function analyzeTradeRadar(params: {
     sourceLabel: response.sourceLabel,
     fetchedAt: response.fetchedAt,
     ohlcv: bars,
+    chartSeries: {
+      ema20: toChartSeries(bars, ema20Series),
+      ema50: toChartSeries(bars, ema50Series),
+      ma200: toChartSeries(bars, ma200Series),
+    },
     indicators: {
       ema20: round(ema20),
       ema50: round(ema50),

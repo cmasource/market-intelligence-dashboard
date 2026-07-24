@@ -13,6 +13,7 @@ import { sectionAccents, type SectionAccent } from "@/lib/ui/section-accents";
 
 const groupLinks: Record<string, string> = {
   argentine_equities: "/screener?country=AR&category=equity",
+  argentine_adrs: "/screener?category=adr",
   cedears: "/screener?category=cedear",
   sovereign_bonds: "/screener?country=AR&coverageGroup=real_provider",
   etfs: "/screener?category=etf",
@@ -22,6 +23,7 @@ const groupLinks: Record<string, string> = {
 
 const groupAccents: Record<string, SectionAccent> = {
   argentine_equities: "argentina",
+  argentine_adrs: "argentina",
   cedears: "cedears",
   sovereign_bonds: "fixedIncome",
   etfs: "usa",
@@ -31,6 +33,7 @@ const groupAccents: Record<string, SectionAccent> = {
 
 const groupTitles: Record<string, { en: string; es: string }> = {
   argentine_equities: { en: "Argentine equities", es: "Acciones argentinas" },
+  argentine_adrs: { en: "Argentine ADRs", es: "ADRs argentinos" },
   cedears: { en: "CEDEARs", es: "CEDEARs" },
   sovereign_bonds: { en: "Bonds", es: "Bonos" },
   etfs: { en: "ETFs", es: "ETFs" },
@@ -73,11 +76,23 @@ export default function MarketsPage() {
               </div>
               <p className="mt-3 text-sm leading-6 text-slate-400">{group.description}</p>
               <div className="mt-4 flex flex-wrap gap-2">
-                {group.instruments.slice(0, 6).map((instrument) => (
-                  <span key={`${group.id}-${instrument.symbol}-${instrument.category}`} className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-slate-300">
+                {group.instruments.slice(0, 18).map((instrument) => (
+                  <Link
+                    key={`${group.id}-${instrument.symbol}-${instrument.category}`}
+                    href={`/asset/${encodeURIComponent(instrument.symbol)}`}
+                    className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-slate-300 transition hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white"
+                  >
                     {instrument.symbol}
-                  </span>
+                  </Link>
                 ))}
+                {group.instruments.length > 18 ? (
+                  <Link
+                    href={groupLinks[group.id] ?? "/screener"}
+                    className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-2.5 py-1 text-xs font-medium text-cyan-100 transition hover:bg-cyan-300/15"
+                  >
+                    +{group.instruments.length - 18}
+                  </Link>
+                ) : null}
               </div>
               <Link
                 href={groupLinks[group.id] ?? "/screener"}

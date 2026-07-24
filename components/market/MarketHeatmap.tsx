@@ -12,6 +12,10 @@ import type { HeatmapFilters, HeatmapItem, HeatmapSegment, HeatmapSourceKind } f
 type MarketHeatmapProps = {
   compact?: boolean;
   defaultSegment?: HeatmapSegment;
+  showControlsInCompact?: boolean;
+  maxItems?: number;
+  title?: string;
+  description?: string;
 };
 
 const segmentTitles: Record<Exclude<HeatmapSegment, "all">, { en: string; es: string }> = {
@@ -81,7 +85,14 @@ function mergeHydratedQuotes(items: HeatmapItem[], providerQuotes: ReturnType<ty
   });
 }
 
-export function MarketHeatmap({ compact = false, defaultSegment = "all" }: MarketHeatmapProps) {
+export function MarketHeatmap({
+  compact = false,
+  defaultSegment = "all",
+  showControlsInCompact = false,
+  maxItems,
+  title,
+  description,
+}: MarketHeatmapProps) {
   const { language } = useLanguage();
   const isSpanish = language === "es";
   const [filters, setFilters] = useState<HeatmapFilters>({
@@ -105,8 +116,8 @@ export function MarketHeatmap({ compact = false, defaultSegment = "all" }: Marke
   const visibleItems = useMemo(() => {
     const hydrated = mergeHydratedQuotes(baseItems, providerQuotes, argentinaQuotes);
     const filtered = filterHeatmapItems(hydrated, filters);
-    return sortHeatmapItems(filtered, filters).slice(0, compact ? 18 : 48);
-  }, [argentinaQuotes, baseItems, compact, filters, providerQuotes]);
+    return sortHeatmapItems(filtered, filters).slice(0, maxItems ?? (compact ? 18 : 48));
+  }, [argentinaQuotes, baseItems, compact, filters, maxItems, providerQuotes]);
 
   const groupedItems = useMemo(() => {
     return visibleItems.reduce<Record<string, HeatmapItem[]>>((groups, item) => {
@@ -122,17 +133,18 @@ export function MarketHeatmap({ compact = false, defaultSegment = "all" }: Marke
         <div>
           <p className="cma-kicker">{isSpanish ? "Mapa de calor" : "Heatmap"}</p>
           <h2 className="mt-2 text-2xl font-semibold text-white">
-            {isSpanish ? "Mapa de calor de mercado" : "Market heatmap"}
+            {title ?? (isSpanish ? "Mapa de calor de mercado" : "Market heatmap")}
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-            {isSpanish
-              ? "Vista rapida del comportamiento relativo por instrumento y segmento."
-              : "Fast view of relative performance by instrument and segment."}
+            {description ??
+              (isSpanish
+                ? "Vista rapida del comportamiento relativo por instrumento y segmento."
+                : "Fast view of relative performance by instrument and segment.")}
           </p>
         </div>
       </div>
 
-      {!compact ? (
+      {!compact || showControlsInCompact ? (
         <div className="mt-5">
           <HeatmapControls filters={filters} language={language} onChange={setFilters} />
         </div>

@@ -13,19 +13,13 @@ import { TechnicalAnalysisCard } from "@/components/asset/TechnicalAnalysisCard"
 import { CedearAnalyticsCard } from "@/components/cedears/CedearAnalyticsCard";
 import { InteractiveAssetChart } from "@/components/charts/InteractiveAssetChart";
 import { TradingViewAdvancedChart } from "@/components/charts/TradingViewAdvancedChart";
-import { DataCoveragePanel } from "@/components/data-coverage/DataCoveragePanel";
-import { AssetIntelligenceReport } from "@/components/intelligence/AssetIntelligenceReport";
 import { AppShell } from "@/components/layout/AppShell";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
-import { getInstrumentBySymbol } from "@/lib/instrument-universe";
 import { isCedearSymbol } from "@/lib/cedears";
+import { assetFromInstrument } from "@/lib/assets/asset-from-instrument";
+import { resolveInstrument } from "@/lib/instruments/resolveInstrument";
 import { findAsset, mockAssets } from "@/lib/mock-data";
 import { getTradingViewSymbol } from "@/lib/tradingview/symbol-map";
-
-function formatCategory(category: string) {
-  return category.replaceAll("_", " ");
-}
 
 export function generateStaticParams() {
   return mockAssets.map((asset) => ({
@@ -39,63 +33,14 @@ export default async function AssetDetailPage({
   params: Promise<{ symbol: string }>;
 }) {
   const { symbol } = await params;
-  const asset = findAsset(decodeURIComponent(symbol));
-  const instrument = getInstrumentBySymbol(decodeURIComponent(symbol));
+  const normalizedSymbol = decodeURIComponent(symbol);
+  const instrumentResolution = resolveInstrument({ symbol: normalizedSymbol });
+  const asset = findAsset(normalizedSymbol) ?? (instrumentResolution ? assetFromInstrument(instrumentResolution.instrument) : null);
 
   if (!asset) {
-    if (instrument) {
-      return (
-        <AppShell width="asset">
-          <div className="space-y-7">
-            <section className="cma-panel-elevated p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-200">
-                Future coverage
-              </p>
-              <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white">{instrument.symbol}</h1>
-              <p className="mt-2 text-lg text-slate-300">{instrument.displayName}</p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-                  <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Category</p>
-                  <p className="mt-2 font-semibold capitalize text-white">{formatCategory(instrument.category)}</p>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-                  <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Market</p>
-                  <p className="mt-2 font-semibold text-white">{instrument.market}</p>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-                  <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Currency</p>
-                  <p className="mt-2 font-semibold text-white">{instrument.currency}</p>
-                </div>
-              </div>
-            </section>
-            <DataCoveragePanel symbol={instrument.symbol} />
-            <AssetIntelligenceReport symbol={instrument.symbol} />
-            <RelatedInstrumentsCard symbol={instrument.symbol} />
-            <section className="rounded-lg border border-white/10 bg-slate-950/55 p-5">
-              <h2 className="text-xl font-semibold text-white">Preliminary profile</h2>
-              <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
-                This instrument is part of the planned CMA Market Intelligence universe, but it does not yet have full price,
-                technical, fundamentals or news coverage.
-              </p>
-              <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-400">
-                Este instrumento forma parte del universo previsto de CMA Market Intelligence, pero todavia no cuenta con
-                cobertura completa de precio, analisis tecnico, fundamentos o noticias.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Button href="/markets" variant="primary">
-                  Back to Markets / Volver a Mercados
-                </Button>
-                <Button href="/screener">Open Screener / Abrir Screener</Button>
-              </div>
-            </section>
-          </div>
-        </AppShell>
-      );
-    }
-
     return (
       <AppShell>
-        <AssetNotFound symbol={decodeURIComponent(symbol)} />
+        <AssetNotFound symbol={normalizedSymbol} />
       </AppShell>
     );
   }

@@ -76,7 +76,7 @@ export function AnalyzerForm({
       setSearchLoading(true);
       setSearchError(null);
       try {
-        const params = new URLSearchParams({ q: query, limit: "25" });
+        const params = new URLSearchParams({ q: query, limit: "100" });
         const response = await fetch(`/api/trade-radar/search?${params.toString()}`, {
           signal: controller.signal,
         });
@@ -107,7 +107,7 @@ export function AnalyzerForm({
 
   return (
     <form
-      className="cma-panel-elevated cma-glow-cyan grid gap-4 p-4 sm:grid-cols-[minmax(180px,1.2fr)_repeat(3,minmax(130px,0.7fr))_auto] sm:items-end sm:p-5"
+      className="cma-panel-elevated cma-glow-cyan grid gap-4 p-4 sm:grid-cols-[minmax(220px,1.2fr)_repeat(3,minmax(130px,0.7fr))_auto] sm:items-start sm:p-5"
       style={{ overflow: "visible" }}
       onSubmit={(event) => {
         event.preventDefault();
@@ -123,8 +123,8 @@ export function AnalyzerForm({
           onChange={(event) => {
             const nextSymbol = event.target.value.toUpperCase();
             onSymbolChange(nextSymbol);
+            setSuggestions([]);
             if (nextSymbol.trim().length < 2) {
-              setSuggestions([]);
               setSuggestionsOpen(false);
               setSearchLoading(false);
               setSearchError(null);
@@ -132,7 +132,7 @@ export function AnalyzerForm({
               setSuggestionsOpen(true);
             }
           }}
-          onFocus={() => setSuggestionsOpen(symbol.trim().length >= 2)}
+          onFocus={() => setSuggestionsOpen(symbol.trim().length >= 2 && (suggestions.length > 0 || searchLoading || Boolean(searchError)))}
           onKeyDown={(event) => {
             if (event.key === "Escape") setSuggestionsOpen(false);
           }}
@@ -144,7 +144,7 @@ export function AnalyzerForm({
           </span>
         ) : null}
         {suggestionsOpen && (suggestions.length > 0 || searchLoading || searchError || symbol.trim().length >= 2) ? (
-          <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-96 overflow-y-auto rounded-lg border border-cyan-300/20 bg-slate-950 shadow-2xl shadow-black/40">
+          <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[28rem] overflow-y-auto rounded-lg border border-cyan-300/20 bg-slate-950 shadow-2xl shadow-black/40">
             {searchLoading ? (
               <div className="px-3 py-3 text-sm text-slate-400">Buscando instrumentos...</div>
             ) : null}
@@ -216,6 +216,7 @@ export function AnalyzerForm({
             </option>
           ))}
         </select>
+        <span className="text-xs text-slate-500">Intervalos acotados para lectura comparable.</span>
       </label>
 
       <label className="grid gap-2">
@@ -234,7 +235,7 @@ export function AnalyzerForm({
       </label>
 
       <button
-        className="h-11 rounded-lg border border-cyan-300/45 bg-cyan-300/15 px-5 text-sm font-semibold text-cyan-50 transition hover:border-cyan-200 hover:bg-cyan-300/22 disabled:cursor-not-allowed disabled:opacity-55"
+        className="h-11 rounded-lg border border-cyan-300/45 bg-cyan-300/15 px-5 text-sm font-semibold text-cyan-50 transition hover:border-cyan-200 hover:bg-cyan-300/22 disabled:cursor-not-allowed disabled:opacity-55 sm:mt-6"
         type="submit"
         disabled={loading || !symbol.trim()}
       >

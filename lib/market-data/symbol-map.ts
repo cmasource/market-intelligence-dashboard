@@ -1,6 +1,7 @@
 import type { MarketDataAssetClass } from "./types";
+import { instrumentMasterSeed } from "@/lib/instruments/instrument-master.seed";
 
-const yahooSymbols = new Set([
+const seededYahooSymbols = [
   "AAPL",
   "MSFT",
   "NVDA",
@@ -73,9 +74,20 @@ const yahooSymbols = new Set([
   "HYG",
   "VOO",
   "VTI",
-]);
-const stockSymbols = new Set([...yahooSymbols].filter((symbol) => !["SPY", "QQQ", "DIA", "IWM", "GLD", "SLV", "TLT", "HYG", "VOO", "VTI"].includes(symbol)));
-const etfSymbols = new Set(["SPY", "QQQ", "DIA", "IWM", "GLD", "SLV", "TLT", "HYG", "VOO", "VTI"]);
+];
+const providerMarketSymbols = instrumentMasterSeed
+  .filter((instrument) =>
+    instrument.market === "us"
+    && instrument.dataCapabilities.includes("technical_full")
+    && instrument.providerSymbol
+    && instrument.assetClass !== "crypto",
+  )
+  .map((instrument) => instrument.providerSymbol as string);
+const yahooSymbols = new Set([...seededYahooSymbols, ...providerMarketSymbols]);
+const etfSymbols = new Set(instrumentMasterSeed
+  .filter((instrument) => instrument.assetClass === "etf" && instrument.providerSymbol)
+  .map((instrument) => instrument.providerSymbol as string));
+const stockSymbols = new Set([...yahooSymbols].filter((symbol) => !etfSymbols.has(symbol)));
 const cryptoSymbols: Record<string, string> = {
   "BTC-USD": "BTCUSDT",
   "ETH-USD": "ETHUSDT",

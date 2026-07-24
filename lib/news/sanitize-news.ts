@@ -48,10 +48,13 @@ export function sanitizeNewsText(text: string | undefined | null, maxLength?: nu
 }
 
 export function sanitizeNewsArticle(article: NewsArticle): NewsArticle {
+  const imageUrl = article.imageUrl ? decodeHtmlEntities(article.imageUrl) : undefined;
+
   return {
     ...article,
     title: sanitizeNewsText(article.title, 180) || "Market update",
     source: sanitizeNewsText(article.source, 80) || article.provider,
     summary: article.summary ? sanitizeNewsText(article.summary, 240) : undefined,
+    imageUrl: imageUrl?.startsWith("http") ? imageUrl : undefined,
   };
 }

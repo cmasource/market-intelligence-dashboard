@@ -19,9 +19,6 @@ import {
 import type { InstrumentUniverseItem } from "@/lib/instrument-universe";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { useTheme } from "@/lib/theme/useTheme";
-import { mockAssets } from "@/lib/mock-data";
-
-const supportedAssetSymbols = new Set(mockAssets.map((asset) => asset.symbol));
 
 type InstrumentScreenerProps = {
   initialFilters?: InstrumentUniverseFilters;
@@ -56,6 +53,7 @@ function coverageBadges(instrument: InstrumentUniverseItem, isSpanish: boolean) 
 }
 
 function groupLabel(instrument: InstrumentUniverseItem, isSpanish: boolean) {
+  if (instrument.category === "adr") return isSpanish ? "ADRs argentinos" : "Argentine ADRs";
   if (instrument.country === "US" && instrument.category === "equity") return isSpanish ? "Acciones USA" : "USA stocks";
   if (instrument.category === "cedear") return "CEDEARs";
   if (instrument.country === "AR" && instrument.category === "equity") return isSpanish ? "Argentina" : "Argentina";
@@ -187,7 +185,7 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
             </div>
             <div className="grid gap-4 lg:grid-cols-2">
         {group.items.map((instrument) => {
-          const hasAssetPage = supportedAssetSymbols.has(instrument.symbol);
+          const hasAssetPage = instrument.sourceStatus === "real_supported" || instrument.dataCoverage.price || instrument.dataCoverage.technical;
           const badges = coverageBadges(instrument, isSpanish);
           const relatedCount = Math.max(0, instrument.relatedSymbols.length - 1);
 

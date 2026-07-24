@@ -19,21 +19,7 @@ const accentClasses = {
   performance: "border-emerald-300/25 bg-emerald-300/10 text-emerald-100",
 };
 
-function getSourceTone(sourceLabel: string, isFallback: boolean) {
-  const normalized = sourceLabel.toLowerCase();
-  if (!isFallback && (normalized.includes("proveedor") || normalized.includes("provider"))) {
-    return "border-cyan-300/20 bg-cyan-300/10 text-cyan-100";
-  }
-  if (normalized.includes("local") || normalized.includes("manual")) {
-    return "border-emerald-300/20 bg-emerald-300/10 text-emerald-100";
-  }
-  if (isFallback || normalized.includes("fallback") || normalized.includes("simulad")) {
-    return "border-amber-300/20 bg-amber-300/10 text-amber-100";
-  }
-  return "border-white/10 bg-white/[0.035] text-slate-300";
-}
-
-export function RankingRow({ item, rank, accent, ctaLabel = "Abrir análisis" }: RankingRowProps) {
+export function RankingRow({ item, rank, accent, ctaLabel = "Abrir analisis" }: RankingRowProps) {
   const changeClass = (item.changePercent ?? 0) >= 0 ? "text-emerald-300" : "text-rose-300";
 
   return (
@@ -59,13 +45,8 @@ export function RankingRow({ item, rank, accent, ctaLabel = "Abrir análisis" }:
           </span>
           <span className="mt-1 block truncate text-xs text-slate-400">{item.name}</span>
           <span className="mt-1 block text-xs leading-5 text-slate-300">{item.reason}</span>
-          <span className="mt-2 flex flex-wrap gap-1.5">
-            <span className={`rounded-full border px-2 py-0.5 text-[0.68rem] ${accentClasses[accent]}`}>
-              {formatScore(item.score)}
-            </span>
-            <span className={`rounded-full border px-2 py-0.5 text-[0.68rem] ${getSourceTone(item.sourceLabel, item.isFallback)}`}>
-              {item.sourceLabel}
-            </span>
+          <span className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-[0.68rem] ${accentClasses[accent]}`}>
+            {formatScore(item.score)}
           </span>
         </span>
       </span>

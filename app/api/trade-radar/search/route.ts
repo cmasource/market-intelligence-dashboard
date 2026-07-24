@@ -6,7 +6,7 @@ type SearchSource = "instrument_master";
 
 function normalizeLimit(value: string | null) {
   const parsed = Number(value);
-  return Number.isInteger(parsed) ? Math.max(1, Math.min(parsed, 25)) : 8;
+  return Number.isInteger(parsed) ? Math.max(1, Math.min(parsed, 100)) : 50;
 }
 
 export async function GET(request: Request) {

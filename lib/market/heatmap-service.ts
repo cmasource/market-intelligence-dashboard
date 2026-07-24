@@ -1,18 +1,20 @@
-import { mockAssets } from "@/lib/mock-data";
-import type { Asset } from "@/types/asset";
+import { instrumentMasterSeed } from "@/lib/instruments/instrument-master.seed";
+import type { Instrument } from "@/lib/instruments/types";
 import type { HeatmapFilters, HeatmapItem, HeatmapSegment, HeatmapSourceKind } from "./heatmap-types";
 
-function getSegment(asset: Asset): Exclude<HeatmapSegment, "all"> {
-  if (asset.type === "cedear") return "cedears";
-  if (asset.type === "argentine_equity") return "argentina";
-  if (asset.type === "crypto") return "crypto";
-  if (asset.type === "etf") return "etfs";
-  if (asset.type.includes("bond") || asset.type === "letra") return "bonds";
+function getSegment(instrument: Instrument): Exclude<HeatmapSegment, "all"> {
+  if (instrument.assetClass === "cedear" || instrument.assetClass === "cedear_etf") return "cedears";
+  if (instrument.market === "argentina" && instrument.assetClass === "stock") return "argentina";
+  if (instrument.assetClass === "crypto") return "crypto";
+  if (instrument.assetClass === "etf") return "etfs";
+  if (["bond", "bill", "corporate_bond"].includes(instrument.assetClass)) return "bonds";
   return "usa";
 }
 
-function getSourceKind(asset: Asset): HeatmapSourceKind {
-  void asset;
+function getSourceKind(instrument: Instrument): HeatmapSourceKind {
+  if (instrument.dataCapabilities.some((capability) => ["technical_full", "technical_underlying", "quote_only"].includes(capability))) {
+    return "provider";
+  }
   return "unavailable";
 }
 
@@ -31,18 +33,18 @@ function sourceLabel(sourceKind: HeatmapSourceKind) {
 }
 
 export function getBaseHeatmapItems(): HeatmapItem[] {
-  return mockAssets.map((asset) => {
-    const segment = getSegment(asset);
-    const sourceKind = getSourceKind(asset);
+  return instrumentMasterSeed.map((instrument) => {
+    const segment = getSegment(instrument);
+    const sourceKind = getSourceKind(instrument);
     return {
-      symbol: asset.symbol,
-      name: asset.name,
+      symbol: instrument.symbol,
+      name: instrument.name,
       segment,
-      assetType: asset.type,
-      typeLabel: asset.typeLabel,
-      href: `/asset/${encodeURIComponent(asset.symbol)}`,
+      assetType: instrument.assetClass,
+      typeLabel: instrument.assetClass.replaceAll("_", " "),
+      href: `/asset/${encodeURIComponent(instrument.symbol)}`,
       price: null,
-      currency: asset.priceDisplayCurrency ?? asset.quoteCurrency ?? asset.currency,
+      currency: instrument.currency,
       changePercent: null,
       sourceKind,
       sourceLabel: sourceLabel(sourceKind),

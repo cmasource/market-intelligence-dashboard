@@ -3,6 +3,7 @@ import type { InstrumentUniverseItem } from "./types";
 
 type InstrumentUniverseGroupId =
   | "argentine_equities"
+  | "argentine_adrs"
   | "cedears"
   | "sovereign_bonds"
   | "etfs"
@@ -44,6 +45,16 @@ function buildGroup(
       es: {
         title: "CEDEARs",
         description: "Referencias CEDEAR preparadas para mapeo de ADR, ratios y CCL.",
+      },
+    },
+    argentine_adrs: {
+      en: {
+        title: "Argentine ADRs",
+        description: "Argentine companies listed abroad, with provider-backed quote and technical analysis when available.",
+      },
+      es: {
+        title: "ADRs argentinos",
+        description: "Empresas argentinas listadas afuera, con cotizacion y analisis tecnico de proveedor cuando esta disponible.",
       },
     },
     sovereign_bonds: {
@@ -104,6 +115,11 @@ export function getInstrumentUniverseGroups(language: "en" | "es" = "en") {
       (instrument) => instrument.country === "AR" && instrument.category === "equity",
     ),
     buildGroup("cedears", language, (instrument) => instrument.category === "cedear"),
+    buildGroup(
+      "argentine_adrs",
+      language,
+      (instrument) => instrument.category === "adr",
+    ),
     buildGroup(
       "sovereign_bonds",
       language,

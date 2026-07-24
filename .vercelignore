@@ -1,0 +1,6 @@
+.claude/
+test-results/
+tests/
+scripts/
+*.log
+tmp-*.log

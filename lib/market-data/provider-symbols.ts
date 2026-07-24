@@ -1,6 +1,7 @@
 import { normalizeSymbol } from "./symbol-map";
+import { instrumentMasterSeed } from "@/lib/instruments/instrument-master.seed";
 
-export const providerQuoteSymbols = new Set([
+const seededProviderQuoteSymbols = [
   "AAPL",
   "MSFT",
   "NVDA",
@@ -54,6 +55,17 @@ export const providerQuoteSymbols = new Set([
   "POL-USD",
   "LTC-USD",
   "BCH-USD",
+];
+
+export const providerQuoteSymbols = new Set([
+  ...seededProviderQuoteSymbols,
+  ...instrumentMasterSeed
+    .filter((instrument) =>
+      instrument.market !== "argentina"
+      && instrument.providerSymbol
+      && instrument.dataCapabilities.some((capability) => ["technical_full", "fundamentals_full", "quote_only"].includes(capability)),
+    )
+    .flatMap((instrument) => [instrument.symbol, instrument.providerSymbol as string]),
 ]);
 
 export function isProviderQuoteSupported(symbol: string) {

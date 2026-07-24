@@ -6,7 +6,7 @@ import { BymaLocalQuoteTable } from "./BymaLocalQuoteTable";
 import { LevelsTable } from "./LevelsTable";
 import { SuggestedAlerts } from "./SuggestedAlerts";
 import { TechnicalVerdict } from "./TechnicalVerdict";
-import { TradingViewChart } from "./TradingViewChart";
+import { TradeRadarTechnicalChart } from "./TradeRadarTechnicalChart";
 
 type AnalysisResultProps = {
   analysis: TradeRadarAnalysis;
@@ -21,7 +21,7 @@ export function AnalysisResult({ analysis }: AnalysisResultProps) {
       <LevelsTable supports={analysis.levels.supports} resistances={analysis.levels.resistances} />
       <div className="grid gap-5 xl:grid-cols-[1fr_380px]">
         {analysis.ohlcv.length ? (
-          <TradingViewChart symbol={analysis.resolvedSymbol} interval={analysis.interval} />
+          <TradeRadarTechnicalChart analysis={analysis} />
         ) : (
           <section className="rounded-lg border border-amber-300/20 bg-amber-300/10 p-5">
             <h3 className="text-lg font-semibold text-white">Grafico tecnico no disponible</h3>

@@ -3,9 +3,11 @@
 import { ArgentinaMarket } from "@/components/dashboard/ArgentinaMarket";
 import { AssetSearch } from "@/components/dashboard/AssetSearch";
 import { FeaturedAssets } from "@/components/dashboard/FeaturedAssets";
+import { MarketNewsPreview } from "@/components/dashboard/MarketNewsPreview";
 import { FixedIncomeComparison } from "@/components/fixed-income/FixedIncomeComparison";
 import { AppShell } from "@/components/layout/AppShell";
 import { MarketHeatmap } from "@/components/market/MarketHeatmap";
+import { MarketRankings } from "@/components/rankings/MarketRankings";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useLanguage } from "@/lib/i18n/useLanguage";
@@ -14,6 +16,13 @@ import { mockAssets } from "@/lib/mock-data";
 export default function Home() {
   const { t, language } = useLanguage();
   const isSpanish = language === "es";
+  const featuredAssets = [...mockAssets]
+    .sort((a, b) => {
+      const aScore = (a.technicalScore ?? 0) + (a.fundamentalScore ?? 0) + Math.abs(a.dailyChange ?? 0);
+      const bScore = (b.technicalScore ?? 0) + (b.fundamentalScore ?? 0) + Math.abs(b.dailyChange ?? 0);
+      return bScore - aScore;
+    })
+    .slice(0, 9);
 
   return (
     <AppShell>
@@ -68,8 +77,21 @@ export default function Home() {
           <AssetSearch assets={mockAssets} />
         </section>
 
-        <MarketHeatmap compact />
-        <FeaturedAssets assets={mockAssets} />
+        <MarketRankings compact />
+        <MarketNewsPreview />
+        <MarketHeatmap
+          compact
+          defaultSegment="argentina"
+          showControlsInCompact
+          maxItems={12}
+          title={isSpanish ? "Mapa Merval y segmentos" : "Merval and segment heatmap"}
+          description={
+            isSpanish
+              ? "Arranca en acciones argentinas y permite cambiar a CEDEARs, bonos, USA, ETFs o cripto sin salir del panel."
+              : "Starts with Argentine equities and lets you switch to CEDEARs, bonds, USA, ETFs or crypto inside the same panel."
+          }
+        />
+        <FeaturedAssets assets={featuredAssets} />
         <section className="cma-panel cma-card-argentina p-5 sm:p-6">
           <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
             <div>

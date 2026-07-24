@@ -6,7 +6,11 @@ import { useTheme } from "@/lib/theme/useTheme";
 import { PerformanceRankings } from "./PerformanceRankings";
 import { RankingColumn } from "./RankingColumn";
 
-export function MarketRankings() {
+type MarketRankingsProps = {
+  compact?: boolean;
+};
+
+export function MarketRankings({ compact = false }: MarketRankingsProps) {
   const { language } = useLanguage();
   const { resolvedMode } = useTheme();
   const isSpanish = language === "es";
@@ -44,7 +48,7 @@ export function MarketRankings() {
               ? "Ordenado por lectura técnica disponible. No constituye recomendación de inversión."
               : "Ordered by available technical reading. Not an investment recommendation."
           }
-          items={rankings.technical.items.slice(0, 5)}
+          items={rankings.technical.items.slice(0, compact ? 3 : 5)}
           accent="technical"
           ctaLabel={isSpanish ? "Abrir análisis" : "Open analysis"}
         />
@@ -55,7 +59,7 @@ export function MarketRankings() {
               ? "Ordenado por calidad fundamental estimada con los datos disponibles."
               : "Ordered by estimated fundamental quality with available data."
           }
-          items={rankings.fundamental.items.slice(0, 5)}
+          items={rankings.fundamental.items.slice(0, compact ? 3 : 5)}
           accent="fundamental"
           ctaLabel={isSpanish ? "Abrir análisis" : "Open analysis"}
         />
@@ -66,15 +70,15 @@ export function MarketRankings() {
               ? "Combina lectura técnica, fundamentos y calidad de datos disponibles."
               : "Combines technical reading, fundamentals and available data quality."
           }
-          items={rankings.combined.items.slice(0, 5)}
+          items={rankings.combined.items.slice(0, compact ? 3 : 5)}
           accent="combined"
           ctaLabel={isSpanish ? "Abrir análisis" : "Open analysis"}
         />
       </div>
 
-      <div className="mt-4">
+      {!compact ? <div className="mt-4">
         <PerformanceRankings rankings={rankings.performance} isSpanish={isSpanish} />
-      </div>
+      </div> : null}
     </section>
   );
 }
