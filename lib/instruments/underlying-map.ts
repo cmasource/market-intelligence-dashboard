@@ -51,6 +51,15 @@ const verifiedUnderlyingSymbols: Record<string, Omit<UnderlyingMapping, "interna
   DESP: { underlyingSymbol: "DESP", verified: true, reason: "NYSE ADR fundamentals." },
   GLOB: { underlyingSymbol: "GLOB", verified: true, reason: "NYSE fundamentals." },
   TECO2: { underlyingSymbol: "TEO", verified: true, reason: "Local ticker mapped to ADR fundamentals." },
+  BABA: { underlyingSymbol: "BABA", verified: true, reason: "Primary listed ADR." },
+  VALE: { underlyingSymbol: "VALE", verified: true, reason: "Primary listed ADR." },
+  PBR: { underlyingSymbol: "PBR", verified: true, reason: "Primary listed ADR." },
+  XLE: { underlyingSymbol: "XLE", verified: true, reason: "Primary listed ETF." },
+  BRKB: { underlyingSymbol: "BRK-B", verified: true, reason: "Local ticker mapped to NYSE Class B ticker." },
+  TXAR: { underlyingSymbol: "TX", verified: true, reason: "Local ticker mapped to NYSE ADR fundamentals." },
+  CRES: { underlyingSymbol: "CRESY", verified: true, reason: "Local ticker mapped to NASDAQ ADR fundamentals." },
+  IRSA: { underlyingSymbol: "IRS", verified: true, reason: "Local ticker mapped to NYSE ADR fundamentals." },
+  EDN: { underlyingSymbol: "EDN", verified: true, reason: "NYSE ADR fundamentals." },
 };
 
 export function normalizeInstrumentSymbol(symbol: string) {

@@ -1,5 +1,3 @@
-import { getFixedIncomeAnalytics } from "@/lib/fixed-income";
-
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ symbol: string }> },
@@ -11,20 +9,12 @@ export async function GET(
     return Response.json({ error: "Symbol is required." }, { status: 400 });
   }
 
-  try {
-    const analytics = await getFixedIncomeAnalytics(normalizedSymbol);
-    return Response.json(analytics, {
-      headers: {
-        "Cache-Control": "no-store",
-      },
-    });
-  } catch {
-    return Response.json(
-      {
-        error: "Fixed income analytics are not available for this symbol in the current mock universe.",
-        symbol: normalizedSymbol,
-      },
-      { status: 404 },
-    );
-  }
+  return Response.json(
+    {
+      error: "Validated cash flows and official terms are required before publishing fixed-income analytics.",
+      symbol: normalizedSymbol,
+      quoteEndpoint: `/api/market-data/quote/${encodeURIComponent(normalizedSymbol)}`,
+    },
+    { status: 501, headers: { "Cache-Control": "no-store" } },
+  );
 }

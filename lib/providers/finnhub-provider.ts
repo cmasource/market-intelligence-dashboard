@@ -1,6 +1,8 @@
 import { buildFundamentalsInterpretation, calculateFundamentalScore } from "@/lib/fundamentals-data/fundamentals-score";
+import { instrumentMasterSeed } from "@/lib/instruments/instrument-master.seed";
 import { getFundamentalsAssetClass, normalizeFundamentalsSymbol } from "@/lib/fundamentals-data/symbol-map";
 import type { FundamentalsRequest, FundamentalsResponse, FundamentalsSnapshot } from "@/lib/fundamentals-data/types";
+import { percentagePointsToRatio } from "@/lib/fundamentals-data/normalization";
 import { getAssetClassForMarketData, normalizeSymbol } from "@/lib/market-data/symbol-map";
 import type { MarketDataCandle, MarketDataRequest, MarketDataResponse } from "@/lib/market-data/types";
 import type { NewsArticle } from "@/lib/news/types";
@@ -34,6 +36,44 @@ type FinnhubCandles = { s?: string; t?: number[]; o?: number[]; h?: number[]; l?
 type FinnhubProfile = { name?: string; marketCapitalization?: number; currency?: string; shareOutstanding?: number };
 type FinnhubMetrics = { metric?: Record<string, number | undefined> };
 type FinnhubNews = Array<{ headline?: string; source?: string; url?: string; datetime?: number; summary?: string; related?: string }>;
+
+const ignoredNewsTerms = new Set(["inc", "corp", "corporation", "company", "group", "holdings", "limited", "plc", "trust"]);
+
+function companyNewsTerms(symbol: string) {
+  const normalized = normalizeSymbol(symbol);
+  const instrument = instrumentMasterSeed.find((item) =>
+    item.symbol === normalized || item.providerSymbol === normalized || item.underlyingSymbol === normalized,
+  );
+  const nameTerms = (instrument?.name ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .split(/\s+/)
+    .filter((term) => term.length >= 4 && !ignoredNewsTerms.has(term));
+  return Array.from(new Set([normalized.toLowerCase(), ...nameTerms]));
+}
+export type FinnhubEarningsCalendarItem = {
+  date?: string;
+  epsActual?: number | null;
+  epsEstimate?: number | null;
+  hour?: string;
+  quarter?: number;
+  revenueActual?: number | null;
+  revenueEstimate?: number | null;
+  symbol?: string;
+  year?: number;
+};
+export type FinnhubEconomicCalendarItem = {
+  actual?: number | string | null;
+  country?: string;
+  estimate?: number | string | null;
+  event?: string;
+  impact?: string;
+  prev?: number | string | null;
+  time?: string;
+  unit?: string;
+};
+type FinnhubEarningsCalendar = { earningsCalendar?: FinnhubEarningsCalendarItem[] };
+type FinnhubEconomicCalendar = { economicCalendar?: FinnhubEconomicCalendarItem[] };
 
 function hasFundamentalMetric(snapshot: FundamentalsSnapshot) {
   return [
@@ -120,20 +160,31 @@ export async function getFinnhubFundamentals(request: FundamentalsRequest): Prom
   const m = metrics.ok ? metrics.data.metric ?? {} : {};
   const snapshot: FundamentalsSnapshot = {
     marketPrice: q?.c,
-    marketCap: p?.marketCapitalization ? p.marketCapitalization * 1_000_000 : undefined,
+    marketCap: (m.marketCapitalization ?? p?.marketCapitalization)
+      ? (m.marketCapitalization ?? p?.marketCapitalization ?? 0) * 1_000_000
+      : undefined,
+    enterpriseValue: m.enterpriseValue ? m.enterpriseValue * 1_000_000 : undefined,
     trailingPE: m.peNormalizedAnnual ?? m.peTTM,
     forwardPE: m.forwardPE,
-    priceToBook: m.pbAnnual ?? m.pbQuarterly,
+    priceToBook: m.pbAnnual ?? m.pbQuarterly ?? m.pb,
+    priceToSales: m.psTTM ?? m.psAnnual,
+    pegRatio: m.pegTTM ?? m.forwardPEG,
     eps: m.epsNormalizedAnnual ?? m.epsTTM,
-    roe: m.roeTTM,
-    roa: m.roaTTM,
-    grossMargin: m.grossMarginTTM,
-    operatingMargin: m.operatingMarginTTM,
-    netMargin: m.netProfitMarginTTM,
-    dividendYield: m.dividendYieldIndicatedAnnual,
+    bookValuePerShare: m.bookValuePerShareQuarterly ?? m.bookValuePerShareAnnual,
+    roe: percentagePointsToRatio(m.roeTTM),
+    roa: percentagePointsToRatio(m.roaTTM),
+    grossMargin: percentagePointsToRatio(m.grossMarginTTM),
+    operatingMargin: percentagePointsToRatio(m.operatingMarginTTM),
+    netMargin: percentagePointsToRatio(m.netProfitMarginTTM),
+    revenueGrowth: percentagePointsToRatio(m.revenueGrowthTTMYoy ?? m.revenueGrowthQuarterlyYoy),
+    earningsGrowth: percentagePointsToRatio(m.epsGrowthTTMYoy ?? m.epsGrowthQuarterlyYoy),
+    debtToEquity: m["totalDebt/totalEquityQuarterly"] ?? m["totalDebt/totalEquityAnnual"],
+    currentRatio: m.currentRatioQuarterly ?? m.currentRatioAnnual,
+    quickRatio: m.quickRatioQuarterly ?? m.quickRatioAnnual,
+    dividendYield: percentagePointsToRatio(m.dividendYieldIndicatedAnnual ?? m.currentDividendYieldTTM),
     beta: m.beta,
-    fiftyTwoWeekHigh: q?.h ?? m["52WeekHigh"],
-    fiftyTwoWeekLow: q?.l ?? m["52WeekLow"],
+    fiftyTwoWeekHigh: m["52WeekHigh"],
+    fiftyTwoWeekLow: m["52WeekLow"],
     currency: p?.currency ?? "USD",
     period: "Finnhub latest",
   };
@@ -164,10 +215,15 @@ export async function getFinnhubCompanyNews(symbol: string): Promise<ProviderRes
     to: to.toISOString().slice(0, 10),
   });
   if (!result.ok) return result;
+  const terms = companyNewsTerms(symbol);
+  const relevantItems = result.data.filter((item) => {
+    const searchable = `${item.headline ?? ""} ${item.summary ?? ""}`.toLowerCase();
+    return terms.some((term) => searchable.includes(term));
+  });
   return {
     ok: true,
     provider: "finnhub",
-    data: result.data.slice(0, 8).map((item) => ({
+    data: relevantItems.slice(0, 8).map((item) => ({
       title: sanitizeNewsText(item.headline, 180) || "Market update",
       source: sanitizeNewsText(item.source, 80) || "Finnhub",
       url: item.url ?? "#",
@@ -178,4 +234,19 @@ export async function getFinnhubCompanyNews(symbol: string): Promise<ProviderRes
       isFallback: false,
     })),
   };
+}
+
+export async function getFinnhubEarningsCalendar(params: { from: string; to: string; symbol?: string }) {
+  return fetchFinnhub<FinnhubEarningsCalendar>("/calendar/earnings", {
+    from: params.from,
+    to: params.to,
+    ...(params.symbol ? { symbol: normalizeSymbol(params.symbol) } : {}),
+  });
+}
+
+export async function getFinnhubEconomicCalendar(params: { from: string; to: string }) {
+  return fetchFinnhub<FinnhubEconomicCalendar>("/calendar/economic", {
+    from: params.from,
+    to: params.to,
+  });
 }

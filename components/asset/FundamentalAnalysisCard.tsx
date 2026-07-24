@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { formatCurrency, formatNumber, formatPercent, formatScore } from "@/lib/formatters";
 import { GlossaryLabel } from "@/components/glossary/GlossaryLabel";
 import type { FundamentalsResponse, FundamentalsSnapshot } from "@/lib/fundamentals-data/types";
@@ -10,8 +9,10 @@ import { buildHumanFundamentalSummary } from "@/lib/intelligence/interpretation"
 import type { AssetType } from "@/types/asset";
 import type { Asset } from "@/types/asset";
 import type { FundamentalMetrics } from "@/types/fundamentals";
+import { Badge } from "../ui/Badge";
 import { MetricGrid } from "../ui/MetricGrid";
 import { SectionHeader } from "../ui/SectionHeader";
+import { useAssetAnalysis } from "./AssetAnalysisProvider";
 
 type FundamentalAnalysisCardProps = {
   asset?: Asset;
@@ -120,22 +121,37 @@ export function FundamentalAnalysisCard({
   currency = asset?.currency ?? "USD",
 }: FundamentalAnalysisCardProps) {
   const { t, language } = useLanguage();
-  const [fundamentals, setFundamentals] = useState<FundamentalsResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [apiFailed, setApiFailed] = useState(false);
-  const fallback = fallbackSnapshot(asset, fallbackFundamentals);
+  const { bundle, loading, error } = useAssetAnalysis();
+  const fundamentals: FundamentalsResponse | null = bundle?.fundamentals ?? null;
+  const apiFailed = Boolean(error);
+
+  if (loading && !fundamentals) {
+    return (
+      <section className="cma-panel cma-module-fundamentals p-5" data-testid="fundamental-analysis-module">
+        <SectionHeader eyebrow={t("fundamentalAnalysis")} title={t("fundamentalsLoading")} />
+      </section>
+    );
+  }
+
+  const fallback = symbol ? {} : fallbackSnapshot(asset, fallbackFundamentals);
   const snapshot = fundamentals?.snapshot ?? fallback;
-  const score = fundamentals?.fundamentalScore ?? fallbackFundamentalScore ?? asset?.fundamentalScore ?? null;
+  const score = fundamentals?.fundamentalScore ?? (symbol ? null : fallbackFundamentalScore ?? asset?.fundamentalScore ?? null);
   const sourceLabel =
     fundamentals?.provider === "unavailable"
       ? t("fundamentalsNotApplicable")
       : fundamentals
         ? fundamentals.isFallback
           ? t("fundamentalsFallback")
-          : t("fundamentalsProvider")
-        : hasAnyFundamental(fallback)
-          ? t("fundamentalsFallback")
-          : t("fundamentalsNotApplicable");
+          : language === "es"
+            ? "Datos fundamentales"
+            : "Fundamental data"
+        : loading
+          ? t("fundamentalsLoading")
+          : apiFailed
+            ? t("fundamentalScoreUnavailable")
+            : hasAnyFundamental(fallback)
+              ? t("fundamentalsFallback")
+              : t("fundamentalsNotApplicable");
   const isNotApplicable = fundamentals?.provider === "unavailable" || (!hasAnyFundamental(snapshot) && !loading);
   const usesUnderlying = Boolean(fundamentals?.symbol && symbol && fundamentals.symbol.toUpperCase() !== symbol.toUpperCase());
   const missingFieldList = fundamentals?.missingFields ?? unavailableFields(snapshot);
@@ -169,35 +185,6 @@ export function FundamentalAnalysisCard({
     unavailableFields: missingFieldList,
   }, language);
 
-  useEffect(() => {
-    if (!symbol) return undefined;
-
-    const controller = new AbortController();
-
-    async function loadFundamentals() {
-      setLoading(true);
-      setApiFailed(false);
-
-      try {
-        const response = await fetch(`/api/fundamentals/${encodeURIComponent(symbol)}`, {
-          signal: controller.signal,
-        });
-
-        if (!response.ok) throw new Error(`Fundamentals API returned HTTP ${response.status}.`);
-
-        setFundamentals((await response.json()) as FundamentalsResponse);
-      } catch {
-        if (!controller.signal.aborted) setApiFailed(true);
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    }
-
-    loadFundamentals();
-
-    return () => controller.abort();
-  }, [symbol]);
-
   if (isNotApplicable) {
     return (
       <section className="cma-panel cma-module-fundamentals p-5" data-testid="fundamental-analysis-module">
@@ -206,8 +193,8 @@ export function FundamentalAnalysisCard({
           title={language === "es" ? t("equityRatiosNotApplicable") : fundamentals?.interpretation.label ?? t("equityRatiosNotApplicable")}
           description={t("equityRatiosNotApplicableText")}
         />
-        <div className="mb-4 inline-flex rounded-full border border-white/10 bg-white/[0.045] px-3 py-1 text-xs text-slate-300">
-          {sourceLabel}
+        <div className="mb-4 inline-flex">
+          <Badge>{sourceLabel}</Badge>
         </div>
         <p className="text-sm leading-6 text-slate-400">
           {assetType === "crypto"
@@ -274,21 +261,17 @@ export function FundamentalAnalysisCard({
         description={humanSummary.shortSummary}
       />
       <div className="mb-4 flex flex-wrap gap-2 text-xs">
-        <span className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 font-medium text-cyan-100">
-          {loading ? t("fundamentalsLoading") : translateProviderLabel(sourceLabel, language)}
-        </span>
-        {apiFailed ? <span className="text-amber-100">{t("fundamentalsApiFallback")}</span> : null}
+        <Badge tone="accent">{loading ? t("fundamentalsLoading") : translateProviderLabel(sourceLabel, language)}</Badge>
+        {apiFailed ? <span className="text-amber-400">{t("fundamentalsApiFallback")}</span> : null}
         {hasPartialCoverage ? (
-          <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 font-medium text-amber-100">
-            {language === "es" ? "Cobertura fundamental parcial" : "Partial fundamental coverage"}
-          </span>
+          <Badge tone="warning">{language === "es" ? "Cobertura fundamental parcial" : "Partial fundamental coverage"}</Badge>
         ) : null}
         {usesUnderlying ? (
-          <span className="rounded-full border border-violet-300/30 bg-violet-300/10 px-3 py-1 font-medium text-violet-100">
+          <Badge>
             {language === "es"
               ? `Fundamentos basados en subyacente: ${fundamentals?.symbol}`
               : `Fundamentals based on underlying: ${fundamentals?.symbol}`}
-          </span>
+          </Badge>
         ) : null}
       </div>
       <div className="space-y-4">

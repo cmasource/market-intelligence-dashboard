@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { ArgentinaMarket } from "@/components/dashboard/ArgentinaMarket";
 import { BondSpeciesGuide } from "@/components/fixed-income/BondSpeciesGuide";
 import { FixedIncomeComparison } from "@/components/fixed-income/FixedIncomeComparison";
-import { CnvDocumentsPanel } from "@/components/cnv/CnvDocumentsPanel";
 import { CnvIssuerCard } from "@/components/cnv/CnvIssuerCard";
 import { AppShell } from "@/components/layout/AppShell";
 import { MarketHeatmap } from "@/components/market/MarketHeatmap";
@@ -13,7 +12,7 @@ import { useLanguage } from "@/lib/i18n/useLanguage";
 import { InstrumentUniverseGroups } from "@/components/screener/InstrumentUniverseGroups";
 import { ARGENTINA_INSTRUMENT_UNIVERSE } from "@/lib/instrument-universe";
 import { formatCurrencyValue, formatNumber, formatPercent } from "@/lib/formatters";
-import { cnvIssuers, getLatestCnvDocuments } from "@/lib/cnv";
+import { cnvIssuers } from "@/lib/cnv";
 import type { ArgentinaInstrument, ArgentinaQuote, ArgentinaSourceStatus } from "@/lib/argentina";
 
 const universeGroups = [
@@ -88,8 +87,9 @@ const localMarketSections = [
 ];
 
 function argentinaSourceLabel(source: string, isSpanish: boolean) {
+  if (source === "yahoo") return isSpanish ? "Yahoo Finance (no oficial)" : "Yahoo Finance (unofficial)";
   if (source === "manual") return isSpanish ? "Carga manual validada" : "Validated manual load";
-  if (source === "mock") return isSpanish ? "Dato estructurado simulado" : "Structured mock data";
+  if (source === "mock" || source === "unavailable") return isSpanish ? "No disponible" : "Unavailable";
   if (source === "byma_future") return isSpanish ? "Integración BYMA futura" : "Future BYMA integration";
   if (source === "cnv_future") return isSpanish ? "CNV futura" : "Future CNV";
   if (source === "broker_future") return isSpanish ? "Broker/API futuro" : "Future broker/API";
@@ -144,7 +144,6 @@ export default function ArgentinaPage() {
   const tableInstruments = argentinaTableSymbols
     .map((symbol) => instruments.find((instrument) => instrument.symbol === symbol))
     .filter((instrument): instrument is ArgentinaInstrument => Boolean(instrument));
-  const latestCnvDocuments = getLatestCnvDocuments(5);
 
   function renderInstrumentCard(symbol: string) {
     const instrument = instruments.find((item) => item.symbol === symbol);
@@ -236,20 +235,17 @@ export default function ArgentinaPage() {
             {isSpanish ? "Capa CNV" : "CNV layer"}
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-white">
-            {isSpanish ? "Emisoras y documentos CNV" : "CNV issuers and documents"}
+            {isSpanish ? "Emisoras registradas" : "Registered issuers"}
           </h2>
           <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
             {isSpanish
-              ? "Primer contexto estructurado para emisoras locales, estados financieros y hechos relevantes. La version actual usa documentos de demostracion hasta integrar fuentes oficiales o publicas autorizadas."
-              : "First structured context for local issuers, financial statements and relevant events. The current version uses demo documents until official or authorized public sources are integrated."}
+              ? "Los documentos y hechos relevantes se incorporaran solo desde una fuente CNV oficial o publica autorizada."
+              : "Documents and relevant events will be added only from an official CNV or authorized public source."}
           </p>
-          <div className="mt-5 grid gap-4 xl:grid-cols-[1fr_1fr]">
-            <div className="grid gap-3 md:grid-cols-2">
-              {cnvIssuers.slice(0, 4).map((issuer) => (
-                <CnvIssuerCard key={issuer.symbol} issuer={issuer} />
-              ))}
-            </div>
-            <CnvDocumentsPanel documents={latestCnvDocuments} />
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {cnvIssuers.slice(0, 4).map((issuer) => (
+              <CnvIssuerCard key={issuer.symbol} issuer={issuer} />
+            ))}
           </div>
         </section>
         <section className="cma-panel cma-card-argentina p-5">
@@ -261,8 +257,8 @@ export default function ArgentinaPage() {
           </h2>
           <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
             {isSpanish
-              ? "La capa Argentina prioriza cargas manuales validadas, mantiene datos estructurados simulados como respaldo y prepara integraciones futuras con BYMA, CNV y proveedores licenciados."
-              : "The Argentina layer prioritizes validated manual loads, keeps structured mock data as fallback and prepares future BYMA, CNV and licensed-provider integrations."}
+              ? "La capa Argentina prioriza fuentes locales configuradas y cargas manuales validadas. Cuando ninguna fuente responde, informa N/D."
+              : "The Argentina layer prioritizes configured local sources and validated manual loads. When no source responds, it reports N/A."}
           </p>
           <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             {sources.map((source) => (
@@ -333,7 +329,7 @@ export default function ArgentinaPage() {
             {isSpanish ? "Universo de instrumentos" : "Instrument universe"}
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-white">
-            {isSpanish ? "Cobertura inicial simulada" : "Initial mock coverage"}
+            {isSpanish ? "Universo registrado" : "Registered universe"}
           </h2>
           <div className="mt-5 grid gap-4 lg:grid-cols-3">
             {universeGroups.map((group) => {
@@ -360,8 +356,8 @@ export default function ArgentinaPage() {
           </div>
           <p className="mt-5 rounded-lg border border-amber-300/20 bg-amber-300/10 p-3 text-sm leading-6 text-amber-100">
             {isSpanish
-              ? "Este es un universo inicial simulado. Versiones futuras ampliarán la cobertura al panel líder, panel general, CEDEARs, ONs, letras, lecaps y otros instrumentos de BYMA."
-              : "This is an initial mock universe. Future versions will expand coverage to panel lider, general panel, CEDEARs, ONs, letras, lecaps and other BYMA instruments."}
+              ? "Este catalogo define los instrumentos buscables. La disponibilidad de cada cotizacion depende de la respuesta efectiva del proveedor local."
+              : "This catalog defines searchable instruments. Quote availability depends on the effective response from the local provider."}
           </p>
           <Link
             href="/screener?country=AR"

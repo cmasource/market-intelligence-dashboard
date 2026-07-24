@@ -13,6 +13,7 @@ function formatProviderDisplay(provider: string, isSpanish: boolean) {
   if (provider === "yahoo") return isSpanish ? "Yahoo compatible" : "Yahoo-compatible";
   if (provider === "google_news_rss") return "Google News RSS";
   if (provider === "alpha_vantage") return "Alpha Vantage";
+  if (provider === "unavailable") return isSpanish ? "No disponible" : "Unavailable";
   return formatProvider(provider);
 }
 
@@ -67,8 +68,8 @@ export function ProviderStatusPanel() {
       <p className="mt-3 text-sm leading-6 text-slate-300">
         {status
           ? isSpanish
-            ? `Proveedor efectivo de precios: ${formatProviderDisplay(status.activeMarketDataProvider, true)}. Si FMP no esta disponible en este entorno, la app usa Yahoo compatible como respaldo real antes de recurrir a datos simulados.`
-            : `Effective market-data provider: ${formatProviderDisplay(status.activeMarketDataProvider, false)}. If FMP is unavailable in this environment, the app uses Yahoo-compatible data as a real-data fallback before using mock data.`
+            ? `Proveedor configurado de precios: ${formatProviderDisplay(status.activeMarketDataProvider, true)}. Si ninguna fuente real responde, la app informa N/D y conserva el detalle del error.`
+            : `Configured market-data provider: ${formatProviderDisplay(status.activeMarketDataProvider, false)}. If no real source responds, the app reports N/A and preserves the error details.`
           : isSpanish
             ? "Consultando la cadena activa de proveedores."
             : "Checking the active provider chain."}

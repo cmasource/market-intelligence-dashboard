@@ -1,6 +1,5 @@
 import { getAlphaVantageNews, getFinnhubCompanyNews, getFmpNews } from "@/lib/providers";
 import { getGoogleNewsRss } from "./google-news-rss";
-import { getMockMarketNews, getMockNewsForSymbol } from "./mock-news";
 import { sanitizeNewsArticle } from "./sanitize-news";
 import type { NewsArticle, NewsResponse } from "./types";
 
@@ -38,14 +37,23 @@ export async function getNewsForSymbol(symbol: string, limit = 6): Promise<NewsR
   const rss = await getGoogleNewsRss(normalized, limit);
   if (rss.articles.length > 0) return { ...rss, articles: rss.articles.map(cleanArticle) };
 
-  const mock = getMockNewsForSymbol(normalized, limit);
-  const cleanMock = { ...mock, articles: mock.articles.map(cleanArticle) };
-  return rss.error ? { ...cleanMock, error: rss.error } : cleanMock;
+  return {
+    articles: [],
+    provider: "rss",
+    isFallback: true,
+    sourceLabel: "No verified news available",
+    ...(rss.error ? { error: rss.error } : {}),
+  };
 }
 
 export async function getMarketNews(limit = 8): Promise<NewsResponse> {
   const rss = await getGoogleNewsRss("markets stocks ETFs crypto", limit);
   if (rss.articles.length > 0) return { ...rss, articles: rss.articles.map(cleanArticle) };
-  const mock = getMockMarketNews(limit);
-  return { ...mock, articles: mock.articles.map(cleanArticle) };
+  return {
+    articles: [],
+    provider: "rss",
+    isFallback: true,
+    sourceLabel: "No verified market news available",
+    ...(rss.error ? { error: rss.error } : {}),
+  };
 }

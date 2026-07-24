@@ -15,8 +15,8 @@ export function DataCoverageLegend() {
       className: "border-emerald-300/25 bg-emerald-300/10 text-emerald-100",
     },
     {
-      label: isSpanish ? "Simulado" : "Mock",
-      className: "border-cyan-300/25 bg-cyan-300/10 text-cyan-100",
+      label: isSpanish ? "Cobertura parcial" : "Partial coverage",
+      className: "border-amber-300/25 bg-amber-300/10 text-amber-100",
     },
     {
       label: isSpanish ? "Futuro" : "Future",
@@ -37,13 +37,13 @@ export function DataCoverageLegend() {
       </h2>
       <p className={`mt-3 max-w-4xl text-sm leading-6 ${isLight ? "text-slate-700" : "text-slate-300"}`}>
         {isSpanish
-          ? "Los datos reales/de proveedor están disponibles actualmente para instrumentos seleccionados de Estados Unidos y cripto. Los instrumentos argentinos y CEDEARs usan datos simulados o cobertura futura hasta habilitar integraciones de mercado local."
-          : "Real/provider data is currently available for selected USA and crypto instruments. Argentine market instruments and CEDEARs use mock or future coverage until local market data integrations are enabled."}
+          ? "Los datos de proveedor se priorizan para Estados Unidos, cripto, instrumentos argentinos y CEDEARs cuando la fuente local responde. La cobertura parcial indica capas que aun dependen de referencia o validacion adicional."
+          : "Provider data is prioritized for USA, crypto, Argentine instruments and CEDEARs when the local feed responds. Partial coverage marks layers that still depend on reference data or additional validation."}
       </p>
       <p className={`mt-2 text-xs ${isLight ? "text-slate-600" : "text-slate-500"}`}>
         {isSpanish
-          ? "Indica si los datos provienen de proveedor real, fallback simulado o cobertura futura."
-          : "Shows whether data comes from a real provider, mock fallback or future coverage."}
+          ? "Indica si los datos provienen de proveedor, referencia validada, cobertura parcial o cobertura futura."
+          : "Shows whether data comes from a provider, validated reference, partial coverage, or future coverage."}
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
         {items.map((item) => (

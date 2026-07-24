@@ -16,7 +16,7 @@ export function ScreenerHero() {
       </h1>
       <p className="mt-4 max-w-4xl text-sm leading-6 text-slate-300">
         {isSpanish
-          ? "Explora el universo actual de instrumentos simulados y con datos reales disponibles. Futuras versiones ampliaran la cobertura a BYMA, CEDEARs, bonos, ONs, letras, lecaps y criptoactivos."
+          ? "Explora el universo actual y su cobertura efectiva. Los campos sin respuesta de proveedor se muestran como N/D."
           : "Explore the current mock and real-supported instrument universe. Future versions will expand coverage to BYMA, CEDEARs, bonds, ONs, letras, lecaps and crypto assets."}
       </p>
     </section>

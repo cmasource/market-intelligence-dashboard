@@ -1,5 +1,5 @@
 import { findAsset } from "@/lib/mock-data";
-import { getFmpQuoteSnapshot } from "@/lib/providers";
+import { getAlphaVantageQuoteSnapshot, getFmpQuoteSnapshot } from "@/lib/providers";
 import type { ProviderTraceEntry } from "@/lib/providers/types";
 import { getMarketData } from "./market-data-service";
 import { getAssetClassForMarketData, getYahooSymbol, normalizeSymbol } from "./symbol-map";
@@ -24,29 +24,29 @@ function latestQuoteFromCandles(candles: MarketDataCandle[]) {
   };
 }
 
-function mockQuote(symbol: string, error?: string, providerTrace: ProviderTraceEntry[] = []): MarketQuoteResponse {
+function unavailableQuote(symbol: string, error?: string, providerTrace: ProviderTraceEntry[] = []): MarketQuoteResponse {
   const normalizedSymbol = normalizeSymbol(symbol);
   const asset = findAsset(normalizedSymbol);
 
   return {
     symbol: normalizedSymbol,
-    price: asset?.price ?? null,
+    price: null,
     change: null,
-    changePercent: asset?.dailyChange ?? null,
+    changePercent: null,
     currency: asset?.quoteCurrency ?? asset?.currency ?? "USD",
-    provider: "mock",
-    sourceLabel: "Mock fallback",
+    provider: "unavailable",
+    sourceLabel: "No verified quote",
     isFallback: true,
     fetchedAt: new Date().toISOString(),
     ...(error ? { error } : {}),
     providerTrace: [
       ...providerTrace,
       {
-        provider: "mock",
+        provider: "unavailable",
         attempted: true,
-        success: true,
+        success: false,
         endpointName: "quote",
-        sourceLabel: "Mock fallback",
+        sourceLabel: "No verified quote",
       },
     ],
   };
@@ -64,8 +64,8 @@ export async function getMarketQuote(symbol: string): Promise<MarketQuoteRespons
       change: null,
       changePercent: null,
       currency: "USD",
-      provider: "mock",
-      sourceLabel: "Mock fallback",
+      provider: "unavailable",
+      sourceLabel: "No verified quote",
       isFallback: true,
       fetchedAt: new Date().toISOString(),
       error: "Symbol is required.",
@@ -80,6 +80,13 @@ export async function getMarketQuote(symbol: string): Promise<MarketQuoteRespons
         return { ...fmpQuote, providerTrace };
       }
       if (fmpQuote.error) errors.push(fmpQuote.error);
+
+      const alphaQuote = await getAlphaVantageQuoteSnapshot(normalizedSymbol);
+      if (alphaQuote.providerTrace) providerTrace.push(...alphaQuote.providerTrace);
+      if (!alphaQuote.error && typeof alphaQuote.price === "number" && alphaQuote.price > 0) {
+        return { ...alphaQuote, providerTrace };
+      }
+      if (alphaQuote.error) errors.push(alphaQuote.error);
     }
 
     const marketData = await getMarketData({
@@ -96,7 +103,7 @@ export async function getMarketQuote(symbol: string): Promise<MarketQuoteRespons
         attempted: true,
         success: true,
         endpointName: "market-data",
-        sourceLabel: marketData.isFallback ? "Mock fallback" : marketData.sourceLabel,
+        sourceLabel: marketData.sourceLabel,
       });
 
       return {
@@ -106,7 +113,7 @@ export async function getMarketQuote(symbol: string): Promise<MarketQuoteRespons
         changePercent: candleQuote.changePercent,
         currency: asset?.quoteCurrency ?? asset?.currency ?? "USD",
         provider: marketData.provider,
-        sourceLabel: marketData.isFallback ? "Mock fallback" : marketData.sourceLabel,
+        sourceLabel: marketData.sourceLabel,
         isFallback: marketData.isFallback,
         fetchedAt: marketData.fetchedAt ?? new Date().toISOString(),
         ...(marketData.error ? { error: marketData.error } : {}),
@@ -129,5 +136,5 @@ export async function getMarketQuote(symbol: string): Promise<MarketQuoteRespons
     errors.push(error instanceof Error ? error.message : "Quote provider chain failed.");
   }
 
-  return mockQuote(normalizedSymbol, errors.filter(Boolean).join(" | ") || undefined, providerTrace);
+  return unavailableQuote(normalizedSymbol, errors.filter(Boolean).join(" | ") || undefined, providerTrace);
 }

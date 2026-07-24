@@ -1,4 +1,4 @@
-export type ProviderName = "fmp" | "finnhub" | "alpha_vantage" | "yahoo" | "crypto" | "google_news_rss" | "mock";
+export type ProviderName = "unavailable" | "fmp" | "finnhub" | "alpha_vantage" | "yahoo" | "crypto" | "google_news_rss" | "mock";
 
 export type ProviderLayer = "marketData" | "fundamentals" | "news";
 

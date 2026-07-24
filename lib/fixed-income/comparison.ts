@@ -25,6 +25,8 @@ export function buildBondComparisonItems(instruments: FixedIncomeInstrument[]): 
       currency: instrument.currency,
       law: instrument.law,
       riskLevel: analytics.risk.overallRisk,
+      sourceLabel: instrument.sourceLabel,
+      isMock: instrument.isMock,
     };
   });
 }

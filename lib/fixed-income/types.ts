@@ -143,4 +143,6 @@ export type BondComparisonItem = {
   currency: FixedIncomeCurrency;
   law: FixedIncomeLaw;
   riskLevel: RiskTone;
+  sourceLabel: string;
+  isMock: boolean;
 };

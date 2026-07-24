@@ -159,11 +159,11 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
     report.fundamentalSummary.interpretation;
   const limitationText = report.cedearSummary
     ? isSpanish
-      ? "Este informe combina datos de proveedor, datos compatibles de respaldo, datos simulados estructurados y cobertura futura. No constituye asesoramiento de inversión. Los datos locales de CEDEAR continúan simulados hasta integrar BYMA/IOL o proveedor licenciado."
-      : "This report combines provider data, compatible fallback data, structured mock data and future coverage. It is not investment advice. Local CEDEAR data remains simulated until BYMA/IOL or licensed-provider data is integrated."
+      ? "Este informe publica datos de proveedores identificados y marca N/D cuando una capa no esta disponible. No constituye asesoramiento de inversion."
+      : "This report publishes data from identified providers and marks a layer N/A when it is unavailable. It is not investment advice."
     : isSpanish
-      ? "Este informe combina datos de proveedor, datos compatibles de respaldo, datos simulados estructurados y cobertura futura. No constituye asesoramiento de inversión."
-      : "This report combines provider data, compatible fallback data, structured mock data and future coverage. It is not investment advice.";
+      ? "Este informe publica datos de proveedores identificados y marca N/D cuando una capa no esta disponible. No constituye asesoramiento de inversion."
+      : "This report publishes data from identified providers and marks a layer N/A when it is unavailable. It is not investment advice.";
 
   const summaryStrip = [
     { label: labels.price, value: displayPrice },
@@ -351,7 +351,7 @@ export function AssetIntelligenceReport({ symbol, compact = false, mode = "full"
               <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-slate-300">
                 <li>{isSpanish ? "Usar el subyacente para evaluar tendencia y fundamentos." : "Use the underlying asset to evaluate trend and fundamentals."}</li>
                 <li>{isSpanish ? "Usar el CEDEAR para analizar precio local, liquidez y CCL implícito." : "Use the CEDEAR to analyze local price, liquidity and implied CCL."}</li>
-                <li>{isSpanish ? "No interpretar el CCL simulado como dato operativo real." : "Do not treat simulated CCL as live operating data."}</li>
+                <li>{isSpanish ? "El CCL implicito solo se publica con precio local, ratio y subyacente disponibles." : "Implied CCL is published only when local price, ratio, and underlying data are available."}</li>
               </ul>
             </div>
           </div>

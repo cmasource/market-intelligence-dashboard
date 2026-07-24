@@ -34,7 +34,7 @@ function formatEnum(value: string) {
 function sourceStatusLabel(value: string, isSpanish: boolean) {
   const labels: Record<string, { en: string; es: string }> = {
     real_supported: { en: "Real-supported", es: "Datos reales disponibles" },
-    mock_supported: { en: "Mock-supported", es: "Datos simulados disponibles" },
+    mock_supported: { en: "Provider route pending", es: "Ruta de proveedor pendiente" },
     future_supported: { en: "Future coverage", es: "Cobertura futura" },
   };
 
@@ -83,7 +83,7 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
     { value: "fundamentals", label: isSpanish ? "Fundamental disponible" : "Fundamental available" },
     { value: "fixed_income", label: isSpanish ? "Renta fija disponible" : "Fixed income available" },
     { value: "provider_backed", label: isSpanish ? "Con proveedor" : "Provider-backed" },
-    { value: "fallback_manual_mock", label: isSpanish ? "Fallback/manual/simulado" : "Fallback/manual/mock" },
+    { value: "fallback_manual_mock", label: isSpanish ? "Manual o no disponible" : "Manual or unavailable" },
   ];
 
   const results = useMemo(() => filterInstrumentUniverse(filters), [filters]);

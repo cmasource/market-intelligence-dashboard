@@ -11,6 +11,7 @@ function clampScore(score: number) {
 export function calculateFundamentalScore(snapshot: FundamentalsSnapshot): number | null {
   let score = 0;
   let availableGroups = 0;
+  let availableWeight = 0;
 
   // Modelo MVP conservador: agrega puntos por calidad, valuacion, crecimiento, liquidez y perfil de mercado.
   // No representa recomendacion de compra o venta.
@@ -33,6 +34,7 @@ export function calculateFundamentalScore(snapshot: FundamentalsSnapshot): numbe
   if (profitabilityInputs > 0) {
     score += Math.min(30, profitability);
     availableGroups += 1;
+    availableWeight += 30;
   }
 
   let valuation = 0;
@@ -56,6 +58,7 @@ export function calculateFundamentalScore(snapshot: FundamentalsSnapshot): numbe
   if (valuationInputs > 0) {
     score += Math.min(25, valuation);
     availableGroups += 1;
+    availableWeight += 25;
   }
 
   let growth = 0;
@@ -71,6 +74,7 @@ export function calculateFundamentalScore(snapshot: FundamentalsSnapshot): numbe
   if (growthInputs > 0) {
     score += Math.min(20, growth);
     availableGroups += 1;
+    availableWeight += 20;
   }
 
   let risk = 0;
@@ -90,6 +94,7 @@ export function calculateFundamentalScore(snapshot: FundamentalsSnapshot): numbe
   if (riskInputs > 0) {
     score += Math.min(15, risk);
     availableGroups += 1;
+    availableWeight += 15;
   }
 
   let marketProfile = 0;
@@ -110,13 +115,14 @@ export function calculateFundamentalScore(snapshot: FundamentalsSnapshot): numbe
   if (marketInputs > 0) {
     score += Math.min(10, marketProfile);
     availableGroups += 1;
+    availableWeight += 10;
   }
 
-  if (availableGroups < 2) return null;
+  if (availableGroups < 2 || availableWeight === 0) return null;
 
-  if (availableGroups < 4) score *= 0.85;
-
-  return clampScore(score);
+  // El score expresa calidad sobre los grupos disponibles. La cobertura se
+  // informa por separado para no confundir datos faltantes con baja calidad.
+  return clampScore((score / availableWeight) * 100);
 }
 
 export function buildFundamentalsInterpretation(
@@ -129,7 +135,7 @@ export function buildFundamentalsInterpretation(
       tone: "neutral",
       summary: "Equity-style fundamental metrics are not available or not applicable for this instrument.",
       bulletPoints: [
-        "The platform keeps fallback handling active for this asset.",
+        "The platform keeps provider error handling active for this asset.",
         "Use the relevant fixed income, crypto or market context modules where applicable.",
       ],
     };
@@ -143,7 +149,7 @@ export function buildFundamentalsInterpretation(
   return {
     label,
     tone,
-    summary: "This fundamental view combines available provider or fallback metrics and should not be treated as a buy or sell recommendation.",
+    summary: "This fundamental view combines available provider or validated manual metrics and should not be treated as a buy or sell recommendation.",
     bulletPoints: [
       isNumber(snapshot.roe) ? `ROE context: ${(snapshot.roe * 100).toFixed(1)}%.` : "ROE is unavailable.",
       isNumber(snapshot.trailingPE) ? `Trailing P/E context: ${snapshot.trailingPE.toFixed(1)}x.` : "Trailing P/E is unavailable.",

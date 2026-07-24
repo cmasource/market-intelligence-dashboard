@@ -20,15 +20,15 @@ export function AppearanceToggle() {
     <div
       aria-label={isSpanish ? "Modo de apariencia" : "Appearance mode"}
       data-theme-mode={resolvedMode}
-      className="flex rounded-full border border-white/10 bg-slate-950/65 p-1"
+      className="flex rounded-md border border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] p-0.5"
     >
       {modes.map((item) => (
         <button
           key={item}
           type="button"
           onClick={() => setMode(item)}
-          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-            mode === item ? "bg-cyan-300/20 text-cyan-100" : "text-slate-400 hover:text-white"
+          className={`rounded px-2.5 py-1 text-xs font-medium transition ${
+            mode === item ? "bg-[var(--cma-border-strong)] text-[var(--cma-accent-cyan)]" : "text-slate-400 hover:text-white"
           }`}
         >
           {labels[item]}

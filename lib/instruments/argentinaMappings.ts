@@ -11,6 +11,7 @@ export const localToAdrSymbol: Record<string, string> = {
   SUPV: "SUPV",
   CRES: "CRESY",
   IRSA: "IRS",
+  TECO2: "TEO",
 };
 
 export const adrToLocalSymbol: Record<string, string> = {
@@ -25,4 +26,5 @@ export const adrToLocalSymbol: Record<string, string> = {
   BMA: "BMA",
   SUPV: "SUPV",
   IRS: "IRSA",
+  TEO: "TECO2",
 };

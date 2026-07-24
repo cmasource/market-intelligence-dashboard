@@ -1,4 +1,4 @@
-export type CedearStatus = "mock" | "provider_underlying" | "future" | "unavailable";
+export type CedearStatus = "local_provider" | "provider_underlying" | "mock" | "future" | "unavailable";
 
 export type CedearInstrument = {
   localSymbol: string;
@@ -8,8 +8,8 @@ export type CedearInstrument = {
   underlyingMarket: "NASDAQ" | "NYSE" | "NYSE_ARCA";
   localCurrency: "ARS";
   underlyingCurrency: "USD";
-  ratio: number;
-  localPrice: number;
+  ratio: number | null;
+  localPrice: number | null;
   underlyingPrice?: number;
   impliedCcl?: number;
   cclSpread?: number;
@@ -29,8 +29,8 @@ export type CedearAnalytics = {
   localSymbol: string;
   underlyingSymbol: string;
   underlyingName: string;
-  ratio: number;
-  localPrice: number;
+  ratio: number | null;
+  localPrice: number | null;
   underlyingPrice: number | null;
   impliedCcl: number | null;
   referenceCcl?: number;

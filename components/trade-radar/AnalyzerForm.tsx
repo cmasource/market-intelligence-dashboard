@@ -59,6 +59,8 @@ export function AnalyzerForm({
 }: AnalyzerFormProps) {
   const [suggestions, setSuggestions] = useState<InstrumentSearchResult[]>([]);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const latestQueryRef = useRef("");
 
   useEffect(() => {
@@ -71,19 +73,29 @@ export function AnalyzerForm({
 
     const controller = new AbortController();
     const timeout = window.setTimeout(async () => {
+      setSearchLoading(true);
+      setSearchError(null);
       try {
         const params = new URLSearchParams({ q: query, limit: "25" });
         const response = await fetch(`/api/trade-radar/search?${params.toString()}`, {
           signal: controller.signal,
         });
-        if (!response.ok) return;
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = (await response.json()) as { results?: InstrumentSearchResult[] };
         if (latestQueryRef.current === query) {
           setSuggestions(data.results ?? []);
           setSuggestionsOpen(true);
         }
-      } catch {
-        if (!controller.signal.aborted) setSuggestions([]);
+      } catch (error) {
+        if (!controller.signal.aborted && latestQueryRef.current === query) {
+          setSuggestions([]);
+          setSearchError(error instanceof Error ? error.message : "No se pudo buscar el instrumento.");
+          setSuggestionsOpen(true);
+        }
+      } finally {
+        if (!controller.signal.aborted && latestQueryRef.current === query) {
+          setSearchLoading(false);
+        }
       }
     }, 250);
 
@@ -114,11 +126,16 @@ export function AnalyzerForm({
             if (nextSymbol.trim().length < 2) {
               setSuggestions([]);
               setSuggestionsOpen(false);
+              setSearchLoading(false);
+              setSearchError(null);
             } else {
               setSuggestionsOpen(true);
             }
           }}
           onFocus={() => setSuggestionsOpen(symbol.trim().length >= 2)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setSuggestionsOpen(false);
+          }}
           autoComplete="off"
         />
         {selectedSuggestion ? (
@@ -126,8 +143,17 @@ export function AnalyzerForm({
             {selectedSuggestion.name} - {selectedSuggestion.market} - {selectedSuggestion.exchange}
           </span>
         ) : null}
-        {suggestionsOpen && suggestions.length ? (
+        {suggestionsOpen && (suggestions.length > 0 || searchLoading || searchError || symbol.trim().length >= 2) ? (
           <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-96 overflow-y-auto rounded-lg border border-cyan-300/20 bg-slate-950 shadow-2xl shadow-black/40">
+            {searchLoading ? (
+              <div className="px-3 py-3 text-sm text-slate-400">Buscando instrumentos...</div>
+            ) : null}
+            {searchError ? (
+              <div className="px-3 py-3 text-sm text-amber-100">Busqueda no disponible: {searchError}</div>
+            ) : null}
+            {!searchLoading && !searchError && suggestions.length === 0 ? (
+              <div className="px-3 py-3 text-sm text-slate-400">Sin resultados reales para este texto.</div>
+            ) : null}
             {suggestions.map((suggestion) => (
               <button
                 key={suggestion.id}

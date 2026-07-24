@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import type { InstrumentMarket, InstrumentSearchResult } from "@/lib/instruments/types";
 import type { TradeRadarInterval, TradeRadarMarket, TradeRadarProviderName } from "@/lib/market-data/providers/base";
@@ -20,6 +20,7 @@ export function TradeRadarPage() {
   const [providerStatus, setProviderStatus] = useState<TradeRadarProviderStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const analyzeControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -37,6 +38,10 @@ export function TradeRadarPage() {
   }, []);
 
   async function analyze() {
+    if (loading) return;
+    analyzeControllerRef.current?.abort();
+    const controller = new AbortController();
+    analyzeControllerRef.current = controller;
     setLoading(true);
     setError(null);
 
@@ -44,6 +49,7 @@ export function TradeRadarPage() {
       const response = await fetch("/api/trade-radar/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           instrumentId: selectedSuggestion?.id,
           symbol: selectedSuggestion?.providerSymbol ?? selectedSuggestion?.bymaSymbol ?? symbol,
@@ -56,10 +62,14 @@ export function TradeRadarPage() {
       if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
       setAnalysis(data as TradeRadarAnalysis);
     } catch (requestError) {
+      if (controller.signal.aborted) return;
       setAnalysis(null);
       setError(requestError instanceof Error ? requestError.message : "No se pudo completar el analisis.");
     } finally {
-      setLoading(false);
+      if (analyzeControllerRef.current === controller) {
+        analyzeControllerRef.current = null;
+        setLoading(false);
+      }
     }
   }
 

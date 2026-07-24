@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         hostname: "img.logo.dev",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "s3-symbol-logo.tradingview.com",
+        pathname: "/**",
+      },
     ],
   },
 };

@@ -20,7 +20,7 @@ const implemented = [
   "Fundamentals USA with fallback",
   "Fixed income analytics mock module",
   "CEDEAR ratio and implied CCL mock analytics",
-  "News MVP with provider/RSS/mock fallback",
+  "News MVP with provider/RSS sources and unavailable state",
   "Expanded USA/crypto provider coverage with fallback",
   "CNV issuer registry and structured document placeholders",
   "Data audit page",
@@ -122,7 +122,7 @@ function DeploymentParityPanel({ isSpanish }: { isSpanish: boolean }) {
       </h2>
       <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
         {isSpanish
-          ? "Si faltan variables de entorno en Vercel, produccion puede usar datos fallback, simulados o manuales aunque local use proveedores configurados. Configura las variables y redeploya para igualar comportamiento."
+          ? "Si faltan variables de entorno en Vercel, produccion puede informar N/D aunque local use proveedores configurados. Configura las variables y redeploya para igualar comportamiento."
           : "If Vercel environment variables are missing, production can use fallback, mock or manual data even when local uses configured providers. Configure variables and redeploy to match behavior."}
       </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -174,7 +174,7 @@ export default function StatusPage() {
           </h2>
           <p className="mt-3 text-sm leading-6 text-slate-300">
             {isSpanish
-              ? "Demo publica - datos reales, proveedor, simulados y cobertura futura."
+              ? "Demo publica - proveedores reales, cobertura efectiva y estados no disponibles."
               : "Public demo - real, provider, mock and future coverage."}
           </p>
           <p className="mt-2 text-sm leading-6 text-slate-400">

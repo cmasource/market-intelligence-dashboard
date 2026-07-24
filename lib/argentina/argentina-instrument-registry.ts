@@ -1,4 +1,6 @@
 import type { ArgentinaInstrument } from "./types";
+import { getCedearRatio } from "@/lib/instruments/cedearMappings";
+import { providerCedearSymbols, providerEquitySymbols, providerInstrumentNames } from "./provider-universe";
 
 function equity(symbol: string, name: string): ArgentinaInstrument {
   return {
@@ -9,7 +11,7 @@ function equity(symbol: string, name: string): ArgentinaInstrument {
     market: "BYMA",
     currency: "ARS",
     quoteCurrency: "ARS",
-    sourceStatus: "mock",
+    sourceStatus: "unavailable",
   };
 }
 
@@ -18,11 +20,12 @@ function bond(input: Omit<ArgentinaInstrument, "market" | "currency" | "sourceSt
     ...input,
     market: "BYMA",
     currency: input.currency ?? input.quoteCurrency,
-    sourceStatus: "mock",
+    sourceStatus: "unavailable",
   };
 }
 
-function cedear(symbol: string, name: string, ratio: number): ArgentinaInstrument {
+function cedear(symbol: string, name: string, ratio?: number): ArgentinaInstrument {
+  const mappedRatio = getCedearRatio(symbol) ?? ratio;
   return {
     symbol,
     displaySymbol: `${symbol} CEDEAR`,
@@ -34,13 +37,13 @@ function cedear(symbol: string, name: string, ratio: number): ArgentinaInstrumen
     currency: "ARS",
     quoteCurrency: "ARS",
     underlyingSymbol: symbol,
-    cedearRatio: ratio,
-    sourceStatus: "mock",
+    ...(typeof mappedRatio === "number" ? { cedearRatio: mappedRatio } : {}),
+    sourceStatus: "unavailable",
     context: "BYMA CEDEAR",
   };
 }
 
-export const argentinaInstrumentRegistry: ArgentinaInstrument[] = [
+const curatedArgentinaInstrumentRegistry: ArgentinaInstrument[] = [
   equity("GGAL", "Grupo Financiero Galicia"),
   equity("YPFD", "YPF Sociedad Anonima"),
   equity("PAMP", "Pampa Energia"),
@@ -307,6 +310,22 @@ export const argentinaInstrumentRegistry: ArgentinaInstrument[] = [
   cedear("CVX", "Chevron CEDEAR", 16),
   cedear("VALE", "Vale CEDEAR", 2),
   cedear("PBR", "Petrobras CEDEAR", 2),
+];
+
+const curatedSymbols = new Set(curatedArgentinaInstrumentRegistry.map((instrument) => instrument.symbol));
+
+const providerEquityRegistry: ArgentinaInstrument[] = providerEquitySymbols
+  .filter((symbol) => !curatedSymbols.has(symbol))
+  .map((symbol) => equity(symbol, providerInstrumentNames[symbol] ?? `${symbol} - accion argentina`));
+
+const providerCedearRegistry: ArgentinaInstrument[] = providerCedearSymbols
+  .filter((symbol) => !curatedSymbols.has(symbol))
+  .map((symbol) => cedear(symbol, providerInstrumentNames[symbol] ?? `${symbol} CEDEAR`));
+
+export const argentinaInstrumentRegistry: ArgentinaInstrument[] = [
+  ...curatedArgentinaInstrumentRegistry,
+  ...providerEquityRegistry,
+  ...providerCedearRegistry,
 ];
 
 export function getArgentinaInstrumentFromRegistry(symbol: string) {

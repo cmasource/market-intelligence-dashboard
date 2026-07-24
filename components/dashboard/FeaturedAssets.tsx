@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { AssetLogo } from "@/components/assets/AssetLogo";
 import { WatchlistButton } from "@/components/watchlist/WatchlistButton";
-import { formatAssetPrice, formatCurrencyValue, formatPercent } from "@/lib/formatters";
+import { formatCurrencyValue, formatPercent } from "@/lib/formatters";
 import { isArgentinaInstrument } from "@/lib/argentina";
-import { useArgentinaQuotes, type ArgentinaQuoteState } from "@/lib/hooks/useArgentinaQuotes";
-import { useProviderQuotes, type ProviderQuoteState } from "@/lib/hooks/useProviderQuotes";
+import { useArgentinaQuotes } from "@/lib/hooks/useArgentinaQuotes";
+import { useProviderQuotes } from "@/lib/hooks/useProviderQuotes";
 import { getAssetTypeLabel } from "@/lib/i18n/domain";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { isProviderQuoteSupported } from "@/lib/market-data/provider-symbols";
@@ -19,39 +19,6 @@ import { SectionHeader } from "../ui/SectionHeader";
 type FeaturedAssetsProps = {
   assets: Asset[];
 };
-
-function getQuoteLabel(quote: ProviderQuoteState | undefined, isSpanish: boolean) {
-  if (!quote || quote.isLoading) return isSpanish ? "Actualizando" : "Refreshing";
-  if (quote.provider === "fmp" && !quote.isFallback) return isSpanish ? "Proveedor FMP" : "FMP provider";
-  if (quote.provider === "yahoo" && !quote.isFallback) return isSpanish ? "Yahoo compatible" : "Yahoo-compatible";
-  if (quote.provider === "mock" || quote.isFallback) return isSpanish ? "Simulado" : "Mock";
-  return isSpanish ? "Proveedor" : "Provider";
-}
-
-function getArgentinaQuoteLabel(quote: ArgentinaQuoteState | undefined, isSpanish: boolean) {
-  if (!quote || quote.isLoading) return isSpanish ? "Actualizando" : "Refreshing";
-  if (quote.source === "manual") return isSpanish ? "Carga manual validada" : "Validated manual load";
-  if (quote.source === "mock") return isSpanish ? "Dato estructurado simulado" : "Structured mock data";
-  if (quote.source === "byma_future") return isSpanish ? "Integración BYMA futura" : "Future BYMA integration";
-  return isSpanish ? "No disponible" : "Unavailable";
-}
-
-function getSourceBadgeTone(sourceLabel: string) {
-  const normalized = sourceLabel.toLowerCase();
-  if (normalized.includes("yahoo") || normalized.includes("fmp") || normalized.includes("provider") || normalized.includes("proveedor")) {
-    return "border-cyan-300/20 bg-cyan-300/10 text-cyan-100";
-  }
-  if (normalized.includes("manual") || normalized.includes("validada")) {
-    return "border-emerald-300/20 bg-emerald-300/10 text-emerald-100";
-  }
-  if (normalized.includes("simulado") || normalized.includes("mock")) {
-    return "border-amber-300/20 bg-amber-300/10 text-amber-100";
-  }
-  if (normalized.includes("future") || normalized.includes("futura")) {
-    return "border-violet-300/20 bg-violet-300/10 text-violet-100";
-  }
-  return "border-white/10 bg-white/[0.04] text-slate-300";
-}
 
 export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
   const { t, language } = useLanguage();
@@ -80,24 +47,18 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
           const hasArgentinaQuote = asset.argentinaContext && argentinaQuote && !argentinaQuote.isLoading && typeof argentinaQuote.price === "number";
           const hasProviderSupport = isProviderQuoteSupported(asset.symbol);
           const hasHydratedQuote = !hasArgentinaQuote && hasProviderSupport && quote && !quote.isLoading && typeof quote.price === "number" && Number.isFinite(quote.price);
-          const visiblePrice = hasArgentinaQuote ? argentinaQuote.price : hasHydratedQuote ? quote.price : asset.price;
+           const visiblePrice = hasArgentinaQuote ? argentinaQuote.price : hasHydratedQuote ? quote.price : null;
           const visibleChange =
             hasArgentinaQuote && typeof argentinaQuote.changePercent === "number" && Number.isFinite(argentinaQuote.changePercent)
               ? argentinaQuote.changePercent
               : hasHydratedQuote && typeof quote.changePercent === "number" && Number.isFinite(quote.changePercent)
                 ? quote.changePercent
-                : asset.dailyChange;
+                 : null;
           const visibleCurrency = hasArgentinaQuote ? argentinaQuote.currency : hasHydratedQuote ? quote.currency : asset.quoteCurrency ?? asset.currency;
-          const isPositive = visibleChange >= 0;
+           const isPositive = typeof visibleChange === "number" && visibleChange >= 0;
           const name = language === "es" && asset.nameEs ? asset.nameEs : asset.nameEn ?? asset.name;
           const summary = language === "es" && asset.summaryEs ? asset.summaryEs : asset.summaryEn ?? asset.summary;
           const context = language === "es" ? asset.marketConventionLabelEs ?? asset.settlementContextEs : asset.marketConventionLabelEn ?? asset.settlementContextEn;
-          const sourceLabel = hasArgentinaQuote || asset.argentinaContext
-            ? getArgentinaQuoteLabel(argentinaQuote, isSpanish)
-            : hasProviderSupport
-              ? getQuoteLabel(quote, isSpanish)
-              : isSpanish ? "Simulado" : "Mock";
-
           return (
             <article
               key={asset.symbol}
@@ -116,7 +77,7 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
                   </div>
                 </div>
                 <span className={isPositive ? "text-sm font-semibold text-emerald-300" : "text-sm font-semibold text-rose-300"}>
-                  {formatPercent(visibleChange)}
+                   {typeof visibleChange === "number" ? formatPercent(visibleChange) : "N/D"}
                 </span>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
@@ -128,20 +89,16 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
                 {context ? (
                   <span className="rounded-full border border-violet-300/20 px-2.5 py-1 text-xs text-violet-100">{context}</span>
                 ) : null}
-                <span className={`rounded-full border px-2.5 py-1 text-xs ${getSourceBadgeTone(sourceLabel)}`}>
-                  {sourceLabel}
-                </span>
               </div>
               <div className="mt-5 flex items-end justify-between gap-4">
                 <div>
                   <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{t("priceLabel")}</p>
                   <p className="mt-1 text-xl font-semibold text-white">
-                    {hasHydratedQuote || hasArgentinaQuote
-                      ? formatCurrencyValue(typeof visiblePrice === "number" ? visiblePrice : asset.price, visibleCurrency, language)
-                      : formatAssetPrice(asset.price, asset, language)}
+                     {typeof visiblePrice === "number"
+                       ? formatCurrencyValue(visiblePrice, visibleCurrency, language)
+                       : "N/D"}
                   </p>
                 </div>
-                <ScoreBadge score={asset.technicalScore} />
               </div>
               <p className="mt-4 text-sm leading-6 text-slate-400">{summary}</p>
               <div className="mt-4 flex flex-wrap items-center gap-3 text-sm font-medium">

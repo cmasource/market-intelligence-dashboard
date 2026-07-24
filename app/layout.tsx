@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CMA Market Intelligence",
-  applicationName: "CMA Market Intelligence",
+  title: "CMA Markets",
+  applicationName: "CMA Markets",
   description:
     "Dashboard de inteligencia financiera con análisis técnico, fundamentos, renta fija, cripto, CEDEARs y cobertura de instrumentos argentinos.",
   authors: [{ name: "CMA Consulting" }],
@@ -38,15 +38,15 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "CMA Market Intelligence",
+    title: "CMA Markets",
     description:
       "Dashboard de inteligencia financiera con análisis técnico, fundamentos, renta fija, cripto, CEDEARs y cobertura de instrumentos argentinos.",
-    siteName: "CMA Market Intelligence",
+    siteName: "CMA Markets",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "CMA Market Intelligence",
+    title: "CMA Markets",
     description:
       "Dashboard de inteligencia financiera con análisis técnico, fundamentos, renta fija, cripto, CEDEARs y cobertura de instrumentos argentinos.",
   },

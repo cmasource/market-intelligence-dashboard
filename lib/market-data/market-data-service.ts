@@ -1,5 +1,4 @@
 import { getCryptoMarketData } from "./crypto-provider";
-import { getMockMarketData } from "./mock-provider";
 import { getAssetClassForMarketData, getCryptoSymbol, getYahooSymbol, normalizeSymbol } from "./symbol-map";
 import type { MarketDataRequest, MarketDataResponse } from "./types";
 import { getYahooMarketData } from "./yahoo-provider";
@@ -12,7 +11,16 @@ function fallback(request: MarketDataRequest, providerResponse?: MarketDataRespo
       ? `Fallback after ${providerResponse.provider} returned no candles.`
       : undefined;
 
-  return getMockMarketData(request, context);
+  return {
+    symbol: normalizeSymbol(request.symbol),
+    provider: "unavailable" as const,
+    assetClass: request.assetClass ?? getAssetClassForMarketData(request.symbol),
+    timeframe: request.timeframe,
+    candles: [],
+    isFallback: true,
+    sourceLabel: "No verified OHLCV data",
+    ...(context ? { error: context } : {}),
+  };
 }
 
 export async function getMarketData(request: MarketDataRequest): Promise<MarketDataResponse> {
@@ -44,18 +52,18 @@ export async function getMarketData(request: MarketDataRequest): Promise<MarketD
       return response.candles.length > 0 ? response : fallback(normalizedRequest, response);
     }
 
-    return getMockMarketData(normalizedRequest);
+    return fallback(normalizedRequest);
   } catch (error) {
     return fallback(
       normalizedRequest,
       {
         symbol,
-        provider: "mock",
+        provider: "unavailable",
         assetClass,
         timeframe: request.timeframe,
         candles: [],
         isFallback: true,
-        sourceLabel: "Mock OHLCV data",
+        sourceLabel: "No verified OHLCV data",
         error: error instanceof Error ? error.message : "Unexpected market-data service error.",
       },
     );

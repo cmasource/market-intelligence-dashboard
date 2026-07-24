@@ -20,7 +20,7 @@ function loadingQuote(symbol: string): ProviderQuoteState {
     change: null,
     changePercent: null,
     currency: "USD",
-    provider: "mock",
+    provider: "unavailable",
     sourceLabel: "Loading provider quote",
     isFallback: true,
     fetchedAt: new Date().toISOString(),
@@ -82,15 +82,22 @@ export function useProviderQuotes(symbols: string[]) {
 
     async function loadQuotes() {
       try {
-        const response = await fetch("/api/market-data/quotes", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ symbols: missingSymbols }),
-        });
-
-        if (!response.ok) throw new Error(`Quote batch returned HTTP ${response.status}.`);
-        const data = await response.json() as { quotes?: Record<string, MarketQuoteResponse> };
-        const incomingQuotes = data.quotes ?? {};
+        const batches = Array.from({ length: Math.ceil(missingSymbols.length / 20) }, (_, index) =>
+          missingSymbols.slice(index * 20, index * 20 + 20),
+        );
+        const responses = await Promise.all(batches.map(async (batch) => {
+          const response = await fetch("/api/market-data/quotes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ symbols: batch }),
+          });
+          if (!response.ok) throw new Error(`Quote batch returned HTTP ${response.status}.`);
+          return response.json() as Promise<{ quotes?: Record<string, MarketQuoteResponse> }>;
+        }));
+        const incomingQuotes = Object.assign(
+          {},
+          ...responses.map((data) => data.quotes ?? {}),
+        ) as Record<string, MarketQuoteResponse>;
 
         for (const [symbol, quote] of Object.entries(incomingQuotes)) {
           quoteCache.set(normalizeSymbol(symbol), quote);

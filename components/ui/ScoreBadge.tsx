@@ -23,7 +23,7 @@ export function ScoreBadge({ score, riskLevel, label }: ScoreBadgeProps) {
     };
 
     return (
-      <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${getRiskTone(riskLevel)}`}>
+      <span className={`rounded-md border px-2.5 py-1 text-xs font-medium ${getRiskTone(riskLevel)}`}>
         {label ?? riskLabels[riskLevel]}
       </span>
     );
@@ -43,7 +43,7 @@ export function ScoreBadge({ score, riskLevel, label }: ScoreBadgeProps) {
             : t("scoreDefensive");
 
   return (
-    <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${getScoreTone(score)}`}>
+    <span className={`rounded-md border px-2.5 py-1 text-xs font-medium ${getScoreTone(score)}`}>
       {label ?? scoreLabel} | {formatScore(score)}
     </span>
   );

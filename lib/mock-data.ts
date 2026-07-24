@@ -568,7 +568,7 @@ const bondSpeciesAssets: Asset[] = [
           bondMetrics: al30.bondMetrics ? { ...al30.bondMetrics, currency: "USD", quoteCurrency: "USD", settlementContext: "Dólar MEP", marketDisplayPrice: 58.4, analyticalPrice: 58.4 } : undefined,
           summary:
             "Dollar MEP trading species for the Bonar 2030 underlying bond, using mock structured fixed income data.",
-          summaryEs: "Especie dólar MEP del Bonar 2030, con precio simulado en USD y métricas normalizadas de renta fija.",
+          summaryEs: "Especie dolar MEP del Bonar 2030, con precio de referencia en USD y metricas normalizadas de renta fija.",
         },
         {
           ...al30,
@@ -590,7 +590,7 @@ const bondSpeciesAssets: Asset[] = [
           bondMetrics: al30.bondMetrics ? { ...al30.bondMetrics, currency: "USD", quoteCurrency: "USD", settlementContext: "Dólar cable/CCL", marketDisplayPrice: 57.9, analyticalPrice: 57.9 } : undefined,
           summary:
             "Dollar cable/CCL trading species for the Bonar 2030 underlying bond, using mock structured fixed income data.",
-          summaryEs: "Especie dólar cable/CCL del Bonar 2030, con precio simulado en USD y métricas normalizadas de renta fija.",
+          summaryEs: "Especie dolar cable/CCL del Bonar 2030, con precio de referencia en USD y metricas normalizadas de renta fija.",
         },
       ]
     : []),
@@ -616,7 +616,7 @@ const bondSpeciesAssets: Asset[] = [
           bondMetrics: gd30.bondMetrics ? { ...gd30.bondMetrics, currency: "USD", quoteCurrency: "USD", settlementContext: "Dólar MEP", marketDisplayPrice: 61.7, analyticalPrice: 61.7 } : undefined,
           summary:
             "Dollar MEP trading species for the Global 2030 underlying bond, using mock structured fixed income data.",
-          summaryEs: "Especie dólar MEP del Global 2030, con precio simulado en USD y métricas normalizadas de renta fija.",
+          summaryEs: "Especie dolar MEP del Global 2030, con precio de referencia en USD y metricas normalizadas de renta fija.",
         },
         {
           ...gd30,
@@ -638,7 +638,7 @@ const bondSpeciesAssets: Asset[] = [
           bondMetrics: gd30.bondMetrics ? { ...gd30.bondMetrics, currency: "USD", quoteCurrency: "USD", settlementContext: "Dólar cable/CCL", marketDisplayPrice: 61.2, analyticalPrice: 61.2 } : undefined,
           summary:
             "Dollar cable/CCL trading species for the Global 2030 underlying bond, using mock structured fixed income data.",
-          summaryEs: "Especie dólar cable/CCL del Global 2030, con precio simulado en USD y métricas normalizadas de renta fija.",
+          summaryEs: "Especie dolar cable/CCL del Global 2030, con precio de referencia en USD y metricas normalizadas de renta fija.",
         },
       ]
     : []),

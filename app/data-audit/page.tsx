@@ -3,10 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
-import { CnvDocumentsPanel } from "@/components/cnv/CnvDocumentsPanel";
 import { DataCoverageBadges } from "@/components/data-coverage/DataCoverageBadges";
 import { ProviderStatusPanel } from "@/components/providers/ProviderStatusPanel";
-import { cnvIssuers, getCnvSourceStatus, getLatestCnvDocuments } from "@/lib/cnv";
+import { cnvIssuers } from "@/lib/cnv";
 import { getInstrumentContextCoverage, getCoverageStatusLabel } from "@/lib/data-coverage";
 import { getAnalysisCoverage, getAnalysisCoverageSummary } from "@/lib/analysis/analysis-coverage";
 import { instrumentUniverse } from "@/lib/instrument-universe/universe";
@@ -49,13 +48,14 @@ function formatCategory(category: string) {
 function formatProviderName(provider: string, isSpanish: boolean) {
   if (provider === "fmp") return "FMP";
   if (provider === "yahoo") return isSpanish ? "Yahoo compatible" : "Yahoo-compatible";
-  if (provider === "mock") return isSpanish ? "Simulado" : "Mock";
+  if (provider === "mock" || provider === "unavailable") return isSpanish ? "No disponible" : "Unavailable";
   return provider.replaceAll("_", " ");
 }
 
 function argentinaSourceLabel(source: string, isSpanish: boolean) {
+  if (source === "yahoo") return isSpanish ? "Yahoo Finance (no oficial)" : "Yahoo Finance (unofficial)";
   if (source === "manual") return isSpanish ? "Carga manual validada" : "Validated manual load";
-  if (source === "mock") return isSpanish ? "Dato estructurado simulado" : "Structured mock data";
+  if (source === "mock" || source === "unavailable") return isSpanish ? "No disponible" : "Unavailable";
   if (source === "byma_future") return isSpanish ? "Integración BYMA futura" : "Future BYMA integration";
   if (source === "cnv_future") return isSpanish ? "CNV futura" : "Future CNV";
   if (source === "broker_future") return isSpanish ? "Broker/API futuro" : "Future broker/API";
@@ -65,7 +65,7 @@ function argentinaSourceLabel(source: string, isSpanish: boolean) {
 function formatCoverageNote(note: string, isSpanish: boolean) {
   if (!isSpanish) return note;
   if (note.toLowerCase().includes("provider underlying") || note.toLowerCase().includes("cedear")) {
-    return "Subyacente con proveedor / CEDEAR local simulado. Precio local, ratio y CCL implicito son modelados hasta integrar BYMA/IOL o un proveedor licenciado.";
+    return "El subyacente usa proveedor. Precio local y CCL implicito solo se publican cuando la fuente argentina responde y el ratio esta validado.";
   }
   return note;
 }
@@ -82,8 +82,8 @@ function getTraceSummary(verification: ProviderVerificationResult, isSpanish: bo
 
   if (verification.actualProvider === "yahoo") {
     return isSpanish
-      ? "La app usa Yahoo compatible como proveedor real de respaldo antes de recurrir a datos simulados."
-      : "The app uses Yahoo-compatible data as a real-data fallback before using mock data.";
+      ? "Yahoo compatible entrego la cotizacion efectiva para esta consulta."
+      : "Yahoo-compatible data returned the effective quote for this request.";
   }
 
   if (verification.actualProvider === "fmp") {
@@ -91,7 +91,7 @@ function getTraceSummary(verification: ProviderVerificationResult, isSpanish: bo
   }
 
   if (verification.actualProvider === "mock") {
-    return isSpanish ? "Se utilizó precio simulado de respaldo." : "Mock fallback price was used.";
+    return isSpanish ? "La cotizacion no esta disponible." : "The quote is unavailable.";
   }
 
   return verification.sourceLabel;
@@ -235,8 +235,6 @@ export default function DataAuditPage() {
   const argentinaAuditItems = argentinaAuditSymbols
     .map((symbol) => argentinaInstruments.find((instrument) => instrument.symbol === symbol))
     .filter((instrument): instrument is ArgentinaInstrument => Boolean(instrument));
-  const cnvStatus = getCnvSourceStatus();
-  const latestCnvDocuments = getLatestCnvDocuments(4);
 
   return (
     <AppShell>
@@ -250,13 +248,13 @@ export default function DataAuditPage() {
           </h1>
           <p className="mt-4 max-w-4xl text-sm leading-6 text-slate-300">
             {isSpanish
-              ? "Revisión de cobertura real, proveedor, simulada y futura por instrumento y capa analítica."
-              : "Review of real, provider, mock and future coverage by instrument and analytical layer."}
+              ? "Revision de cobertura efectiva por instrumento, proveedor y capa analitica."
+              : "Review of effective coverage by instrument, provider, and analytical layer."}
           </p>
           <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-400">
             {isSpanish
-              ? "Esta página existe para evitar confusión entre datos reales, datos de proveedor, datos simulados y cobertura futura."
-              : "This page exists to avoid confusion between real data, provider data, mock data and future coverage."}
+              ? "Esta pagina diferencia rutas configuradas, respuestas efectivas y campos no disponibles."
+              : "This page separates configured routes, effective responses, and unavailable fields."}
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link href="/methodology" className="rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-sm font-medium text-cyan-100">
@@ -309,7 +307,7 @@ export default function DataAuditPage() {
               <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
                 {isSpanish ? "Noticias" : "News"}
               </p>
-              <p className="mt-2">{isSpanish ? "RSS/proveedor/mock segun disponibilidad" : "RSS/provider/mock depending on availability"}</p>
+              <p className="mt-2">{isSpanish ? "RSS o proveedor; N/D si no responden" : "RSS or provider; N/A if unavailable"}</p>
             </div>
             <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-sm text-slate-300">
               <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
@@ -403,10 +401,10 @@ export default function DataAuditPage() {
           </h2>
           <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
             {isSpanish
-              ? "Esta sección separa cargas manuales, datos simulados y rutas futuras BYMA/CNV/broker para evitar confusión sobre qué datos locales son reales."
-              : "This section separates manual loads, mock data and future BYMA/CNV/broker paths so local real-data status stays clear."}
+              ? "Esta seccion identifica la fuente efectiva de cada cotizacion argentina y las rutas oficiales pendientes."
+              : "This section identifies the effective source of each Argentine quote and pending official routes."}
           </p>
-          <p className="mt-2 text-xs font-medium text-slate-500">manual/mock/future</p>
+          <p className="mt-2 text-xs font-medium text-slate-500">provider / manual / unavailable</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {argentinaSources.map((source) => (
               <span key={source.source} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-300">
@@ -441,9 +439,9 @@ export default function DataAuditPage() {
                       <td className="px-3 py-3 text-slate-300">{quote?.isRealData ? (isSpanish ? "Sí" : "Yes") : "No"}</td>
                       <td className="px-3 py-3 text-xs text-slate-500">{quote?.lastUpdated ?? "N/D"}</td>
                       <td className="px-3 py-3 text-xs text-slate-400">
-                        {quote?.source === "manual"
-                          ? isSpanish ? "manual/mock/future: manual activo" : "manual/mock/future: manual active"
-                          : isSpanish ? "manual/mock/future: respaldo o futuro" : "manual/mock/future: fallback or future"}
+                        {quote?.isRealData
+                          ? isSpanish ? "Cotizacion disponible" : "Quote available"
+                          : isSpanish ? "No disponible" : "Unavailable"}
                       </td>
                     </tr>
                   );
@@ -458,12 +456,12 @@ export default function DataAuditPage() {
             {isSpanish ? "Cobertura objetivo del universo" : "Target universe coverage"}
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-white">
-            {isSpanish ? "Ruta de reemplazo de datos simulados" : "Path to replace simulated data"}
+            {isSpanish ? "Cobertura local pendiente" : "Pending local coverage"}
           </h2>
           <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
             {isSpanish
-              ? "Acciones USA con relacion CEDEAR usan datos de proveedor o fallback para el subyacente. Los precios locales de CEDEAR, acciones argentinas y bonos quedan etiquetados como carga manual, simulado o futuro hasta integrar BYMA/IOL/PPI o un proveedor licenciado."
-              : "USA stocks with a CEDEAR relationship use provider or fallback data for the underlying. Local CEDEAR prices, Argentine equities and bonds stay labeled as manual, mock or future until BYMA/IOL/PPI or a licensed provider is integrated."}
+              ? "Los subyacentes internacionales usan proveedores globales. Las cotizaciones locales dependen de PPI, data912 u otra fuente argentina configurada; cuando no responden se informa N/D."
+              : "International underlyings use global providers. Local quotes depend on PPI, data912, or another configured Argentine source; when none responds the result is N/A."}
           </p>
         </section>
 
@@ -472,26 +470,16 @@ export default function DataAuditPage() {
             {isSpanish ? "CNV source/status" : "CNV source/status"}
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-white">
-            {isSpanish ? "Auditoria de documentos CNV" : "CNV document audit"}
+            {isSpanish ? "Cobertura documental CNV" : "CNV document coverage"}
           </h2>
           <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
             {isSpanish
-              ? "La capa CNV separa emisoras registradas, documentos estructurados de demostracion e integracion oficial futura. CNV no se usa para precios en vivo."
-              : "The CNV layer separates registered issuers, structured demo documents and future official integration. CNV is not used for live prices."}
+              ? "La app no publica documentos de demostracion. Los hechos relevantes y estados financieros se incorporaran cuando exista una consulta oficial o publica autorizada. CNV no se usa para precios en vivo."
+              : "The app does not publish demo documents. Relevant events and financial statements will be added when an official or authorized public query is available. CNV is not used for live prices."}
           </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {cnvStatus.sources.map((source) => (
-              <span key={source.source} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-300">
-                {source.label} | {source.mode}
-              </span>
-            ))}
-          </div>
           <p className="mt-4 text-sm text-slate-300">
             {isSpanish ? "Emisoras registradas" : "Registered issuers"}: {cnvIssuers.map((issuer) => issuer.symbol).join(", ")}
           </p>
-          <div className="mt-5">
-            <CnvDocumentsPanel documents={latestCnvDocuments} compact />
-          </div>
         </section>
 
         <section className="cma-panel overflow-hidden">

@@ -2,15 +2,24 @@ import { buildFundamentalsInterpretation, calculateFundamentalScore } from "@/li
 import { getFundamentalsAssetClass, normalizeFundamentalsSymbol } from "@/lib/fundamentals-data/symbol-map";
 import type { FundamentalsRequest, FundamentalsResponse, FundamentalsSnapshot } from "@/lib/fundamentals-data/types";
 import { getAssetClassForMarketData, normalizeSymbol } from "@/lib/market-data/symbol-map";
-import type { MarketDataCandle, MarketDataRequest, MarketDataResponse } from "@/lib/market-data/types";
+import type { MarketDataCandle, MarketDataRequest, MarketDataResponse, MarketQuoteResponse } from "@/lib/market-data/types";
 import type { NewsArticle } from "@/lib/news/types";
 import { sanitizeNewsText } from "@/lib/news/sanitize-news";
-import type { ProviderResult } from "./types";
+import type { ProviderDiagnosticReason, ProviderResult, ProviderTraceEntry } from "./types";
 
 const baseUrl = "https://www.alphavantage.co/query";
 
 function key() {
   return process.env.ALPHA_VANTAGE_API_KEY?.trim() ?? "";
+}
+
+function classifyAlphaMessage(message: string): ProviderDiagnosticReason {
+  const normalized = message.toLowerCase();
+  if (normalized.includes("rate limit") || normalized.includes("sparingly") || normalized.includes("requests per day")) {
+    return "rate_limited";
+  }
+  if (normalized.includes("premium") || normalized.includes("subscribe")) return "plan_restricted";
+  return "unknown_error";
 }
 
 async function fetchAlpha<T>(params: Record<string, string>): Promise<ProviderResult<T>> {
@@ -23,8 +32,16 @@ async function fetchAlpha<T>(params: Record<string, string>): Promise<ProviderRe
   try {
     const response = await fetch(url, { next: { revalidate: 300 } });
     if (!response.ok) return { ok: false, provider: "alpha_vantage", error: `Alpha Vantage returned HTTP ${response.status}` };
-    const data = await response.json() as T & { Note?: string; "Error Message"?: string };
-    if (data.Note || data["Error Message"]) return { ok: false, provider: "alpha_vantage", error: data.Note ?? data["Error Message"] ?? "Alpha Vantage limit or error" };
+    const data = await response.json() as T & { Note?: string; "Error Message"?: string; Information?: string };
+    const providerMessage = data.Note ?? data["Error Message"] ?? data.Information;
+    if (providerMessage) {
+      return {
+        ok: false,
+        provider: "alpha_vantage",
+        error: providerMessage,
+        reason: classifyAlphaMessage(providerMessage),
+      };
+    }
     return { ok: true, provider: "alpha_vantage", data };
   } catch (error) {
     return { ok: false, provider: "alpha_vantage", error: error instanceof Error ? error.message : "Alpha Vantage request failed" };
@@ -32,7 +49,17 @@ async function fetchAlpha<T>(params: Record<string, string>): Promise<ProviderRe
 }
 
 type AlphaDaily = { "Time Series (Daily)"?: Record<string, { "1. open"?: string; "2. high"?: string; "3. low"?: string; "4. close"?: string; "5. volume"?: string }> };
-type AlphaQuote = { "Global Quote"?: { "05. price"?: string; "03. high"?: string; "04. low"?: string } };
+type AlphaQuote = {
+  "Global Quote"?: {
+    "01. symbol"?: string;
+    "03. high"?: string;
+    "04. low"?: string;
+    "05. price"?: string;
+    "07. latest trading day"?: string;
+    "09. change"?: string;
+    "10. change percent"?: string;
+  };
+};
 type AlphaOverview = Record<string, string | undefined>;
 type AlphaNews = { feed?: Array<{ title?: string; source?: string; url?: string; time_published?: string; summary?: string; ticker_sentiment?: Array<{ ticker?: string }> }> };
 
@@ -45,6 +72,12 @@ function decimalValue(value: string | undefined) {
   const parsed = numberValue(value);
   if (parsed === undefined) return undefined;
   return Math.abs(parsed) > 1.5 ? parsed / 100 : parsed;
+}
+
+function percentValue(value: string | undefined) {
+  if (!value) return null;
+  const parsed = Number(value.replace("%", "").replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function hasFundamentalMetric(snapshot: FundamentalsSnapshot) {
@@ -68,6 +101,87 @@ function hasFundamentalMetric(snapshot: FundamentalsSnapshot) {
 
 export function getAlphaVantageQuote(symbol: string) {
   return fetchAlpha<AlphaQuote>({ function: "GLOBAL_QUOTE", symbol: normalizeSymbol(symbol) });
+}
+
+function buildAlphaQuoteTrace(success: boolean, reason?: ProviderDiagnosticReason): ProviderTraceEntry {
+  return {
+    provider: "alpha_vantage",
+    attempted: true,
+    success,
+    reason,
+    endpointName: "GLOBAL_QUOTE",
+    sourceLabel: "Alpha Vantage quote",
+  };
+}
+
+export async function getAlphaVantageQuoteSnapshot(symbol: string): Promise<MarketQuoteResponse> {
+  const normalizedSymbol = normalizeSymbol(symbol);
+  const result = await getAlphaVantageQuote(normalizedSymbol);
+  const quote = result.ok ? result.data["Global Quote"] : undefined;
+  const price = numberValue(quote?.["05. price"]) ?? null;
+
+  if (!result.ok) {
+    return {
+      symbol: normalizedSymbol,
+      price: null,
+      change: null,
+      changePercent: null,
+      currency: "USD",
+      provider: "alpha_vantage",
+      sourceLabel: "Alpha Vantage quote",
+      isFallback: false,
+      fetchedAt: new Date().toISOString(),
+      error: result.error,
+      providerTrace: [buildAlphaQuoteTrace(false, result.reason ?? "unknown_error")],
+    };
+  }
+
+  if (!quote || Object.keys(quote).length === 0) {
+    return {
+      symbol: normalizedSymbol,
+      price: null,
+      change: null,
+      changePercent: null,
+      currency: "USD",
+      provider: "alpha_vantage",
+      sourceLabel: "Alpha Vantage quote",
+      isFallback: false,
+      fetchedAt: new Date().toISOString(),
+      error: "Alpha Vantage returned an empty quote response.",
+      providerTrace: [buildAlphaQuoteTrace(false, "empty_response")],
+    };
+  }
+
+  if (price === null || price <= 0) {
+    return {
+      symbol: normalizedSymbol,
+      price: null,
+      change: null,
+      changePercent: null,
+      currency: "USD",
+      provider: "alpha_vantage",
+      sourceLabel: "Alpha Vantage quote",
+      isFallback: false,
+      fetchedAt: new Date().toISOString(),
+      error: "Alpha Vantage returned no usable quote price.",
+      providerTrace: [buildAlphaQuoteTrace(false, "invalid_price")],
+    };
+  }
+
+  const latestTradingDay = quote["07. latest trading day"];
+
+  return {
+    symbol: quote["01. symbol"]?.trim().toUpperCase() || normalizedSymbol,
+    price,
+    change: numberValue(quote["09. change"]) ?? null,
+    changePercent: percentValue(quote["10. change percent"]),
+    currency: "USD",
+    provider: "alpha_vantage",
+    sourceLabel: "Alpha Vantage quote",
+    isFallback: false,
+    fetchedAt: latestTradingDay ? new Date(`${latestTradingDay}T21:00:00.000Z`).toISOString() : new Date().toISOString(),
+    providerTrace: [buildAlphaQuoteTrace(true)],
+  };
 }
 
 export function getAlphaVantageDaily(symbol: string) {

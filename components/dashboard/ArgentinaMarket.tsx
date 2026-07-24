@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { argentinaMarketSymbols, mockAssets } from "@/lib/mock-data";
 import { formatCurrency, formatPercent } from "@/lib/formatters";
+import { useArgentinaQuotes } from "@/lib/hooks/useArgentinaQuotes";
 import { getAssetTypeLabel } from "@/lib/i18n/domain";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { SectionHeader } from "../ui/SectionHeader";
@@ -12,6 +13,7 @@ export function ArgentinaMarket() {
   const localAssets = mockAssets.filter((asset) =>
     ["GGAL", "YPFD", "AL30", "AL30D", "AL30C", "GD30", "GD30D", "GD30C", "TX26"].includes(asset.symbol),
   );
+  const quotes = useArgentinaQuotes(localAssets.map((asset) => asset.symbol));
 
   return (
     <section id="argentina">
@@ -22,7 +24,11 @@ export function ArgentinaMarket() {
       />
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="grid gap-3 sm:grid-cols-2">
-          {localAssets.map((asset) => (
+          {localAssets.map((asset) => {
+            const quote = quotes[asset.symbol];
+            const hasQuote = quote && !quote.isLoading && typeof quote.price === "number";
+            const change = hasQuote && typeof quote.changePercent === "number" ? quote.changePercent : null;
+            return (
             <Link
               key={asset.symbol}
               href={`/asset/${encodeURIComponent(asset.symbol)}`}
@@ -33,13 +39,15 @@ export function ArgentinaMarket() {
                   <p className="font-semibold text-white">{asset.symbol}</p>
                   <p className="mt-1 text-xs text-slate-400">{getAssetTypeLabel(asset.type, t)}</p>
                 </div>
-                <span className={asset.dailyChange >= 0 ? "text-sm text-emerald-300" : "text-sm text-rose-300"}>
-                  {formatPercent(asset.dailyChange)}
+                <span className={typeof change === "number" && change >= 0 ? "text-sm text-emerald-300" : "text-sm text-rose-300"}>
+                  {typeof change === "number" ? formatPercent(change) : "N/D"}
                 </span>
               </div>
-              <p className="mt-4 text-lg font-semibold text-white">{formatCurrency(asset.price, asset.currency, language)}</p>
+              <p className="mt-4 text-lg font-semibold text-white">
+                {hasQuote ? formatCurrency(quote.price as number, quote.currency, language) : "N/D"}
+              </p>
             </Link>
-          ))}
+          );})}
         </div>
         <div className="rounded-lg border border-violet-300/20 bg-violet-500/10 p-5 backdrop-blur">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-violet-200">{t("referenceBoard")}</p>

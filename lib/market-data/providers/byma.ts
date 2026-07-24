@@ -86,17 +86,17 @@ function normalizeBymaQuote(row: Record<string, unknown>, feed: BymaFeed): BymaQ
     low: firstNumber(row, ["trading_session_low_price", "tradingSessionLowPrice", "low"]),
     previousClose,
     close: close ?? trade,
-    vwap: firstNumber(row, ["vwap", "volume_weighted_average_price"]),
+    vwap: firstNumber(row, ["vwap_price", "vwap", "volume_weighted_average_price"]),
     trades: firstNumber(row, ["trades", "number_of_trades"]),
     volume: firstNumber(row, ["trade_volume", "tradeVolume", "volume"]),
     amount: firstNumber(row, ["trade_amount", "tradeAmount", "amount"]),
     imbalance: firstNumber(row, ["imbalance"]),
     bestBid: firstNumber(row, ["best_purchase_price", "bestPurchasePrice", "bid", "best_bid"]),
-    bidSize: firstNumber(row, ["best_purchase_size", "bestPurchaseSize", "bid_size"]),
+    bidSize: firstNumber(row, ["purchase_amount", "best_purchase_size", "bestPurchaseSize", "bid_size"]),
     bestAsk: firstNumber(row, ["best_selling_price", "bestSellingPrice", "ask", "best_ask"]),
-    askSize: firstNumber(row, ["best_selling_size", "bestSellingSize", "ask_size"]),
+    askSize: firstNumber(row, ["selling_amount", "best_selling_size", "bestSellingSize", "ask_size"]),
     broadcastTime: firstString(row, ["broadcast_time", "broadcastTime", "time"]),
-    date: firstString(row, ["date", "trade_date", "tradeDate"]),
+    date: firstString(row, ["Date", "date", "trade_date", "tradeDate"]),
   };
 }
 

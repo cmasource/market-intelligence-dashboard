@@ -2,8 +2,6 @@ import { mockAssets } from "@/lib/mock-data";
 import type { Asset } from "@/types/asset";
 import type { HeatmapFilters, HeatmapItem, HeatmapSegment, HeatmapSourceKind } from "./heatmap-types";
 
-const manualArgentinaSymbols = new Set(["AL30", "GD30", "TX26", "GGAL", "YPFD", "AAPL", "KO"]);
-
 function getSegment(asset: Asset): Exclude<HeatmapSegment, "all"> {
   if (asset.type === "cedear") return "cedears";
   if (asset.type === "argentine_equity") return "argentina";
@@ -14,16 +12,8 @@ function getSegment(asset: Asset): Exclude<HeatmapSegment, "all"> {
 }
 
 function getSourceKind(asset: Asset): HeatmapSourceKind {
-  const symbol = asset.symbol.toUpperCase();
-
-  if (manualArgentinaSymbols.has(symbol) && (asset.argentinaContext || asset.type === "cedear" || asset.type.includes("bond") || asset.type === "letra")) {
-    return "manual";
-  }
-  if (asset.argentinaContext || asset.type === "cedear" || asset.type.includes("bond") || asset.type === "letra") {
-    return "mock";
-  }
-  if (asset.type === "crypto") return "fallback";
-  return "provider";
+  void asset;
+  return "unavailable";
 }
 
 function sourceLabel(sourceKind: HeatmapSourceKind) {
@@ -31,7 +21,7 @@ function sourceLabel(sourceKind: HeatmapSourceKind) {
     provider: "Provider",
     yahoo: "Yahoo compatible",
     manual: "Manual validated",
-    mock: "Structured mock",
+    mock: "Unavailable",
     future: "Future",
     fallback: "Fallback",
     unavailable: "Unavailable",
@@ -40,20 +30,10 @@ function sourceLabel(sourceKind: HeatmapSourceKind) {
   return labels[sourceKind];
 }
 
-function shouldHideStaticPrice(asset: Asset, sourceKind: HeatmapSourceKind) {
-  return sourceKind === "provider" || sourceKind === "fallback" || asset.type === "crypto";
-}
-
 export function getBaseHeatmapItems(): HeatmapItem[] {
   return mockAssets.map((asset) => {
     const segment = getSegment(asset);
     const sourceKind = getSourceKind(asset);
-    const price = shouldHideStaticPrice(asset, sourceKind)
-      ? null
-      : typeof asset.marketDisplayPrice === "number"
-        ? asset.marketDisplayPrice
-        : asset.price;
-
     return {
       symbol: asset.symbol,
       name: asset.name,
@@ -61,13 +41,13 @@ export function getBaseHeatmapItems(): HeatmapItem[] {
       assetType: asset.type,
       typeLabel: asset.typeLabel,
       href: `/asset/${encodeURIComponent(asset.symbol)}`,
-      price,
+      price: null,
       currency: asset.priceDisplayCurrency ?? asset.quoteCurrency ?? asset.currency,
-      changePercent: Number.isFinite(asset.dailyChange) ? asset.dailyChange : null,
+      changePercent: null,
       sourceKind,
       sourceLabel: sourceLabel(sourceKind),
       isRealOrManual: sourceKind === "provider" || sourceKind === "yahoo" || sourceKind === "manual",
-      isSimulated: sourceKind === "mock",
+      isSimulated: false,
     };
   });
 }

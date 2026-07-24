@@ -15,7 +15,7 @@ export const DATA_COVERAGE_BY_SYMBOL: Record<string, InstrumentDataCoverage> = {
     fixedIncome: "not_applicable",
     news: "future",
     aiSummary: "mock",
-    notes: ["USA market data is provider-based; CEDEAR local price and ratio are mock structured values for implied CCL context."],
+    notes: ["USA market data is provider-based; CEDEAR local prices are hydrated from the local market feed when available, with registry ratios used for implied CCL context."],
   },
   SPY: {
     symbol: "SPY",
@@ -69,7 +69,7 @@ for (const symbol of providerEquitySymbols) {
     fixedIncome: "not_applicable",
     news: "future",
     aiSummary: "mock",
-    notes: ["USA market data and fundamentals use provider adapters with fallback-safe behavior. CEDEAR local context, when available, uses mock local price and ratio."],
+    notes: ["USA market data and fundamentals use provider adapters with fallback-safe behavior. CEDEAR local context uses the local market feed when available and registry ratios for CCL context."],
   };
 }
 
@@ -90,14 +90,14 @@ for (const symbol of providerCryptoSymbols) {
 function buildFixedIncomeCoverage(symbol: string): InstrumentDataCoverage {
   return {
     symbol,
-    price: "mock",
-    chart: "mock",
-    technical: "mock",
+    price: "provider",
+    chart: "fallback",
+    technical: "fallback",
     fundamentals: "not_applicable",
-    fixedIncome: "mock",
+    fixedIncome: "fallback",
     news: "future",
     aiSummary: "mock",
-    notes: ["Argentina fixed income values use structured mock data until local market integrations are enabled."],
+    notes: ["Argentina fixed income quotes use the available local market feed when it responds; analytics still need historical and terms validation."],
   };
 }
 
@@ -108,10 +108,10 @@ for (const symbol of fixedIncomeSymbols) {
 for (const symbol of argentinaEquitySymbols) {
   DATA_COVERAGE_BY_SYMBOL[symbol] = {
     symbol,
-    price: "mock",
-    chart: "mock",
-    technical: "mock",
-    fundamentals: "mock",
+    price: "provider",
+    chart: "fallback",
+    technical: "fallback",
+    fundamentals: "fallback",
     fixedIncome: "not_applicable",
     news: "future",
     aiSummary: "mock",

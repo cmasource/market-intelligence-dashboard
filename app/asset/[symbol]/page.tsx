@@ -1,22 +1,23 @@
 import { AssetDisclaimer } from "@/components/asset/AssetDisclaimer";
 import { AssetHeader } from "@/components/asset/AssetHeader";
+import { AssetAnalysisProvider } from "@/components/asset/AssetAnalysisProvider";
+import { AssetQuoteProvider } from "@/components/asset/AssetQuoteProvider";
 import { AssetNotFound } from "@/components/asset/AssetNotFound";
 import { AssetSecondaryDetails } from "@/components/asset/AssetSecondaryDetails";
 import { BondMetricsCard } from "@/components/asset/BondMetricsCard";
 import { FundamentalAnalysisCard } from "@/components/asset/FundamentalAnalysisCard";
+import { InvestmentDecisionPanel } from "@/components/asset/InvestmentDecisionPanel";
 import { NewsPanel } from "@/components/asset/NewsPanel";
 import { RelatedInstrumentsCard } from "@/components/asset/RelatedInstrumentsCard";
 import { TechnicalAnalysisCard } from "@/components/asset/TechnicalAnalysisCard";
-import { MarketSignalGauge } from "@/components/analysis/MarketSignalGauge";
 import { CedearAnalyticsCard } from "@/components/cedears/CedearAnalyticsCard";
 import { InteractiveAssetChart } from "@/components/charts/InteractiveAssetChart";
 import { TradingViewAdvancedChart } from "@/components/charts/TradingViewAdvancedChart";
 import { DataCoveragePanel } from "@/components/data-coverage/DataCoveragePanel";
-import { AssetExecutiveSummary } from "@/components/intelligence/AssetExecutiveSummary";
 import { AssetIntelligenceReport } from "@/components/intelligence/AssetIntelligenceReport";
-import { AssetRiskPanel } from "@/components/intelligence/AssetRiskPanel";
 import { AppShell } from "@/components/layout/AppShell";
-import Link from "next/link";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { getInstrumentBySymbol } from "@/lib/instrument-universe";
 import { isCedearSymbol } from "@/lib/cedears";
 import { findAsset, mockAssets } from "@/lib/mock-data";
@@ -81,12 +82,10 @@ export default async function AssetDetailPage({
                 cobertura completa de precio, analisis tecnico, fundamentos o noticias.
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
-                <Link href="/markets" className="rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-300/15">
+                <Button href="/markets" variant="primary">
                   Back to Markets / Volver a Mercados
-                </Link>
-                <Link href="/screener" className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white">
-                  Open Screener / Abrir Screener
-                </Link>
+                </Button>
+                <Button href="/screener">Open Screener / Abrir Screener</Button>
               </div>
             </section>
           </div>
@@ -102,65 +101,62 @@ export default async function AssetDetailPage({
   }
 
   const tradingViewMapping = getTradingViewSymbol(asset.symbol);
+  const isFixedIncome = ["sovereign_bond", "cer_bond", "corporate_bond", "letra"].includes(asset.type);
 
   return (
     <AppShell width="asset">
+      <AssetQuoteProvider symbol={asset.symbol} isArgentina={Boolean(asset.argentinaContext)}>
+      <AssetAnalysisProvider symbol={asset.symbol} enabled={!isFixedIncome}>
       <div className="space-y-6">
         <AssetHeader asset={asset} />
+        {!isFixedIncome ? <InvestmentDecisionPanel asset={asset} /> : null}
         {tradingViewMapping.verified ? (
           <TradingViewAdvancedChart symbol={asset.symbol} height={620} />
         ) : (
-          <section className="cma-panel-elevated cma-glow-cyan p-4 sm:p-5" data-testid="price-action-section">
+          <section className="cma-panel-elevated p-4 sm:p-5" data-testid="price-action-section">
             <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">Acción del precio</p>
+                <p className="cma-kicker">Acción del precio</p>
                 <h2 className="mt-1 text-xl font-semibold text-white">Acción del precio</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
                   Símbolo TradingView no verificado. Se muestra un gráfico interno de respaldo como referencia secundaria.
                 </p>
               </div>
-              <span className="w-fit rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-xs font-medium text-amber-100">
+              <Badge tone="warning" className="w-fit">
                 {tradingViewMapping.tradingViewSymbol}
-              </span>
+              </Badge>
             </div>
             <details className="rounded-lg border border-white/10 bg-slate-950/45 p-4" data-testid="legacy-chart-fallback">
-              <summary className="cursor-pointer text-sm font-semibold text-cyan-100">Gráfico interno de respaldo</summary>
+              <summary className="cursor-pointer text-sm font-semibold text-[var(--cma-accent-cyan)]">Gráfico interno de respaldo</summary>
               <div className="mt-4">
                 <InteractiveAssetChart symbol={asset.symbol} name={asset.name} currency={asset.currency} />
               </div>
             </details>
           </section>
         )}
-        <AssetExecutiveSummary symbol={asset.symbol} />
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.85fr)] xl:items-start">
           <div className="space-y-6">
-            <TechnicalAnalysisCard asset={asset} />
-            <NewsPanel news={asset.news} symbol={asset.symbol} />
+            {!isFixedIncome ? <TechnicalAnalysisCard asset={asset} /> : <BondMetricsCard />}
+            <NewsPanel symbol={asset.symbol} />
           </div>
           <aside className="space-y-6 xl:sticky xl:top-24">
-            <MarketSignalGauge
-              technicalScore={asset.technicalScore}
-              fundamentalScore={asset.fundamentalScore}
-              assetType={asset.type}
-              riskLevel={asset.riskLevel}
-            />
-            <FundamentalAnalysisCard
+            {!isFixedIncome ? <FundamentalAnalysisCard
               asset={asset}
               symbol={asset.symbol}
               assetType={asset.type}
               fallbackFundamentals={asset.fundamentals}
               fallbackFundamentalScore={asset.fundamentalScore}
               currency={asset.currency}
-            />
+            /> : null}
             {isCedearSymbol(asset.symbol) ? <CedearAnalyticsCard symbol={asset.symbol} /> : null}
-            {asset.bondMetrics ? <BondMetricsCard symbol={asset.symbol} fallbackBondMetrics={asset.bondMetrics} /> : null}
-            <AssetRiskPanel symbol={asset.symbol} />
           </aside>
         </div>
         <AssetSecondaryDetails symbol={asset.symbol} />
         <RelatedInstrumentsCard symbol={asset.symbol} />
         <AssetDisclaimer />
       </div>
+      </AssetAnalysisProvider>
+      </AssetQuoteProvider>
     </AppShell>
   );
 }

@@ -55,7 +55,7 @@ export function BondSpeciesGuide() {
 
       <p className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/10 p-3 text-sm leading-6 text-amber-100">
         {isSpanish
-          ? "Los precios de instrumentos argentinos son simulados hasta contar con integración real de mercado. En bonos, el precio visible puede diferenciarse del precio normalizado usado para métricas analíticas."
+          ? "Los precios argentinos se publican solo cuando una fuente local responde. Las metricas de bonos requieren terminos y cashflows oficiales validados."
           : "Argentine instrument prices are simulated until real market integration is available. For bonds, the visible price may differ from the normalized price used for analytical metrics."}
       </p>
       <p className="mt-3 text-xs text-slate-500">

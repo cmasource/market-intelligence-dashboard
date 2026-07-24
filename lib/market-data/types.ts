@@ -1,7 +1,7 @@
 import type { Timeframe } from "@/types/chart";
 import type { ProviderTraceEntry } from "@/lib/providers/types";
 
-export type MarketDataProviderName = "mock" | "yahoo" | "crypto" | "fmp" | "finnhub" | "alpha_vantage";
+export type MarketDataProviderName = "unavailable" | "mock" | "yahoo" | "crypto" | "fmp" | "finnhub" | "alpha_vantage";
 
 export type MarketDataAssetClass = "stock" | "etf" | "crypto" | "argentina" | "bond" | "unknown";
 

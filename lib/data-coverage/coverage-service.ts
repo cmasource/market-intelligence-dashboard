@@ -17,14 +17,14 @@ export function getInstrumentContextCoverage(symbol: string, context?: { categor
   if (context?.category === "cedear") {
     return {
       symbol: normalized,
-      price: "mock",
+      price: "provider",
       chart: "provider",
       technical: "provider",
       fundamentals: "provider",
       fixedIncome: "not_applicable",
       news: "future",
       aiSummary: "mock",
-      notes: ["Provider underlying with simulated local CEDEAR. Local price, ratio and implied CCL are modeled until BYMA/IOL or licensed-provider integration is enabled."],
+      notes: ["CEDEAR local price uses the best available local market feed; technical and fundamentals can use the US underlying where CEDEAR-specific history is unavailable."],
     };
   }
 
@@ -35,8 +35,8 @@ export function getCoverageStatusLabel(status: DataCoverageStatus, language: Dat
   const labels: Record<DataCoverageStatus, { en: string; es: string }> = {
     real: { en: "Real", es: "Real" },
     provider: { en: "Provider", es: "Proveedor" },
-    fallback: { en: "Mock", es: "Simulado" },
-    mock: { en: "Mock", es: "Simulado" },
+    fallback: { en: "Reference", es: "Referencia" },
+    mock: { en: "Partial coverage", es: "Cobertura parcial" },
     future: { en: "Future", es: "Futuro" },
     not_applicable: { en: "Not applicable", es: "No aplica" },
     unavailable: { en: "Unavailable", es: "No disponible" },
@@ -62,7 +62,7 @@ export function instrumentMatchesCoverageGroup(symbol: string, group?: string, c
 export function getCoverageGroupOptions(language: DataCoverageLanguage) {
   return [
     { value: "real_provider", label: language === "es" ? "Real / proveedor" : "Real / provider" },
-    { value: "mock_fallback", label: language === "es" ? "Simulado / respaldo" : "Mock / fallback" },
+    { value: "mock_fallback", label: language === "es" ? "Cobertura parcial" : "Partial coverage" },
     { value: "future", label: language === "es" ? "Futuro" : "Future" },
     { value: "not_applicable", label: language === "es" ? "No aplica" : "Not applicable" },
   ];

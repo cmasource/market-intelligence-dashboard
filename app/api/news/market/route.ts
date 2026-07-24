@@ -10,6 +10,6 @@ export async function GET() {
       },
     });
   } catch {
-    return Response.json({ articles: [], provider: "mock", isFallback: true, sourceLabel: "Mock news", error: "News request failed." });
+    return Response.json({ articles: [], provider: "unavailable", isFallback: true, sourceLabel: "News unavailable", error: "News request failed." });
   }
 }

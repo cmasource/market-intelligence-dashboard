@@ -3,21 +3,11 @@
 import Link from "next/link";
 import { formatCurrencyValue, formatPercent } from "@/lib/formatters";
 import type { FormatterLanguage } from "@/lib/formatters";
-import type { HeatmapItem, HeatmapSourceKind } from "@/lib/market/heatmap-types";
+import type { HeatmapItem } from "@/lib/market/heatmap-types";
 
 type HeatmapCellProps = {
   item: HeatmapItem;
   language: FormatterLanguage;
-};
-
-const sourceLabels: Record<HeatmapSourceKind, { en: string; es: string }> = {
-  provider: { en: "Provider", es: "Proveedor" },
-  yahoo: { en: "Yahoo compatible", es: "Yahoo compatible" },
-  manual: { en: "Manual validated", es: "Manual validado" },
-  mock: { en: "Simulated", es: "Simulado" },
-  future: { en: "Future", es: "Futuro" },
-  fallback: { en: "Fallback", es: "Respaldo" },
-  unavailable: { en: "N/A", es: "No aplica" },
 };
 
 function getCellTone(changePercent: number | null, isSimulated: boolean) {
@@ -47,16 +37,7 @@ function getTypeLabel(item: HeatmapItem, language: FormatterLanguage) {
   return labels[item.assetType]?.[language] ?? item.typeLabel;
 }
 
-function getSourceTone(sourceKind: HeatmapSourceKind) {
-  if (sourceKind === "provider" || sourceKind === "yahoo") return "border-cyan-200/25 bg-cyan-300/12 text-cyan-50";
-  if (sourceKind === "manual") return "border-emerald-200/25 bg-emerald-300/12 text-emerald-50";
-  if (sourceKind === "mock" || sourceKind === "fallback") return "border-amber-200/25 bg-amber-300/10 text-amber-50";
-  if (sourceKind === "future") return "border-violet-200/25 bg-violet-300/10 text-violet-50";
-  return "border-white/15 bg-white/[0.06] text-slate-300";
-}
-
 export function HeatmapCell({ item, language }: HeatmapCellProps) {
-  const source = sourceLabels[item.sourceKind]?.[language] ?? item.sourceLabel;
   const changeLabel = item.changePercent === null ? "N/D" : formatPercent(item.changePercent);
   const priceLabel = typeof item.price === "number" ? formatCurrencyValue(item.price, item.currency, language) : "N/D";
 
@@ -64,7 +45,7 @@ export function HeatmapCell({ item, language }: HeatmapCellProps) {
     <Link
       href={item.href}
       data-testid={`heatmap-cell-${item.symbol}`}
-      aria-label={`${item.symbol} ${item.name} ${source}`}
+      aria-label={`${item.symbol} ${item.name}`}
       className={`group min-h-28 rounded-xl border p-3 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(15,23,42,0.24)] ${getCellTone(
         item.changePercent,
         item.isSimulated,
@@ -76,9 +57,8 @@ export function HeatmapCell({ item, language }: HeatmapCellProps) {
       </div>
       <p className="mt-2 line-clamp-1 text-xs opacity-80">{item.name}</p>
       <p className="mt-3 text-xs font-semibold opacity-95">{priceLabel}</p>
-      <div className="mt-3 flex flex-wrap gap-1.5 text-[10px] uppercase tracking-[0.14em]">
+      <div className="mt-3 flex flex-wrap gap-1.5 text-[10px] uppercase">
         <span className="rounded-full border border-white/15 bg-white/[0.06] px-2 py-0.5 opacity-80">{getTypeLabel(item, language)}</span>
-        <span className={`rounded-full border px-2 py-0.5 ${getSourceTone(item.sourceKind)}`}>{source}</span>
       </div>
     </Link>
   );

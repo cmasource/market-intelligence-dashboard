@@ -1,4 +1,4 @@
-import { getMockFundamentals } from "./mock-provider";
+import argentinaManualFundamentals from "@/data/fundamentals-arg.manual.json";
 import { getYahooFundamentals } from "./yahoo-fundamentals-provider";
 import {
   getFundamentalsAssetClass,
@@ -9,6 +9,17 @@ import { getFundamentalProviderSymbol } from "@/lib/instruments";
 import type { FundamentalsProviderName, FundamentalsProviderTraceEntry, FundamentalsRequest, FundamentalsResponse, FundamentalsSnapshot } from "./types";
 import { buildFundamentalsInterpretation, calculateFundamentalScore } from "./fundamentals-score";
 import { getAlphaVantageFundamentals, getFinnhubFundamentals, getFmpFundamentals } from "@/lib/providers";
+
+type ManualArgentinaFundamentals = {
+  asOf: string | null;
+  pe: number | null;
+  forwardPe: number | null;
+  revenueGrowthYoy: number | null;
+  epsGrowthYoy: number | null;
+  roe: number | null;
+};
+
+const manualArgentinaFundamentals = argentinaManualFundamentals as Record<string, ManualArgentinaFundamentals>;
 
 function unavailableResponse(
   symbol: string,
@@ -142,6 +153,50 @@ function combinedSourceLabel(responses: FundamentalsResponse[]) {
   return labels.length > 1 ? "Provider fundamentals (partial coverage)" : labels[0] ?? "Provider fundamentals";
 }
 
+function percentToRatio(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) ? value / 100 : undefined;
+}
+
+function getManualArgentinaFundamentals(symbol: string, assetClass: ReturnType<typeof getFundamentalsAssetClass>): FundamentalsResponse | null {
+  const normalizedSymbol = normalizeFundamentalsSymbol(symbol);
+  const manual = manualArgentinaFundamentals[normalizedSymbol];
+  if (!manual) return null;
+
+  const snapshot: FundamentalsSnapshot = {
+    trailingPE: manual.pe ?? undefined,
+    forwardPE: manual.forwardPe ?? undefined,
+    revenueGrowth: percentToRatio(manual.revenueGrowthYoy),
+    earningsGrowth: percentToRatio(manual.epsGrowthYoy),
+    roe: percentToRatio(manual.roe),
+    fiscalYear: manual.asOf ?? undefined,
+    period: manual.asOf ?? undefined,
+    currency: "ARS",
+  };
+
+  if (!hasProviderData({ snapshot } as FundamentalsResponse)) return null;
+
+  const fundamentalScore = calculateFundamentalScore(snapshot);
+  const missing = missingFields(snapshot);
+
+  return {
+    symbol: normalizedSymbol,
+    provider: "manual",
+    assetClass,
+    sourceLabel: "Manual Argentina fundamentals",
+    isFallback: false,
+    fetchedAt: new Date().toISOString(),
+    snapshot,
+    fundamentalScore,
+    interpretation: buildFundamentalsInterpretation(snapshot, fundamentalScore),
+    missingFields: missing,
+    coverageRatio: coverageRatio(snapshot),
+    warnings: [
+      "Manual Argentina fundamentals are an audited dataset, not a live provider feed.",
+      ...(missing.length ? ["Some indicators are not available in the manual dataset."] : []),
+    ],
+  };
+}
+
 export async function getFundamentals(request: FundamentalsRequest): Promise<FundamentalsResponse> {
   const requestedSymbol = normalizeFundamentalsSymbol(request.symbol);
   const providerMapping = getFundamentalProviderSymbol(requestedSymbol);
@@ -183,6 +238,7 @@ export async function getFundamentals(request: FundamentalsRequest): Promise<Fun
       const providerResponse = await getYahooFundamentals(normalizedRequest);
       providerResponses.push(providerResponse);
       const usableResponses = providerResponses.filter(hasProviderData);
+      const manualResponse = getManualArgentinaFundamentals(requestedSymbol, requestedAssetClass);
 
       if (usableResponses.length > 0) {
         const snapshot = mergeSnapshots(usableResponses);
@@ -210,17 +266,22 @@ export async function getFundamentals(request: FundamentalsRequest): Promise<Fun
         };
       }
 
-      const fallback = getMockFundamentals(
-          normalizedRequest,
-          providerResponse.error ?? "Provider fundamentals were insufficient; using fallback mock fundamentals.",
-        );
-      return {
-        ...fallback,
-        missingFields: missingFields(fallback.snapshot),
-        coverageRatio: coverageRatio(fallback.snapshot),
-        providerTrace: providerResponses.map(trace),
-      };
+      if (manualResponse) {
+        return {
+          ...manualResponse,
+          providerTrace: providerResponses.map(trace),
+        };
+      }
+
+      return unavailableResponse(
+        requestedSymbol,
+        providerResponse.error ?? "Fundamentals are unavailable from the current provider coverage.",
+        requestedAssetClass,
+      );
     }
+
+    const manualResponse = getManualArgentinaFundamentals(requestedSymbol, requestedAssetClass);
+    if (manualResponse) return manualResponse;
 
     return unavailableResponse(
       requestedSymbol,
@@ -230,10 +291,10 @@ export async function getFundamentals(request: FundamentalsRequest): Promise<Fun
       requestedAssetClass,
     );
   } catch (error) {
-    const fallback = getMockFundamentals(
-      normalizedRequest,
+    return unavailableResponse(
+      requestedSymbol,
       error instanceof Error ? error.message : "Unexpected fundamentals service error.",
+      request.assetClass ?? getFundamentalsAssetClass(requestedSymbol),
     );
-    return { ...fallback, missingFields: missingFields(fallback.snapshot), coverageRatio: coverageRatio(fallback.snapshot) };
   }
 }

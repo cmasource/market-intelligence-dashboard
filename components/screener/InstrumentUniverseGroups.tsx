@@ -16,7 +16,7 @@ function formatEnum(value: string) {
 function statusLabel(value: string, isSpanish: boolean) {
   const labels: Record<string, { en: string; es: string }> = {
     real_supported: { en: "Real data", es: "Datos reales" },
-    mock_supported: { en: "Mock data", es: "Datos simulados" },
+    mock_supported: { en: "Provider route pending", es: "Ruta de proveedor pendiente" },
     future_supported: { en: "Future data", es: "Datos futuros" },
   };
 

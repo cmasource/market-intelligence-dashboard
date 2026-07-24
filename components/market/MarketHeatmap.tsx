@@ -30,6 +30,7 @@ function sourceKindFromProvider(provider: string, isFallback: boolean): HeatmapS
 }
 
 function sourceKindFromArgentina(source: string): HeatmapSourceKind {
+  if (source === "data912" || source === "ppi") return "provider";
   if (source === "manual") return "manual";
   if (source === "mock") return "mock";
   if (source.includes("future")) return "future";
@@ -43,9 +44,9 @@ function mergeHydratedQuotes(items: HeatmapItem[], providerQuotes: ReturnType<ty
       const sourceKind = sourceKindFromArgentina(argentinaQuote.source);
       return {
         ...item,
-        price: argentinaQuote.price ?? item.price,
+        price: argentinaQuote.price ?? null,
         currency: argentinaQuote.currency ?? item.currency,
-        changePercent: typeof argentinaQuote.changePercent === "number" ? argentinaQuote.changePercent : item.changePercent,
+        changePercent: typeof argentinaQuote.changePercent === "number" ? argentinaQuote.changePercent : null,
         sourceKind,
         sourceLabel: argentinaQuote.sourceLabel,
         isRealOrManual: argentinaQuote.isRealData || sourceKind === "manual",
@@ -58,9 +59,9 @@ function mergeHydratedQuotes(items: HeatmapItem[], providerQuotes: ReturnType<ty
       const sourceKind = sourceKindFromProvider(providerQuote.provider, providerQuote.isFallback);
       return {
         ...item,
-        price: providerQuote.price ?? item.price,
+        price: providerQuote.price ?? null,
         currency: providerQuote.currency ?? item.currency,
-        changePercent: typeof providerQuote.changePercent === "number" ? providerQuote.changePercent : item.changePercent,
+        changePercent: typeof providerQuote.changePercent === "number" ? providerQuote.changePercent : null,
         sourceKind,
         sourceLabel: providerQuote.sourceLabel,
         isRealOrManual: sourceKind === "provider" || sourceKind === "yahoo",
@@ -68,7 +69,15 @@ function mergeHydratedQuotes(items: HeatmapItem[], providerQuotes: ReturnType<ty
       };
     }
 
-    return item;
+    return {
+      ...item,
+      price: null,
+      changePercent: null,
+      sourceKind: "unavailable" as const,
+      sourceLabel: "No verified quote",
+      isRealOrManual: false,
+      isSimulated: false,
+    };
   });
 }
 
@@ -109,7 +118,7 @@ export function MarketHeatmap({ compact = false, defaultSegment = "all" }: Marke
 
   return (
     <section id="market-heatmap" className="cma-panel cma-glow-violet p-5 sm:p-6" data-testid="market-heatmap">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+      <div>
         <div>
           <p className="cma-kicker">{isSpanish ? "Mapa de calor" : "Heatmap"}</p>
           <h2 className="mt-2 text-2xl font-semibold text-white">
@@ -120,16 +129,6 @@ export function MarketHeatmap({ compact = false, defaultSegment = "all" }: Marke
               ? "Vista rapida del comportamiento relativo por instrumento y segmento."
               : "Fast view of relative performance by instrument and segment."}
           </p>
-        </div>
-        <div className="flex flex-wrap gap-2 text-xs">
-          {(isSpanish
-            ? ["Proveedor", "Manual validado", "Simulado", "Futuro"]
-            : ["Provider", "Manual validated", "Simulated", "Future"]
-          ).map((label) => (
-            <span key={label} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-slate-300">
-              {label}
-            </span>
-          ))}
         </div>
       </div>
 

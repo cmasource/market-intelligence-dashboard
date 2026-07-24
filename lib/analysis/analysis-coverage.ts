@@ -1,4 +1,3 @@
-import { getMockFixedIncomeInstrument } from "@/lib/fixed-income";
 import { getInstrumentBySymbol } from "@/lib/instrument-universe";
 import { instrumentUniverse } from "@/lib/instrument-universe/universe";
 import type { InstrumentUniverseItem } from "@/lib/instrument-universe/types";
@@ -37,21 +36,20 @@ function resolveInstrument(symbol: string): InstrumentUniverseItem | undefined {
 
 function technicalCoverage(symbol: string, instrument?: InstrumentUniverseItem): AnalysisCoverageLayer {
   const providerMapping = getMarketDataProviderSymbol(symbol);
-  const asset = findAsset(symbol);
+
+  if (instrument?.category && bondCategories.has(instrument.category)) {
+    return {
+      status: "unavailable",
+      source: "quote_only",
+      reason: "Los bonos tienen cobertura de cotizacion; no se publica score tecnico sin una serie OHLCV validada.",
+    };
+  }
 
   if (providerMapping.verified) {
     return {
       status: "provider",
       source: providerMapping.provider,
       reason: "Análisis técnico disponible con datos de proveedor o proveedor compatible.",
-    };
-  }
-
-  if (instrument?.dataCoverage.technical || asset?.technical) {
-    return {
-      status: instrument?.sourceStatus === "mock_supported" ? "mock" : "fallback",
-      source: instrument?.sourceStatus ?? "fallback",
-      reason: "Análisis técnico disponible con datos estructurados de respaldo.",
     };
   }
 
@@ -111,7 +109,7 @@ function fundamentalsCoverage(symbol: string, instrument?: InstrumentUniverseIte
   };
 }
 
-function fixedIncomeCoverage(symbol: string, instrument?: InstrumentUniverseItem): AnalysisCoverageLayer {
+function fixedIncomeCoverage(_symbol: string, instrument?: InstrumentUniverseItem): AnalysisCoverageLayer {
   const category = instrument?.category;
 
   if (!category || !bondCategories.has(category)) {
@@ -122,19 +120,10 @@ function fixedIncomeCoverage(symbol: string, instrument?: InstrumentUniverseItem
     };
   }
 
-  const fixedIncomeInstrument = getMockFixedIncomeInstrument(symbol);
-  if (fixedIncomeInstrument) {
-    return {
-      status: fixedIncomeInstrument.isMock ? "mock" : "manual",
-      source: fixedIncomeInstrument.sourceLabel,
-      reason: "Analítica de renta fija disponible con datos estructurados.",
-    };
-  }
-
   return {
     status: "unavailable",
-    source: "unavailable",
-    reason: "No hay métricas estructuradas de renta fija para este símbolo.",
+    source: "official_terms_required",
+    reason: "La cotizacion puede estar disponible, pero TIR, paridad y duration requieren terminos y cashflows oficiales validados.",
   };
 }
 
@@ -174,9 +163,9 @@ export function getAnalysisCoverageUniverse(type?: string) {
 export function getAnalysisCoverageSummary(items = getAnalysisCoverageUniverse()) {
   return {
     universeSize: items.length,
-    technicalCount: items.filter((item) => item.technical.status !== "unavailable").length,
+    technicalCount: items.filter((item) => item.technical.status === "provider" || item.technical.status === "manual").length,
     fundamentalCount: items.filter((item) => item.fundamentals.status === "provider" || item.fundamentals.status === "fallback" || item.fundamentals.status === "manual").length,
-    fixedIncomeCount: items.filter((item) => item.fixedIncome.status === "provider" || item.fixedIncome.status === "fallback" || item.fixedIncome.status === "mock" || item.fixedIncome.status === "manual").length,
+    fixedIncomeCount: items.filter((item) => item.fixedIncome.status === "provider" || item.fixedIncome.status === "manual").length,
     chartCount: items.filter((item) => item.chart.verified).length,
   };
 }

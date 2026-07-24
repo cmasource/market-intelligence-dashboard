@@ -12,19 +12,30 @@ export type ArgentinaInstrumentType =
 
 export type ArgentinaQuoteSource =
   | "manual"
+  | "ppi"
+  | "data912"
+  | "yahoo"
   | "byma_future"
   | "cnv_future"
   | "broker_future"
   | "mock"
   | "unavailable";
 
-export type ArgentinaSourceMode = "manual" | "future" | "mock";
+export type ArgentinaSourceMode = "live" | "manual" | "future" | "mock";
 
 export type ArgentinaSourceStatus = {
   source: ArgentinaQuoteSource;
   enabled: boolean;
   mode: ArgentinaSourceMode;
   notes: string;
+  providerEnvironment?: string;
+  baseUrl?: string;
+  missingVariables?: string[];
+  lastError?: {
+    stage: string;
+    status?: number;
+    message: string;
+  } | null;
 };
 
 export type ArgentinaInstrument = {

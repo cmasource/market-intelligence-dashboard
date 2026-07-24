@@ -4,7 +4,7 @@ import {
   calculateRSI,
   calculateSMA,
 } from "@/lib/finance/technical";
-import { getMarketData, getMockMarketData } from "@/lib/market-data";
+import { getMarketData } from "@/lib/market-data";
 import type { MarketDataResponse } from "@/lib/market-data/types";
 import type { Timeframe } from "@/types/chart";
 import { calculateRecentResistance, calculateRecentSupport, calculateVolumeTrend } from "./support-resistance";
@@ -96,13 +96,45 @@ function analyzeMarketData(
   };
 }
 
-export function getFallbackTechnicalAnalysis(symbol: string, timeframe: Timeframe, warnings: string[] = [], language: "en" | "es" = "en") {
-  const fallbackMarketData = getMockMarketData(
-    { symbol, timeframe },
-    warnings.length ? `Technical analysis fallback: ${warnings.join(" | ")}` : "Technical analysis fallback.",
-  );
+export function getFallbackTechnicalAnalysis(symbol: string, timeframe: Timeframe, warnings: string[] = [], language: "en" | "es" = "en"): TechnicalAnalysisResponse {
+  const snapshot: TechnicalIndicatorSnapshot = {
+    lastClose: null,
+    sma20: null,
+    sma50: null,
+    sma200: null,
+    ema12: null,
+    ema26: null,
+    rsi14: null,
+    macd: null,
+    macdSignal: null,
+    macdHistogram: null,
+    support: null,
+    resistance: null,
+    volumeTrend: "unavailable",
+    trendLabel: "Trend unavailable",
+    momentumLabel: "Momentum unavailable",
+  };
 
-  return analyzeMarketData(fallbackMarketData, timeframe, warnings, language);
+  return {
+    symbol,
+    timeframe,
+    provider: "unavailable",
+    sourceLabel: "No verified market history",
+    isFallback: true,
+    candlesCount: 0,
+    snapshot,
+    technicalScore: 0,
+    interpretation: buildTechnicalInterpretation(snapshot, 0, language),
+    warnings,
+    analysisWarnings: warnings,
+    providerTrace: [{
+      provider: "unavailable",
+      attempted: true,
+      success: false,
+      endpointName: "technical-analysis",
+      sourceLabel: "No verified market history",
+    }],
+  };
 }
 
 export async function getTechnicalAnalysis(symbol: string, timeframe: Timeframe, language: "en" | "es" = "en"): Promise<TechnicalAnalysisResponse> {

@@ -49,11 +49,11 @@ function buildGroup(
     sovereign_bonds: {
       en: {
         title: "Sovereign bonds and species",
-        description: "Peso, dollar MEP, cable/CCL and CER-linked mock fixed income instruments.",
+        description: "Peso, dollar MEP, cable/CCL and CER-linked instruments with local quotes when a configured source responds.",
       },
       es: {
         title: "Bonos soberanos y especies",
-        description: "Instrumentos simulados en pesos, dolar MEP, cable/CCL y CER.",
+        description: "Instrumentos argentinos en pesos, dolar MEP, cable/CCL y CER, con precios locales cuando la fuente responde.",
       },
     },
     etfs: {
@@ -69,11 +69,11 @@ function buildGroup(
     usa_stocks: {
       en: {
         title: "USA stocks",
-        description: "Selected USA equities for real-supported and future provider coverage.",
+        description: "Selected USA equities with available price and analysis coverage.",
       },
       es: {
         title: "Acciones USA",
-        description: "Acciones de Estados Unidos para cobertura real y futura de proveedores.",
+        description: "Acciones de Estados Unidos con cobertura disponible de precio y analisis.",
       },
     },
     crypto: {

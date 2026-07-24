@@ -2,35 +2,17 @@
 
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { DataCoverageBadges } from "@/components/data-coverage/DataCoverageBadges";
-import { formatAssetPrice, formatCurrencyValue, formatDisplayCurrency, formatPercent } from "@/lib/formatters";
-import { useArgentinaQuotes, type ArgentinaQuoteState } from "@/lib/hooks/useArgentinaQuotes";
-import { useProviderQuotes, type ProviderQuoteState } from "@/lib/hooks/useProviderQuotes";
+import { formatCurrencyValue, formatDisplayCurrency, formatPercent } from "@/lib/formatters";
+import { useArgentinaQuotes } from "@/lib/hooks/useArgentinaQuotes";
+import { useProviderQuotes } from "@/lib/hooks/useProviderQuotes";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { searchInstrumentUniverse, type InstrumentUniverseItem } from "@/lib/instrument-universe";
 import { isProviderQuoteSupported } from "@/lib/market-data/provider-symbols";
 import type { Asset } from "@/types/asset";
-import { ScoreBadge } from "../ui/ScoreBadge";
 
 type AssetSearchProps = {
   assets: Asset[];
 };
-
-function getQuoteLabel(quote: ProviderQuoteState | undefined, isSpanish: boolean) {
-  if (!quote || quote.isLoading) return isSpanish ? "Actualizando" : "Refreshing";
-  if (quote.provider === "fmp" && !quote.isFallback) return isSpanish ? "Proveedor FMP" : "FMP provider";
-  if (quote.provider === "yahoo" && !quote.isFallback) return isSpanish ? "Yahoo compatible" : "Yahoo-compatible";
-  if (quote.provider === "mock" || quote.isFallback) return isSpanish ? "Simulado" : "Mock";
-  return isSpanish ? "Proveedor" : "Provider";
-}
-
-function getArgentinaQuoteLabel(quote: ArgentinaQuoteState | undefined, isSpanish: boolean) {
-  if (!quote || quote.isLoading) return isSpanish ? "Actualizando" : "Refreshing";
-  if (quote.source === "manual") return isSpanish ? "Carga manual validada" : "Validated manual load";
-  if (quote.source === "mock") return isSpanish ? "Dato estructurado simulado" : "Structured mock data";
-  if (quote.source === "byma_future") return isSpanish ? "Integración BYMA futura" : "Future BYMA integration";
-  return isSpanish ? "No disponible" : "Unavailable";
-}
 
 export function AssetSearch({ assets }: AssetSearchProps) {
   const [query, setQuery] = useState("");
@@ -124,7 +106,7 @@ export function AssetSearch({ assets }: AssetSearchProps) {
       <label htmlFor="asset-search" className="text-sm font-medium text-slate-200">
         {t("assetSearchLabel")}
       </label>
-      <div className="mt-3 rounded-2xl border border-white/10 bg-slate-950/70 p-2 shadow-inner shadow-black/20 focus-within:border-cyan-300/60">
+      <div className="mt-3 rounded-md border border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] p-2 focus-within:border-[var(--cma-border-strong)]">
         <input
           id="asset-search"
           type="search"
@@ -148,7 +130,7 @@ export function AssetSearch({ assets }: AssetSearchProps) {
                 key={symbol}
                 href={`/asset/${encodeURIComponent(symbol)}`}
                 onClick={() => saveRecentSymbol(symbol)}
-                className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-slate-300 transition hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white"
+                className="rounded-md border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-slate-300 transition hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white"
               >
                 {symbol}
               </Link>
@@ -171,57 +153,39 @@ export function AssetSearch({ assets }: AssetSearchProps) {
                 ? argentinaQuote.changePercent
                 : hasHydratedQuote && typeof quote.changePercent === "number" && Number.isFinite(quote.changePercent)
                 ? quote.changePercent
-                : asset?.dailyChange ?? 0;
-            const visiblePrice = hasArgentinaQuote ? argentinaQuote.price : hasHydratedQuote ? quote.price : asset?.price;
+                 : null;
+            const visiblePrice = hasArgentinaQuote ? argentinaQuote.price : hasHydratedQuote ? quote.price : null;
             const visibleCurrency = hasArgentinaQuote ? argentinaQuote.currency : hasHydratedQuote ? quote.currency : asset?.quoteCurrency ?? asset?.currency;
-            const positive = visibleChange >= 0;
+            const positive = typeof visibleChange === "number" && visibleChange >= 0;
             const hasAssetPage = supportedAssetSymbols.has(instrument.symbol);
             const context = settlementLabel(instrument, asset);
-            const quoteLabel = instrument.country === "AR"
-              ? getArgentinaQuoteLabel(argentinaQuote, isSpanish)
-              : hasProviderSupport
-                ? getQuoteLabel(quote, isSpanish)
-                : isSpanish ? "Simulado" : "Mock";
-
             const content = (
               <>
                 <span className="min-w-0">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold text-white">{instrument.symbol}</span>
                     <span className="text-sm text-slate-400">{displayName(instrument)}</span>
-                    {asset ? <ScoreBadge score={asset.technicalScore} /> : null}
                   </span>
                   <span className="mt-1 block text-xs text-slate-500">
                     {contextLabel(instrument)} | {instrument.market} | {formatDisplayCurrency(instrument.currency, language)}
                   </span>
                   {context ? <span className="mt-1 block text-xs font-medium text-violet-200">{context}</span> : null}
-                  <DataCoverageBadges
-                    symbol={instrument.symbol}
-                    category={instrument.category}
-                    country={instrument.country}
-                    compact
-                    layers={["price", "technical", "fundamentals"]}
-                    className="mt-2"
-                  />
                 </span>
                 <span className="flex flex-col items-start gap-2 text-left sm:items-end sm:text-right">
                   {asset ? (
                     <>
                       <span className="block font-semibold text-white">
-                        {hasHydratedQuote && typeof visiblePrice === "number" && visibleCurrency
+                        {typeof visiblePrice === "number" && visibleCurrency
                           ? formatCurrencyValue(visiblePrice, visibleCurrency, language)
-                          : formatAssetPrice(asset.price, asset, language)}
+                          : "N/D"}
                       </span>
                       <span className={positive ? "text-sm text-emerald-300" : "text-sm text-rose-300"}>
-                        {formatPercent(visibleChange)}
-                      </span>
-                      <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-xs text-cyan-100">
-                        {quoteLabel}
+                        {typeof visibleChange === "number" ? formatPercent(visibleChange) : "N/D"}
                       </span>
                     </>
                   ) : (
-                    <span className="rounded-full border border-violet-300/20 bg-violet-300/10 px-3 py-1 text-xs text-violet-100">
-                      {isSpanish ? "Cobertura futura" : "Future coverage"}
+                    <span className="rounded-md border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs text-amber-100">
+                      {isSpanish ? "Ficha preliminar" : "Preliminary profile"}
                     </span>
                   )}
                   <span className="inline-flex rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-3 py-1.5 text-xs font-medium text-cyan-100">

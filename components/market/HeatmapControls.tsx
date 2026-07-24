@@ -23,7 +23,6 @@ const sortOptions: Array<{ value: HeatmapSort; en: string; es: string }> = [
   { value: "change", en: "Variation", es: "Variacion" },
   { value: "absoluteChange", en: "Biggest move", es: "Mayor movimiento" },
   { value: "symbol", en: "Symbol", es: "Simbolo" },
-  { value: "source", en: "Source", es: "Fuente" },
 ];
 
 export function HeatmapControls({ filters, language, onChange }: HeatmapControlsProps) {
@@ -69,9 +68,9 @@ export function HeatmapControls({ filters, language, onChange }: HeatmapControls
           className="h-4 w-4 accent-cyan-300"
         />
         <span>
-          <span className="block font-semibold">{isSpanish ? "Incluir simulados" : "Include simulated"}</span>
+          <span className="block font-semibold">{isSpanish ? "Mostrar sin cotizacion" : "Show unavailable quotes"}</span>
           <span className="block text-xs text-slate-400">
-            {isSpanish ? "Solo datos reales/manuales si esta desactivado." : "Only provider/manual data when off."}
+            {isSpanish ? "Incluye instrumentos cuyo precio figura como N/D." : "Includes instruments whose price is shown as N/A."}
           </span>
         </span>
       </label>

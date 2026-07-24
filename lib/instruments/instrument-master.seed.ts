@@ -1,4 +1,5 @@
 import { adrToLocalSymbol, localToAdrSymbol } from "./argentinaMappings";
+import { providerCedearSymbols, providerEquitySymbols, providerInstrumentNames } from "@/lib/argentina/provider-universe";
 import { cedearUnderlyingSymbols, cedearWarning } from "./cedearMappings";
 import { fixedIncomeGroups } from "./fixedIncomeMappings";
 import type { Instrument, InstrumentAssetClass } from "./types";
@@ -10,6 +11,12 @@ const usEtfs: UsSeed[] = [
   { symbol: "QQQ", name: "Invesco QQQ Trust", exchange: "NASDAQ", assetClass: "etf", tv: "NASDAQ:QQQ" },
   { symbol: "DIA", name: "SPDR Dow Jones Industrial Average ETF Trust", exchange: "NYSE Arca", assetClass: "etf", tv: "AMEX:DIA" },
   { symbol: "IWM", name: "iShares Russell 2000 ETF", exchange: "NYSE Arca", assetClass: "etf", tv: "AMEX:IWM" },
+  { symbol: "GLD", name: "SPDR Gold Shares", exchange: "NYSE Arca", assetClass: "etf", tv: "AMEX:GLD" },
+  { symbol: "SLV", name: "iShares Silver Trust", exchange: "NYSE Arca", assetClass: "etf", tv: "AMEX:SLV" },
+  { symbol: "TLT", name: "iShares 20+ Year Treasury Bond ETF", exchange: "NASDAQ", assetClass: "etf", tv: "NASDAQ:TLT" },
+  { symbol: "HYG", name: "iShares iBoxx High Yield Corporate Bond ETF", exchange: "NYSE Arca", assetClass: "etf", tv: "AMEX:HYG" },
+  { symbol: "VOO", name: "Vanguard S&P 500 ETF", exchange: "NYSE Arca", assetClass: "etf", tv: "AMEX:VOO" },
+  { symbol: "VTI", name: "Vanguard Total Stock Market ETF", exchange: "NYSE Arca", assetClass: "etf", tv: "AMEX:VTI" },
   { symbol: "ARKK", name: "ARK Innovation ETF", exchange: "NYSE Arca", assetClass: "etf", tv: "AMEX:ARKK" },
   { symbol: "XLF", name: "Financial Select Sector SPDR Fund", exchange: "NYSE Arca", assetClass: "etf", tv: "AMEX:XLF" },
   { symbol: "XLK", name: "Technology Select Sector SPDR Fund", exchange: "NYSE Arca", assetClass: "etf", tv: "AMEX:XLK" },
@@ -37,6 +44,18 @@ const usStocks: UsSeed[] = [
   { symbol: "DIS", name: "The Walt Disney Company", exchange: "NYSE", assetClass: "stock" },
   { symbol: "NFLX", name: "Netflix Inc.", exchange: "NASDAQ", assetClass: "stock" },
   { symbol: "MELI", name: "MercadoLibre Inc.", exchange: "NASDAQ", assetClass: "stock" },
+  { symbol: "INTC", name: "Intel Corporation", exchange: "NASDAQ", assetClass: "stock" },
+  { symbol: "V", name: "Visa Inc.", exchange: "NYSE", assetClass: "stock" },
+  { symbol: "MA", name: "Mastercard Incorporated", exchange: "NYSE", assetClass: "stock" },
+  { symbol: "XOM", name: "Exxon Mobil Corporation", exchange: "NYSE", assetClass: "stock" },
+  { symbol: "CVX", name: "Chevron Corporation", exchange: "NYSE", assetClass: "stock" },
+  { symbol: "UNH", name: "UnitedHealth Group Incorporated", exchange: "NYSE", assetClass: "stock" },
+  { symbol: "JNJ", name: "Johnson & Johnson", exchange: "NYSE", assetClass: "stock" },
+  { symbol: "PG", name: "Procter & Gamble Company", exchange: "NYSE", assetClass: "stock" },
+  { symbol: "NKE", name: "NIKE Inc.", exchange: "NYSE", assetClass: "stock" },
+  { symbol: "CRM", name: "Salesforce Inc.", exchange: "NYSE", assetClass: "stock" },
+  { symbol: "ORCL", name: "Oracle Corporation", exchange: "NYSE", assetClass: "stock" },
+  { symbol: "IBM", name: "International Business Machines Corporation", exchange: "NYSE", assetClass: "stock" },
 ];
 
 const adrSeeds: UsSeed[] = [
@@ -75,15 +94,42 @@ const localEquities = [
   ["IRSA", "IRSA Inversiones y Representaciones S.A."],
   ["TRAN", "Transener S.A."],
   ["TGNO4", "Transportadora de Gas del Norte S.A."],
+  ["TECO2", "Telecom Argentina S.A."],
 ] as const;
 
 const cryptoSeeds = [
-  ["BTCUSDT", "Bitcoin / Tether USD"],
-  ["ETHUSDT", "Ethereum / Tether USD"],
-  ["SOLUSDT", "Solana / Tether USD"],
-  ["BNBUSDT", "BNB / Tether USD"],
-  ["XRPUSDT", "XRP / Tether USD"],
+  ["BTC-USD", "Bitcoin"],
+  ["ETH-USD", "Ethereum"],
+  ["SOL-USD", "Solana"],
+  ["BNB-USD", "BNB"],
+  ["XRP-USD", "XRP"],
+  ["ADA-USD", "Cardano"],
+  ["DOGE-USD", "Dogecoin"],
+  ["AVAX-USD", "Avalanche"],
+  ["LINK-USD", "Chainlink"],
+  ["DOT-USD", "Polkadot"],
+  ["MATIC-USD", "Polygon"],
+  ["POL-USD", "Polygon Ecosystem Token"],
+  ["LTC-USD", "Litecoin"],
+  ["BCH-USD", "Bitcoin Cash"],
 ] as const;
+
+const cryptoProviderSymbols: Record<string, string> = {
+  "BTC-USD": "BTCUSDT",
+  "ETH-USD": "ETHUSDT",
+  "SOL-USD": "SOLUSDT",
+  "BNB-USD": "BNBUSDT",
+  "XRP-USD": "XRPUSDT",
+  "ADA-USD": "ADAUSDT",
+  "DOGE-USD": "DOGEUSDT",
+  "AVAX-USD": "AVAXUSDT",
+  "LINK-USD": "LINKUSDT",
+  "DOT-USD": "DOTUSDT",
+  "MATIC-USD": "MATICUSDT",
+  "POL-USD": "POLUSDT",
+  "LTC-USD": "LTCUSDT",
+  "BCH-USD": "BCHUSDT",
+};
 
 function usInstrument(seed: UsSeed): Instrument {
   const exchangePrefix = seed.exchange === "NYSE" ? "NYSE" : seed.exchange === "NYSE Arca" ? "AMEX" : "NASDAQ";
@@ -193,6 +239,7 @@ function fixedIncome(symbol: string): Instrument {
 }
 
 function crypto(symbol: string, name: string): Instrument {
+  const providerSymbol = cryptoProviderSymbols[symbol] ?? symbol;
   return {
     id: `crypto:${symbol}`,
     symbol,
@@ -203,8 +250,8 @@ function crypto(symbol: string, name: string): Instrument {
     exchange: "Binance",
     country: "Global",
     currency: "USD",
-    providerSymbol: symbol,
-    tradingViewSymbol: `BINANCE:${symbol}`,
+    providerSymbol,
+    tradingViewSymbol: `BINANCE:${providerSymbol}`,
     tags: ["crypto", "binance", "technical"],
     dataCapabilities: ["technical_full"],
     warnings: [],
@@ -218,14 +265,29 @@ const cedearEtfs = ["SPY", "QQQ", "DIA", "IWM", "EWZ", "ARKK", "XLF", "XLK", "XL
 const fixedIncomeSymbols = ["AL30", "AL30D", "GD30", "GD30D", "AE38", "AL35", "TX26", "TZX26", "S31L6", "S30J6"];
 
 const usBySymbol = new Map([...usEtfs, ...usStocks, ...adrSeeds].map((item) => [item.symbol, item]));
+const seededLocalEquitySymbols = new Set<string>(localEquities.map(([symbol]) => symbol));
+const seededCedearSymbols = new Set<string>([...cedearStocks, ...cedearEtfs]);
+
+const providerLocalEquities = providerEquitySymbols
+  .filter((symbol) => !seededLocalEquitySymbols.has(symbol))
+  .map((symbol) => [symbol, providerInstrumentNames[symbol] ?? `${symbol} accion argentina`] as const);
+
+const providerCedearStocks = providerCedearSymbols
+  .filter((symbol) => !seededCedearSymbols.has(symbol) && cedearUnderlyingSymbols[symbol]?.type !== "etf");
+
+const providerCedearEtfs = providerCedearSymbols
+  .filter((symbol) => !seededCedearSymbols.has(symbol) && cedearUnderlyingSymbols[symbol]?.type === "etf");
 
 export const instrumentMasterSeed: Instrument[] = [
   ...usEtfs.map(usInstrument),
   ...usStocks.map(usInstrument),
   ...adrSeeds.map(usInstrument),
   ...localEquities.map(([symbol, name]) => localEquity(symbol, name)),
+  ...providerLocalEquities.map(([symbol, name]) => localEquity(symbol, name)),
   ...cedearStocks.map((symbol) => cedear(symbol, `${usBySymbol.get(symbol)?.name ?? symbol} CEDEAR`, "cedear")),
   ...cedearEtfs.map((symbol) => cedear(symbol, `${usBySymbol.get(symbol)?.name ?? symbol} CEDEAR ETF`, "cedear_etf")),
+  ...providerCedearStocks.map((symbol) => cedear(symbol, `${providerInstrumentNames[symbol] ?? symbol} CEDEAR`, "cedear")),
+  ...providerCedearEtfs.map((symbol) => cedear(symbol, `${providerInstrumentNames[symbol] ?? symbol} CEDEAR ETF`, "cedear_etf")),
   ...fixedIncomeSymbols.map(fixedIncome),
   ...cryptoSeeds.map(([symbol, name]) => crypto(symbol, name)),
 ];

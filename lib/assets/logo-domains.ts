@@ -28,6 +28,17 @@ export const assetLogoDomains: Record<string, string> = {
   IWM: "ishares.com",
   GLD: "spdrgoldshares.com",
   SLV: "ishares.com",
+  GGAL: "galicia.ar",
+  YPFD: "ypf.com",
+  PAMP: "pampaenergia.com",
+  BMA: "macro.com.ar",
+  BBAR: "bbva.com.ar",
+  SUPV: "supervielle.com.ar",
+  LOMA: "lomanegra.com",
+  CEPU: "centralpuerto.com",
+  TECO2: "telecom.com.ar",
+  GLOB: "globant.com",
+  DESP: "despegar.com",
 };
 
 export const cryptoLogoIds: Record<string, string> = {

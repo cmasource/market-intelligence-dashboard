@@ -24,8 +24,8 @@ export function ShareableAssetReportPage({ symbol }: ShareableAssetReportPagePro
     audit: isSpanish ? "Auditoría de datos" : "Data audit",
     scopeTitle: isSpanish ? "Alcance del reporte" : "Report scope",
     scopeBody: isSpanish
-      ? "CMA Market Intelligence brinda análisis informativo únicamente. Este informe combina datos de proveedor, datos compatibles de respaldo, datos simulados estructurados y cobertura futura; los datos locales de CEDEAR continúan simulados hasta integrar BYMA/IOL o proveedor licenciado."
-      : "CMA Market Intelligence provides informational analysis only. This report combines provider data, compatible fallback data, structured mock data and future coverage; local CEDEAR data remains simulated until BYMA/IOL or licensed-provider data is integrated.",
+      ? "CMA Markets brinda analisis informativo unicamente. El informe publica datos de proveedores identificados y marca N/D cuando una capa no esta disponible."
+      : "CMA Markets provides informational analysis only. The report publishes data from identified providers and marks a layer N/A when it is unavailable.",
   };
 
   return (

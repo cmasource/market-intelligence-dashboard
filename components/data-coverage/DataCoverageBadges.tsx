@@ -50,7 +50,7 @@ function statusClasses(status: DataCoverageStatus) {
   }
 
   if (status === "mock" || status === "fallback") {
-    return "border-cyan-300/25 bg-cyan-300/10 text-cyan-100";
+    return "border-amber-300/25 bg-amber-300/10 text-amber-100";
   }
 
   if (status === "future") {
@@ -72,8 +72,8 @@ function coverageTitle(status: DataCoverageStatus, isSpanish: boolean) {
   }
 
   return isSpanish
-    ? "Indica si los datos provienen de proveedor real, fallback simulado o cobertura futura."
-    : "Shows whether data comes from a real provider, mock fallback or future coverage.";
+    ? "Indica si los datos provienen de proveedor, referencia validada, cobertura parcial o cobertura futura."
+    : "Shows whether data comes from a provider, validated reference, partial coverage, or future coverage.";
 }
 
 export function DataCoverageBadges({

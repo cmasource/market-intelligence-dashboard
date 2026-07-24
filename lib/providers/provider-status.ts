@@ -22,6 +22,6 @@ export function getProviderStatus(): ProviderStatus {
     configuredActiveFundamentalsProvider: getFirstEnabledProvider(fundamentals),
     configuredActiveNewsProvider: getFirstEnabledProvider(news),
     actualProviderDependsOnEndpoint: true,
-    fallbackChain: ["fmp", "yahoo", "mock"],
+    fallbackChain: ["fmp", "finnhub", "alpha_vantage", "yahoo", "unavailable"],
   };
 }

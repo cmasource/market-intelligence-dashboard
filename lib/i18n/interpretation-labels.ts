@@ -64,6 +64,7 @@ const providerLabels: Dictionary = {
   "yahoo compatible data": { en: "Yahoo-compatible data", es: "datos compatibles con Yahoo Finance" },
   "fmp provider": { en: "FMP provider", es: "proveedor FMP" },
   "fmp provider news": { en: "FMP provider news", es: "noticias del proveedor FMP" },
+  "manual argentina fundamentals": { en: "Manual Argentina fundamentals", es: "fundamentos manuales de Argentina" },
   "mock fallback": { en: "Mock fallback", es: "respaldo simulado" },
   "mock fallback price": { en: "Mock fallback price", es: "precio simulado de respaldo" },
   "provider price": { en: "Provider price", es: "precio de proveedor" },

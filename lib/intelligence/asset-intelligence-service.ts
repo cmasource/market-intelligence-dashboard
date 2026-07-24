@@ -83,12 +83,12 @@ function buildPriceSummary(asset: Asset | null, quote: Awaited<ReturnType<typeof
   }
 
   return {
-    price: asset?.price ?? null,
+    price: null,
     currency: asset?.quoteCurrency ?? asset?.currency ?? "USD",
     change: null,
-    changePercent: asset?.dailyChange ?? null,
-    provider: asset ? "mock" : "unavailable",
-    sourceLabel: asset ? "Mock fallback" : "Unavailable",
+    changePercent: null,
+    provider: "unavailable",
+    sourceLabel: "Unavailable",
     isFallback: true,
   };
 }
@@ -143,7 +143,7 @@ export async function getAssetIntelligenceReport(
   const quote = quoteResult.status === "fulfilled" ? quoteResult.value : null;
   if (quoteResult.status === "rejected") warnings.push(l(language, "Quote layer used fallback data.", "La capa de precio uso datos de respaldo."));
 
-  const technical = technicalResult.status === "fulfilled" ? technicalResult.value : null;
+  const technical = technicalResult.status === "fulfilled" && !technicalResult.value.isFallback ? technicalResult.value : null;
   if (!technical) warnings.push(l(language, "Technical layer unavailable.", "Capa tecnica no disponible."));
 
   const fundamentals = fundamentalsResult.status === "fulfilled" ? fundamentalsResult.value : null;
@@ -151,14 +151,13 @@ export async function getAssetIntelligenceReport(
 
   const news = newsResult.status === "fulfilled" ? newsResult.value : null;
   const cedear = cedearResult.status === "fulfilled" ? cedearResult.value : null;
-  const fixedIncome = fixedIncomeResult.status === "fulfilled" ? fixedIncomeResult.value : null;
+  const fixedIncome = fixedIncomeResult.status === "fulfilled" && !fixedIncomeResult.value?.isMock ? fixedIncomeResult.value : null;
   const cnvIssuer = getCnvIssuer(normalized);
   const cnvDocuments = cnvIssuer ? getCnvDocumentsForSymbol(normalized) : [];
 
   const priceSummary = buildPriceSummary(asset, quote);
   if (priceSummary.isFallback) warnings.push(l(language, "Price layer is fallback or mock.", "La capa de precio es fallback o simulada."));
   if (cedear?.isMock) warnings.push(l(language, "Local CEDEAR data is mock.", "Los datos locales CEDEAR son simulados."));
-  if (fixedIncome?.isMock) warnings.push(l(language, "Fixed income data is structured mock local data.", "Los datos de renta fija son locales estructurados simulados."));
   if (cnvIssuer) {
     warnings.push(
       l(
@@ -171,7 +170,7 @@ export async function getAssetIntelligenceReport(
 
   const technicalSummary: TechnicalSummary = {
     available: Boolean(technical),
-    score: technical?.technicalScore ?? asset?.technicalScore ?? null,
+    score: technical?.technicalScore ?? null,
     trend: technical?.snapshot.trendLabel ?? "Unavailable",
     momentum: technical?.snapshot.momentumLabel ?? "Unavailable",
     keyIndicators: technical
@@ -207,9 +206,14 @@ export async function getAssetIntelligenceReport(
 
   const fundamentalSummary: FundamentalSummary = {
     available: Boolean(fundamentals && fundamentals.fundamentalScore !== null && fundamentals.fundamentalScore !== undefined),
-    score: fundamentals?.fundamentalScore ?? asset?.fundamentalScore ?? null,
-    valuation: valuation(fundamentals?.snapshot.trailingPE ?? asset?.fundamentals?.peRatio, language),
-    profitability: quality(fundamentals?.snapshot.roe ?? asset?.fundamentals?.roe, 20, 8, language),
+    score: fundamentals?.fundamentalScore ?? null,
+    valuation: valuation(fundamentals?.snapshot.trailingPE, language),
+    profitability: quality(
+      fundamentals?.snapshot.roe,
+      0.2,
+      0.08,
+      language,
+    ),
     solvency: quality(fundamentals?.snapshot.currentRatio, 1.5, 0.8, language),
     growth: quality(fundamentals?.snapshot.revenueGrowth, 0.08, -0.02, language),
     interpretation: fundamentals?.interpretation.summary ?? l(language, "Fundamentals unavailable.", "Fundamentos no disponibles."),
@@ -217,19 +221,19 @@ export async function getAssetIntelligenceReport(
   };
   fundamentalSummary.humanSummary = buildHumanFundamentalSummary({
     fundamentalScore: fundamentalSummary.score,
-    pe: fundamentals?.snapshot.trailingPE ?? asset?.fundamentals?.peRatio ?? null,
+    pe: fundamentals?.snapshot.trailingPE ?? null,
     forwardPe: fundamentals?.snapshot.forwardPE ?? null,
-    pb: fundamentals?.snapshot.priceToBook ?? asset?.fundamentals?.pbRatio ?? null,
+    pb: fundamentals?.snapshot.priceToBook ?? null,
     ps: fundamentals?.snapshot.priceToSales ?? null,
-    roe: fundamentals?.snapshot.roe ?? (asset?.fundamentals?.roe ? asset.fundamentals.roe / 100 : null),
-    roa: fundamentals?.snapshot.roa ?? (asset?.fundamentals?.roa ? asset.fundamentals.roa / 100 : null),
+    roe: fundamentals?.snapshot.roe ?? null,
+    roa: fundamentals?.snapshot.roa ?? null,
     grossMargin: fundamentals?.snapshot.grossMargin ?? null,
-    ebitdaMargin: fundamentals?.snapshot.ebitdaMargin ?? (asset?.fundamentals?.ebitdaMargin ? asset.fundamentals.ebitdaMargin / 100 : null),
+    ebitdaMargin: fundamentals?.snapshot.ebitdaMargin ?? null,
     netMargin: fundamentals?.snapshot.netMargin ?? null,
     debtToEquity: fundamentals?.snapshot.debtToEquity ?? null,
     currentRatio: fundamentals?.snapshot.currentRatio ?? null,
     quickRatio: fundamentals?.snapshot.quickRatio ?? null,
-    dividendYield: fundamentals?.snapshot.dividendYield ?? (asset?.fundamentals?.dividendYield ? asset.fundamentals.dividendYield / 100 : null),
+    dividendYield: fundamentals?.snapshot.dividendYield ?? null,
     beta: fundamentals?.snapshot.beta ?? null,
     sourceLabel: fundamentals?.sourceLabel ?? null,
     unavailableFields: unavailableFields(fundamentals?.snapshot ?? {}, [
