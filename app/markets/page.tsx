@@ -1,24 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { CedearMarketGrid } from "@/components/cedears/CedearMarketGrid";
-import { MarketOverview } from "@/components/dashboard/MarketOverview";
 import { AppShell } from "@/components/layout/AppShell";
+import { CommodityBoard } from "@/components/market/CommodityBoard";
 import { MarketHeatmap } from "@/components/market/MarketHeatmap";
-import { argentinaInstrumentRegistry } from "@/lib/argentina/argentina-instrument-registry";
-import { getInstrumentUniverseGroups } from "@/lib/instrument-universe";
+import { getInstrumentUniverseGroups, instrumentUniverse } from "@/lib/instrument-universe";
 import { useLanguage } from "@/lib/i18n/useLanguage";
-import { marketOverviewItems } from "@/lib/mock-data";
 import { sectionAccents, type SectionAccent } from "@/lib/ui/section-accents";
 
 const groupLinks: Record<string, string> = {
-  argentine_equities: "/screener?country=AR&category=equity",
-  argentine_adrs: "/screener?category=adr",
-  cedears: "/screener?category=cedear",
-  sovereign_bonds: "/screener?country=AR&coverageGroup=real_provider",
-  etfs: "/screener?category=etf",
-  usa_stocks: "/screener?country=US&category=equity",
-  crypto: "/screener?category=crypto",
+  argentine_equities: "/argentina",
+  argentine_adrs: "/usa",
+  cedears: "/argentina",
+  sovereign_bonds: "/argentina",
+  etfs: "/usa",
+  usa_stocks: "/usa",
+  crypto: "/crypto",
 };
 
 const groupAccents: Record<string, SectionAccent> = {
@@ -37,7 +34,7 @@ const groupTitles: Record<string, { en: string; es: string }> = {
   cedears: { en: "CEDEARs", es: "CEDEARs" },
   sovereign_bonds: { en: "Bonds", es: "Bonos" },
   etfs: { en: "ETFs", es: "ETFs" },
-  usa_stocks: { en: "USA stocks", es: "Acciones USA" },
+  usa_stocks: { en: "USA stocks and CEDEAR underlyings", es: "Acciones USA y subyacentes CEDEAR" },
   crypto: { en: "Crypto", es: "Cripto" },
 };
 
@@ -45,6 +42,9 @@ export default function MarketsPage() {
   const { language } = useLanguage();
   const isSpanish = language === "es";
   const groups = getInstrumentUniverseGroups(language);
+  const usaCoverage = new Set(
+    instrumentUniverse.flatMap((instrument) => instrument.category === "cedear" && instrument.underlyingSymbol ? [instrument.underlyingSymbol] : instrument.country === "US" && instrument.category === "equity" ? [instrument.symbol] : []),
+  ).size;
 
   return (
     <AppShell>
@@ -63,7 +63,9 @@ export default function MarketsPage() {
           </p>
         </section>
 
-        <MarketHeatmap />
+        <MarketHeatmap compact showControlsInCompact maxItems={18} />
+
+        <CommodityBoard />
 
         <section className="grid gap-4 xl:grid-cols-3">
           {groups.map((group) => (
@@ -71,7 +73,7 @@ export default function MarketsPage() {
               <div className="flex items-start justify-between gap-3">
                 <h2 className="text-lg font-semibold text-white">{groupTitles[group.id]?.[isSpanish ? "es" : "en"] ?? group.title}</h2>
                 <span className={`rounded-full border px-3 py-1 text-xs ${sectionAccents[groupAccents[group.id] ?? "default"].badge}`}>
-                  {group.instruments.length}
+                  {group.id === "usa_stocks" ? usaCoverage : group.instruments.length}
                 </span>
               </div>
               <p className="mt-3 text-sm leading-6 text-slate-400">{group.description}</p>
@@ -98,7 +100,7 @@ export default function MarketsPage() {
                 href={groupLinks[group.id] ?? "/screener"}
                 className="mt-5 inline-flex rounded-lg border border-cyan-300/30 px-3 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-300/10"
               >
-                {isSpanish ? "Ver en screener" : "View in screener"}
+                {isSpanish ? "Abrir segmento" : "Open segment"}
               </Link>
             </article>
           ))}
@@ -114,14 +116,9 @@ export default function MarketsPage() {
               ? "Los CEDEARs permiten exposicion local a acciones y ETFs internacionales. El panel prioriza precios locales de mercado y calcula CCL implicito con el subyacente disponible."
               : "CEDEARs enable local exposure to international stocks and ETFs. This panel prioritizes local market prices and calculates implied CCL with the available underlying data."}
           </p>
-          <p className="mt-2 text-xs text-violet-100">
-            {isSpanish
-              ? "El panel CEDEAR muestra activo subyacente, ratio de referencia, precio local y CCL implicito calculado con datos disponibles."
-              : "The CEDEAR panel shows underlying asset, reference ratio, local price and implied CCL calculated from available data."}
-          </p>
           <div className="mt-4 flex flex-wrap gap-3">
-            <Link href="/screener?category=cedear" className="rounded-lg border border-violet-300/30 bg-violet-300/10 px-3 py-2 text-sm font-medium text-violet-100 transition hover:bg-violet-300/15">
-              {isSpanish ? "Ver CEDEARs en screener" : "View CEDEARs in screener"}
+            <Link href="/argentina" className="rounded-lg border border-violet-300/30 bg-violet-300/10 px-3 py-2 text-sm font-medium text-violet-100 transition hover:bg-violet-300/15">
+              {isSpanish ? "Abrir CEDEARs e indicadores" : "Open CEDEARs and indicators"}
             </Link>
             <Link href="/methodology" className="rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-300 transition hover:border-violet-300/40 hover:bg-violet-300/10 hover:text-white">
               {isSpanish ? "Metodologia CEDEAR" : "CEDEAR methodology"}
@@ -130,27 +127,8 @@ export default function MarketsPage() {
               {isSpanish ? "Glosario" : "Glossary"}
             </Link>
           </div>
-          <CedearMarketGrid
-            fallbackItems={argentinaInstrumentRegistry
-              .filter((instrument) => instrument.type === "cedear")
-              .map((instrument) => ({
-                localSymbol: instrument.symbol,
-                underlyingName: instrument.name,
-                ratio: instrument.cedearRatio ?? null,
-              }))}
-          />
         </section>
 
-        <MarketOverview items={marketOverviewItems} />
-        <Link
-          href="/screener"
-          className="block rounded-lg border border-cyan-300/25 bg-cyan-300/10 p-5 text-sm font-semibold text-cyan-100 transition hover:border-cyan-200/50 hover:bg-cyan-300/15"
-        >
-          {isSpanish ? "Abrir screener avanzado" : "Open advanced screener"}
-          <span className="mt-2 block font-normal text-slate-300">
-            {isSpanish ? "Filtra por mercado, categoria, moneda y estado de cobertura." : "Filter by market, category, currency and coverage status."}
-          </span>
-        </Link>
       </div>
     </AppShell>
   );

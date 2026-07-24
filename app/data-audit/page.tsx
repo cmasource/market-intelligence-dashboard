@@ -366,8 +366,8 @@ export default function DataAuditPage() {
                 </tr>
               </thead>
               <tbody>
-                {analysisCoverageItems.map((coverage) => (
-                  <tr key={`${coverage.symbol}-${coverage.assetType}`} className="border-b border-white/10 last:border-b-0">
+                {analysisCoverageItems.map((coverage, index) => (
+                  <tr key={`${coverage.symbol}-${coverage.assetType}-${coverage.market ?? "unknown"}-${index}`} className="border-b border-white/10 last:border-b-0">
                     <td className="px-4 py-4 font-semibold text-white">{coverage.symbol}</td>
                     <td className="px-4 py-4 text-slate-300">{formatCategory(coverage.assetType)}</td>
                     <td className="px-4 py-4 text-slate-400">{coverage.market ?? "N/D"}</td>

@@ -1,15 +1,14 @@
 "use client";
 
-import { ArgentinaMarket } from "@/components/dashboard/ArgentinaMarket";
 import { AssetSearch } from "@/components/dashboard/AssetSearch";
 import { FeaturedAssets } from "@/components/dashboard/FeaturedAssets";
+import { ArgentinaMacroMonitor } from "@/components/dashboard/ArgentinaMacroMonitor";
 import { MarketNewsPreview } from "@/components/dashboard/MarketNewsPreview";
-import { FixedIncomeComparison } from "@/components/fixed-income/FixedIncomeComparison";
+import { MarketPulseVisual } from "@/components/dashboard/MarketPulseVisual";
 import { AppShell } from "@/components/layout/AppShell";
 import { MarketHeatmap } from "@/components/market/MarketHeatmap";
 import { MarketRankings } from "@/components/rankings/MarketRankings";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { mockAssets } from "@/lib/mock-data";
 
@@ -40,36 +39,9 @@ export default function Home() {
                   {isSpanish ? "Buscar activo" : "Search asset"}
                 </Button>
                 <Button href="/argentina">{isSpanish ? "Ver Argentina" : "View Argentina"}</Button>
-                <Button href="/screener">{isSpanish ? "Abrir screener" : "Open screener"}</Button>
-                <Button href="/report/AAPL">{isSpanish ? "Reporte AAPL" : "AAPL report"}</Button>
               </div>
             </div>
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <Card variant="analysis" className="p-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-[var(--cma-text-muted)]">
-                  {isSpanish ? "Datos de mercado" : "Market data"}
-                </p>
-                <p className="mt-2 text-sm font-semibold text-[var(--cma-text-primary)]">
-                  {isSpanish ? "Cotizaciones verificadas o no disponibles" : "Verified quotes or unavailable state"}
-                </p>
-              </Card>
-              <Card variant="analysis" className="p-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-[var(--cma-text-muted)]">
-                  {isSpanish ? "Lectura integrada" : "Integrated reading"}
-                </p>
-                <p className="mt-2 text-sm font-semibold text-[var(--cma-text-primary)]">
-                  {isSpanish ? "Técnico, fundamentos, cobertura y riesgo" : "Technical, fundamentals, coverage and risk"}
-                </p>
-              </Card>
-              <Card variant="price" className="p-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-[var(--cma-text-muted)]">
-                  {isSpanish ? "Cobertura mixta" : "Mixed coverage"}
-                </p>
-                <p className="mt-2 text-sm font-semibold text-[var(--cma-text-primary)]">
-                  {isSpanish ? "Datos reales, proveedor y cobertura pendiente" : "Real, provider and pending coverage"}
-                </p>
-              </Card>
-            </div>
+            <MarketPulseVisual />
             <p className="mt-4 rounded-md border border-amber-800/40 bg-[var(--cma-bg-panel)] p-3 text-sm leading-6 text-amber-400">
               {t("disclaimer")}
             </p>
@@ -79,6 +51,7 @@ export default function Home() {
 
         <MarketRankings compact />
         <MarketNewsPreview />
+        <ArgentinaMacroMonitor />
         <MarketHeatmap
           compact
           defaultSegment="argentina"
@@ -92,23 +65,6 @@ export default function Home() {
           }
         />
         <FeaturedAssets assets={featuredAssets} />
-        <section className="cma-panel cma-card-argentina p-5 sm:p-6">
-          <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
-            <div>
-              <p className="cma-kicker">{isSpanish ? "Argentina + CEDEAR" : "Argentina + CEDEAR"}</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">
-                {isSpanish ? "Cobertura local con trazabilidad de fuente" : "Local coverage with source traceability"}
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-300">
-                {isSpanish
-                  ? "Acciones argentinas, CEDEARs, bonos y especies se separan por carga manual, proveedor, cobertura pendiente y dato no operativo para que la lectura sea clara."
-                  : "Argentine equities, CEDEARs, bonds and species are separated by manual load, provider, pending coverage and non-operational data so the reading stays transparent."}
-              </p>
-            </div>
-            <ArgentinaMarket />
-          </div>
-        </section>
-        <FixedIncomeComparison />
       </div>
     </AppShell>
   );

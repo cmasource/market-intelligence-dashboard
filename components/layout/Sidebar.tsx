@@ -12,12 +12,13 @@ import { LanguageSwitcher } from "./LanguageSwitcher";
 export const navItems = [
   { labelKey: "navDashboard", href: "/", accent: "from-cyan-300 to-emerald-300" },
   { labelKey: "navMarkets", href: "/markets", accent: "from-sky-300 to-cyan-300" },
-  { labelKey: "navScreener", href: "/screener", accent: "from-violet-300 to-cyan-300" },
+  { labelKey: "navUSA", href: "/usa", accent: "from-violet-300 to-cyan-300" },
   { labelKey: "navTradeRadar", href: "/trade-radar", accent: "from-amber-300 to-cyan-300" },
   { labelKey: "navArgentina", href: "/argentina", accent: "from-blue-300 to-white" },
   { labelKey: "navCrypto", href: "/crypto", accent: "from-orange-300 to-amber-300" },
   { labelKey: "navWatchlist", href: "/watchlist", accent: "from-emerald-300 to-lime-300" },
   { labelKey: "navReports", href: "/reports", accent: "from-fuchsia-300 to-violet-300" },
+  { labelKey: "navContact", href: "/contact", accent: "from-emerald-300 to-cyan-300" },
   { labelKey: "navAgents", href: "/agents", accent: "from-slate-300 to-cyan-300" },
 ];
 

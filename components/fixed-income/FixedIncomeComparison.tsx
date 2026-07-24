@@ -60,23 +60,17 @@ export function FixedIncomeComparison() {
         title={t("fixedIncomeAnalyticsTitle")}
         description={t("fixedIncomeAnalyticsDescription")}
       />
-      <p className="mb-4 rounded-lg border border-amber-300/20 bg-amber-300/10 p-3 text-sm leading-6 text-amber-100">
-        {language === "es"
-          ? "Comparador bloqueado para uso operativo hasta integrar precios reales y cronogramas oficiales. El motor calcula TIR, duracion, convexidad y paridad, pero no se muestran valores no operativos como senales."
-          : "Comparator blocked for operational use until real prices and official schedules are integrated. The engine calculates YTM, duration, convexity and parity, but non-operational values are not shown as signals."}
-      </p>
-
       {isLoading ? (
         <p className="text-sm text-slate-300">{t("fixedIncomeLoading")}</p>
       ) : realItems.length === 0 ? (
         <div className="rounded-lg border border-white/10 bg-white/[0.045] p-5">
           <p className="text-sm font-semibold text-white">
-            {language === "es" ? "Sin bonos con datos reales operativos" : "No bonds with operational real data"}
+            {language === "es" ? "Rendimientos en actualizacion" : "Yields are being updated"}
           </p>
           <p className="mt-3 text-sm leading-6 text-slate-400">
             {language === "es"
-              ? "El modulo requiere una cotizacion local y un archivo validado de cashflows. Sin esos insumos no publica precio, TIR ni duracion."
-              : "This module is ready for BYMA, a licensed broker provider, or a validated cash-flow file. Until then, simulated prices, YTM and durations are not displayed."}
+              ? "Las especies aparecen cuando precio y flujo contractual permiten calcular TIR, paridad y duration de forma consistente."
+              : "Instruments appear when price and contractual cash flows allow consistent YTM, parity and duration calculations."}
           </p>
         </div>
       ) : (

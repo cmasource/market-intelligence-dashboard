@@ -38,6 +38,11 @@ export const cedearUnderlyingSymbols: Record<string, { underlyingSymbol: string;
   SLV: { underlyingSymbol: "SLV", type: "etf", ratio: 10 },
   XOM: { underlyingSymbol: "XOM", type: "stock", ratio: 10 },
   CVX: { underlyingSymbol: "CVX", type: "stock", ratio: 16 },
+  UNH: { underlyingSymbol: "UNH", type: "stock", ratio: 33 },
+  NKE: { underlyingSymbol: "NKE", type: "stock", ratio: 12 },
+  CRM: { underlyingSymbol: "CRM", type: "stock", ratio: 18 },
+  ORCL: { underlyingSymbol: "ORCL", type: "stock", ratio: 3 },
+  IBM: { underlyingSymbol: "IBM", type: "stock", ratio: 15 },
   VALE: { underlyingSymbol: "VALE", type: "stock", ratio: 2 },
   PBR: { underlyingSymbol: "PBR", type: "stock", ratio: 2 },
 };

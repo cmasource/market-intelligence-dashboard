@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { AssetLogo } from "@/components/assets/AssetLogo";
 import { formatCurrencyValue, formatDisplayCurrency, formatPercent } from "@/lib/formatters";
 import { useArgentinaQuotes } from "@/lib/hooks/useArgentinaQuotes";
 import { useProviderQuotes } from "@/lib/hooks/useProviderQuotes";
@@ -13,6 +14,14 @@ import type { Asset } from "@/types/asset";
 type AssetSearchProps = {
   assets: Asset[];
 };
+
+function resultTone(instrument: InstrumentUniverseItem) {
+  if (instrument.category === "crypto") return "border-orange-300/15 bg-orange-300/[0.065] hover:border-orange-300/35 hover:bg-orange-300/[0.1]";
+  if (instrument.category === "cedear") return "border-violet-300/15 bg-violet-300/[0.065] hover:border-violet-300/35 hover:bg-violet-300/[0.1]";
+  if (instrument.category.includes("bond") || instrument.category === "lecap" || instrument.category === "letra") return "border-amber-300/15 bg-amber-300/[0.06] hover:border-amber-300/35 hover:bg-amber-300/[0.1]";
+  if (instrument.country === "AR") return "border-sky-300/15 bg-sky-300/[0.055] hover:border-sky-300/35 hover:bg-sky-300/[0.1]";
+  return "border-emerald-300/15 bg-emerald-300/[0.055] hover:border-emerald-300/35 hover:bg-emerald-300/[0.095]";
+}
 
 export function AssetSearch({ assets }: AssetSearchProps) {
   const [query, setQuery] = useState("");
@@ -161,7 +170,9 @@ export function AssetSearch({ assets }: AssetSearchProps) {
             const context = settlementLabel(instrument, asset);
             const content = (
               <>
-                <span className="min-w-0">
+                <span className="flex min-w-0 items-start gap-3">
+                  <AssetLogo symbol={instrument.symbol} name={displayName(instrument)} type={instrument.category} size="sm" />
+                  <span className="min-w-0">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold text-white">{instrument.symbol}</span>
                     <span className="text-sm text-slate-400">{displayName(instrument)}</span>
@@ -170,6 +181,7 @@ export function AssetSearch({ assets }: AssetSearchProps) {
                     {contextLabel(instrument)} | {instrument.market} | {formatDisplayCurrency(instrument.currency, language)}
                   </span>
                   {context ? <span className="mt-1 block text-xs font-medium text-violet-200">{context}</span> : null}
+                  </span>
                 </span>
                 <span className="flex flex-col items-start gap-2 text-left sm:items-end sm:text-right">
                   {asset ? (
@@ -206,7 +218,7 @@ export function AssetSearch({ assets }: AssetSearchProps) {
               <Link
                 href={`/asset/${encodeURIComponent(instrument.symbol)}`}
                 onClick={() => saveRecentSymbol(instrument.symbol)}
-                className="group cma-card-price grid gap-4 p-3 sm:grid-cols-[minmax(0,1fr)_auto]"
+                className={`group grid gap-4 rounded-lg border p-3 transition sm:grid-cols-[minmax(0,1fr)_auto] ${resultTone(instrument)}`}
               >
                 {content}
               </Link>

@@ -84,17 +84,17 @@ function buildGroup(
       },
       es: {
         title: "Acciones USA",
-        description: "Acciones de Estados Unidos con cobertura disponible de precio y analisis.",
+        description: "Acciones de Estados Unidos y subyacentes de CEDEAR con cobertura disponible de precio y analisis.",
       },
     },
     crypto: {
       en: {
         title: "Crypto",
-        description: "Crypto roadmap from BTC and ETH toward a broader top 50 universe.",
+        description: "Crypto assets with quotes and comparable technical readings.",
       },
       es: {
         title: "Cripto",
-        description: "Hoja de ruta cripto desde BTC y ETH hacia un universo top 50.",
+        description: "Criptoactivos con cotizaciones y lecturas tecnicas comparables.",
       },
     },
   };

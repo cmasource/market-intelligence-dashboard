@@ -6,9 +6,10 @@ import { useLanguage } from "@/lib/i18n/useLanguage";
 
 const footerLinks = [
   { href: "/markets", en: "Markets", es: "Mercados" },
-  { href: "/screener", en: "Screener", es: "Screener" },
+  { href: "/usa", en: "USA", es: "USA" },
   { href: "/argentina", en: "Argentina", es: "Argentina" },
   { href: "/crypto", en: "Crypto", es: "Cripto" },
+  { href: "/contact", en: "Contact", es: "Contacto" },
   { href: "/data-audit", en: "Data Audit", es: "Auditoría" },
   { href: "/methodology", en: "Methodology", es: "Metodología" },
   { href: "/glossary", en: "Glossary", es: "Glosario" },

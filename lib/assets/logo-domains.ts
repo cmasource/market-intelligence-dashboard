@@ -52,4 +52,10 @@ export const cryptoLogoIds: Record<string, string> = {
   "AVAX-USD": "avalanche",
   "LINK-USD": "chainlink",
   "DOT-USD": "polkadot",
+  "USDT-USD": "tether",
+  "USDC-USD": "usd-coin",
+  "MATIC-USD": "polygon",
+  "POL-USD": "polygon",
+  "LTC-USD": "litecoin",
+  "BCH-USD": "bitcoin-cash",
 };

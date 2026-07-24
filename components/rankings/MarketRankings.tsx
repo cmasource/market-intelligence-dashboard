@@ -40,7 +40,7 @@ export function MarketRankings({ compact = false }: MarketRankingsProps) {
         </span>
       </div>
 
-      <div className="mt-5 grid gap-4 xl:grid-cols-3">
+      <div className="mt-5 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 xl:grid xl:grid-cols-3 xl:overflow-visible xl:pb-0">
         <RankingColumn
           title={isSpanish ? "Ranking técnico" : "Technical ranking"}
           subtitle={
@@ -48,8 +48,9 @@ export function MarketRankings({ compact = false }: MarketRankingsProps) {
               ? "Ordenado por lectura técnica disponible. No constituye recomendación de inversión."
               : "Ordered by available technical reading. Not an investment recommendation."
           }
-          items={rankings.technical.items.slice(0, compact ? 3 : 5)}
+          items={rankings.technical.items.slice(0, 5)}
           accent="technical"
+          compact={compact}
           ctaLabel={isSpanish ? "Abrir análisis" : "Open analysis"}
         />
         <RankingColumn
@@ -59,8 +60,9 @@ export function MarketRankings({ compact = false }: MarketRankingsProps) {
               ? "Ordenado por calidad fundamental estimada con los datos disponibles."
               : "Ordered by estimated fundamental quality with available data."
           }
-          items={rankings.fundamental.items.slice(0, compact ? 3 : 5)}
+          items={rankings.fundamental.items.slice(0, 5)}
           accent="fundamental"
+          compact={compact}
           ctaLabel={isSpanish ? "Abrir análisis" : "Open analysis"}
         />
         <RankingColumn
@@ -70,8 +72,9 @@ export function MarketRankings({ compact = false }: MarketRankingsProps) {
               ? "Combina lectura técnica, fundamentos y calidad de datos disponibles."
               : "Combines technical reading, fundamentals and available data quality."
           }
-          items={rankings.combined.items.slice(0, compact ? 3 : 5)}
+          items={rankings.combined.items.slice(0, 5)}
           accent="combined"
+          compact={compact}
           ctaLabel={isSpanish ? "Abrir análisis" : "Open analysis"}
         />
       </div>

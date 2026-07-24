@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import type { NewsArticle, NewsResponse } from "@/lib/news/types";
 
@@ -52,6 +52,7 @@ export function MarketNewsPreview() {
   const { language } = useLanguage();
   const isSpanish = language === "es";
   const [response, setResponse] = useState<NewsResponse | null>(null);
+  const railRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,7 +70,11 @@ export function MarketNewsPreview() {
     };
   }, []);
 
-  const articles = useMemo<NewsArticle[]>(() => response?.articles.slice(0, 3) ?? [], [response]);
+  const articles = useMemo<NewsArticle[]>(() => response?.articles.slice(0, 10) ?? [], [response]);
+
+  function scrollNews(direction: -1 | 1) {
+    railRef.current?.scrollBy({ left: direction * 360, behavior: "smooth" });
+  }
 
   return (
     <section className="cma-panel p-5 sm:p-6">
@@ -85,12 +90,16 @@ export function MarketNewsPreview() {
               : "Recent economy and market headlines to support the technical and fundamental view."}
           </p>
         </div>
-        <a href="/reports" className="text-sm font-semibold text-cyan-200 transition hover:text-white">
-          {isSpanish ? "Abrir reportes" : "Open reports"}
-        </a>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => scrollNews(-1)} aria-label={isSpanish ? "Noticias anteriores" : "Previous news"} className="grid h-9 w-9 place-items-center rounded-md border border-white/10 text-lg text-slate-300 transition hover:border-cyan-300/35 hover:text-white">&lt;</button>
+          <button type="button" onClick={() => scrollNews(1)} aria-label={isSpanish ? "Noticias siguientes" : "Next news"} className="grid h-9 w-9 place-items-center rounded-md border border-white/10 text-lg text-slate-300 transition hover:border-cyan-300/35 hover:text-white">&gt;</button>
+          <a href="/reports" className="ml-1 text-sm font-semibold text-cyan-200 transition hover:text-white">
+            {isSpanish ? "Abrir reportes" : "Open reports"}
+          </a>
+        </div>
       </div>
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-3">
+      <div ref={railRef} className="mt-5 flex snap-x snap-mandatory gap-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {articles.length ? (
           articles.map((article, index) => {
             const dateLabel = formatDate(article.publishedAt, language);
@@ -100,7 +109,7 @@ export function MarketNewsPreview() {
                 href={article.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group overflow-hidden rounded-lg border border-white/10 bg-slate-950/55 transition hover:-translate-y-0.5 hover:border-cyan-200/35"
+                className="group w-[82vw] max-w-[340px] shrink-0 snap-start overflow-hidden rounded-lg border border-white/10 bg-slate-950/55 transition hover:-translate-y-0.5 hover:border-cyan-200/35 sm:w-[340px]"
               >
                 <NewsVisual article={article} index={index} />
                 <div className="p-4">
@@ -117,7 +126,7 @@ export function MarketNewsPreview() {
             );
           })
         ) : (
-          <div className="rounded-lg border border-white/10 bg-white/[0.035] p-4 text-sm text-slate-400 lg:col-span-3">
+          <div className="w-full rounded-lg border border-white/10 bg-white/[0.035] p-4 text-sm text-slate-400">
             {isSpanish ? "Noticias no disponibles en este momento." : "News unavailable right now."}
           </div>
         )}

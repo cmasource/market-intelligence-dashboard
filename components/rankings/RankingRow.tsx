@@ -10,6 +10,7 @@ type RankingRowProps = {
   rank: number;
   accent: "technical" | "fundamental" | "combined" | "performance";
   ctaLabel?: string;
+  compact?: boolean;
 };
 
 const accentClasses = {
@@ -19,7 +20,7 @@ const accentClasses = {
   performance: "border-emerald-300/25 bg-emerald-300/10 text-emerald-100",
 };
 
-export function RankingRow({ item, rank, accent, ctaLabel = "Abrir analisis" }: RankingRowProps) {
+export function RankingRow({ item, rank, accent, ctaLabel = "Abrir analisis", compact = false }: RankingRowProps) {
   const changeClass = (item.changePercent ?? 0) >= 0 ? "text-emerald-300" : "text-rose-300";
 
   return (
@@ -44,8 +45,8 @@ export function RankingRow({ item, rank, accent, ctaLabel = "Abrir analisis" }: 
             ) : null}
           </span>
           <span className="mt-1 block truncate text-xs text-slate-400">{item.name}</span>
-          <span className="mt-1 block text-xs leading-5 text-slate-300">{item.reason}</span>
-          <span className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-[0.68rem] ${accentClasses[accent]}`}>
+          {!compact ? <span className="mt-1 block text-xs leading-5 text-slate-300">{item.reason}</span> : null}
+          <span className={`${compact ? "mt-1" : "mt-2"} inline-flex rounded-full border px-2 py-0.5 text-[0.68rem] ${accentClasses[accent]}`}>
             {formatScore(item.score)}
           </span>
         </span>

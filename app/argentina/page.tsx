@@ -1,371 +1,253 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { ArgentinaMarket } from "@/components/dashboard/ArgentinaMarket";
-import { BondSpeciesGuide } from "@/components/fixed-income/BondSpeciesGuide";
+import { Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { FixedIncomeComparison } from "@/components/fixed-income/FixedIncomeComparison";
-import { CnvIssuerCard } from "@/components/cnv/CnvIssuerCard";
 import { AppShell } from "@/components/layout/AppShell";
 import { MarketHeatmap } from "@/components/market/MarketHeatmap";
 import { useLanguage } from "@/lib/i18n/useLanguage";
-import { InstrumentUniverseGroups } from "@/components/screener/InstrumentUniverseGroups";
-import { ARGENTINA_INSTRUMENT_UNIVERSE } from "@/lib/instrument-universe";
-import { formatCurrencyValue, formatNumber, formatPercent } from "@/lib/formatters";
-import { cnvIssuers } from "@/lib/cnv";
-import type { ArgentinaInstrument, ArgentinaQuote, ArgentinaSourceStatus } from "@/lib/argentina";
+import { formatCurrencyValue, formatPercent } from "@/lib/formatters";
+import type { ArgentinaInstrument, ArgentinaQuote } from "@/lib/argentina";
+import type { TechnicalAnalysisResponse } from "@/lib/analysis/types";
 
-const universeGroups = [
-  {
-    key: "bonds",
-    en: "Sovereign bonds and species",
-    es: "Bonos soberanos y especies",
-    symbols: ["AL30", "AL30D", "AL30C", "GD30", "GD30D", "GD30C", "TX26"],
-  },
-  {
-    key: "equities",
-    en: "Argentine equities",
-    es: "Acciones argentinas",
-    symbols: ["GGAL", "YPFD"],
-  },
-  {
-    key: "cedears",
-    en: "CEDEAR examples",
-    es: "Ejemplos de CEDEARs",
-    symbols: ["AAPL", "MSFT", "KO", "TSLA", "AMZN", "SPY", "QQQ"],
-  },
+type ViewKey = "heatmap" | "equities" | "indicators" | "cedears" | "cedearIndicators" | "bonds";
+
+const pageSize = 12;
+
+const views: Array<{ key: ViewKey; es: string; en: string }> = [
+  { key: "heatmap", es: "Mapa de calor", en: "Heatmap" },
+  { key: "equities", es: "Acciones", en: "Equities" },
+  { key: "indicators", es: "Acciones + indicadores", en: "Equities + indicators" },
+  { key: "cedears", es: "CEDEARs", en: "CEDEARs" },
+  { key: "cedearIndicators", es: "CEDEARs + indicadores", en: "CEDEARs + indicators" },
+  { key: "bonds", es: "Bonos", en: "Bonds" },
 ];
 
-const argentinaTableSymbols = [
-  "GGAL",
-  "YPFD",
-  "PAMP",
-  "TXAR",
-  "ALUA",
-  "BYMA",
-  "AL30",
-  "AL30D",
-  "AL30C",
-  "GD30",
-  "GD30D",
-  "GD30C",
-  "TX26",
-  "AAPL",
-  "MSFT",
-  "NVDA",
-  "TSLA",
-  "KO",
-  "SPY",
-  "QQQ",
-];
+function instrumentsForView(items: ArgentinaInstrument[], view: ViewKey) {
+  if (view === "cedears" || view === "cedearIndicators") return items.filter((item) => item.type === "cedear");
+  if (view === "bonds") {
+    return items.filter((item) => ["sovereign_bond", "corporate_bond", "treasury_bill", "lecaps"].includes(item.type));
+  }
+  return items.filter((item) => item.type === "equity");
+}
 
-const localMarketSections = [
-  {
-    key: "snapshot",
-    es: "Panorama local de mercado",
-    en: "Local market snapshot",
-    symbols: ["AL30", "GD30", "GGAL", "YPFD", "AAPL"],
-  },
-  {
-    key: "bonds",
-    es: "Bonos soberanos",
-    en: "Sovereign bonds",
-    symbols: ["AL30", "AL30D", "AL30C", "GD30", "GD30D", "GD30C", "TX26"],
-  },
-  {
-    key: "equities",
-    es: "Acciones argentinas",
-    en: "Argentine equities",
-    symbols: ["GGAL", "YPFD", "PAMP", "TXAR", "ALUA", "BYMA"],
-  },
-  {
-    key: "cedears",
-    es: "CEDEARs destacados",
-    en: "Featured CEDEARs",
-    symbols: ["AAPL", "MSFT", "NVDA", "TSLA", "KO", "SPY", "QQQ"],
-  },
-];
+function signalLabel(analysis: TechnicalAnalysisResponse | null | undefined, isSpanish: boolean) {
+  if (!analysis) return "-";
+  if (analysis.technicalScore >= 65) return isSpanish ? "Compra" : "Buy";
+  if (analysis.technicalScore <= 35) return isSpanish ? "Venta" : "Sell";
+  return isSpanish ? "Esperar" : "Wait";
+}
 
-function argentinaSourceLabel(source: string, isSpanish: boolean) {
-  if (source === "yahoo") return isSpanish ? "Yahoo Finance (no oficial)" : "Yahoo Finance (unofficial)";
-  if (source === "manual") return isSpanish ? "Carga manual validada" : "Validated manual load";
-  if (source === "mock" || source === "unavailable") return isSpanish ? "No disponible" : "Unavailable";
-  if (source === "byma_future") return isSpanish ? "Integración BYMA futura" : "Future BYMA integration";
-  if (source === "cnv_future") return isSpanish ? "CNV futura" : "Future CNV";
-  if (source === "broker_future") return isSpanish ? "Broker/API futuro" : "Future broker/API";
-  return isSpanish ? "No disponible" : "Unavailable";
+function scoreTone(score: number | null | undefined) {
+  if (typeof score !== "number") return "text-slate-400";
+  if (score >= 65) return "bg-emerald-300/12 text-emerald-300 ring-1 ring-emerald-300/25";
+  if (score <= 35) return "bg-rose-300/12 text-rose-300 ring-1 ring-rose-300/25";
+  return "bg-amber-300/10 text-amber-200 ring-1 ring-amber-300/20";
+}
+
+function rsiTone(rsi: number | null | undefined) {
+  if (typeof rsi !== "number") return "text-slate-400";
+  if (rsi >= 70 || rsi <= 30) return "bg-amber-300/10 text-amber-200 ring-1 ring-amber-300/20";
+  if (rsi >= 45 && rsi <= 65) return "bg-emerald-300/12 text-emerald-300 ring-1 ring-emerald-300/25";
+  return "bg-slate-300/8 text-slate-300 ring-1 ring-white/10";
+}
+
+function macdTone(analysis: TechnicalAnalysisResponse | null | undefined) {
+  const macd = analysis?.snapshot.macd;
+  const signal = analysis?.snapshot.macdSignal;
+  if (typeof macd !== "number" || typeof signal !== "number") return "text-slate-400";
+  return macd >= signal
+    ? "bg-emerald-300/12 text-emerald-300 ring-1 ring-emerald-300/25"
+    : "bg-rose-300/12 text-rose-300 ring-1 ring-rose-300/25";
 }
 
 export default function ArgentinaPage() {
   const { language } = useLanguage();
   const isSpanish = language === "es";
-  const [quotes, setQuotes] = useState<Record<string, ArgentinaQuote>>({});
+  const [view, setView] = useState<ViewKey>("heatmap");
+  const [page, setPage] = useState(1);
+  const [query, setQuery] = useState("");
   const [instruments, setInstruments] = useState<ArgentinaInstrument[]>([]);
-  const [sources, setSources] = useState<ArgentinaSourceStatus[]>([]);
+  const [quotes, setQuotes] = useState<Record<string, ArgentinaQuote>>({});
+  const [analyses, setAnalyses] = useState<Record<string, TechnicalAnalysisResponse | null>>({});
+  const [loading, setLoading] = useState(true);
+
+  const filtered = useMemo(() => {
+    const source = instrumentsForView(instruments, view);
+    const normalized = query.trim().toLowerCase();
+    return normalized ? source.filter((item) => [item.symbol, item.displaySymbol, item.name, item.underlyingSymbol].some((value) => value?.toLowerCase().includes(normalized))) : source;
+  }, [instruments, query, view]);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const visible = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page]);
+  const visibleSymbols = useMemo(() => visible.map((item) => item.symbol), [visible]);
 
   useEffect(() => {
-    let active = true;
-
-    async function loadArgentinaData() {
-      try {
-        const [quotesResponse, instrumentsResponse, statusResponse] = await Promise.all([
-          fetch(`/api/argentina/quotes?symbols=${argentinaTableSymbols.join(",")}`),
-          fetch("/api/argentina/instruments"),
-          fetch("/api/argentina/status"),
-        ]);
-        if (!active) return;
-        if (quotesResponse.ok) {
-          const data = (await quotesResponse.json()) as { quotes?: Record<string, ArgentinaQuote> };
-          setQuotes(data.quotes ?? {});
-        }
-        if (instrumentsResponse.ok) {
-          const data = (await instrumentsResponse.json()) as { instruments?: ArgentinaInstrument[] };
-          setInstruments(data.instruments ?? []);
-        }
-        if (statusResponse.ok) {
-          const data = (await statusResponse.json()) as { sources?: ArgentinaSourceStatus[] };
-          setSources(data.sources ?? []);
-        }
-      } catch {
-        if (active) {
-          setQuotes({});
-          setInstruments([]);
-          setSources([]);
-        }
-      }
-    }
-
-    void loadArgentinaData();
-    return () => {
-      active = false;
-    };
+    fetch("/api/argentina/instruments")
+      .then((response) => response.json())
+      .then((payload: { instruments?: ArgentinaInstrument[] }) => setInstruments(payload.instruments ?? []))
+      .catch(() => setInstruments([]))
+      .finally(() => setLoading(false));
   }, []);
 
-  const tableInstruments = argentinaTableSymbols
-    .map((symbol) => instruments.find((instrument) => instrument.symbol === symbol))
-    .filter((instrument): instrument is ArgentinaInstrument => Boolean(instrument));
+  useEffect(() => {
+    if (!visibleSymbols.length || view === "heatmap") return;
+    const controller = new AbortController();
+    fetch(`/api/argentina/quotes?symbols=${visibleSymbols.join(",")}`, { signal: controller.signal })
+      .then((response) => response.json())
+      .then((payload: { quotes?: Record<string, ArgentinaQuote> }) => setQuotes(payload.quotes ?? {}))
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [view, visibleSymbols]);
 
-  function renderInstrumentCard(symbol: string) {
-    const instrument = instruments.find((item) => item.symbol === symbol);
-    if (!instrument) return null;
-    const quote = quotes[symbol];
-    const price = quote?.price === null || quote?.price === undefined ? "N/D" : formatCurrencyValue(quote.price, quote.currency, language);
-    const change = typeof quote?.changePercent === "number" ? formatPercent(quote.changePercent) : "N/D";
-    const source = argentinaSourceLabel(quote?.source ?? instrument.sourceStatus, isSpanish);
+  useEffect(() => {
+    if (!["indicators", "cedearIndicators"].includes(view) || !visibleSymbols.length) return;
+    const controller = new AbortController();
+    Promise.allSettled(
+      visibleSymbols.map(async (symbol) => {
+        const response = await fetch(`/api/analysis/technical/${encodeURIComponent(symbol)}?timeframe=1Y&language=${language}`, {
+          signal: controller.signal,
+        });
+        return [symbol, (await response.json()) as TechnicalAnalysisResponse] as const;
+      }),
+    ).then((results) => {
+      if (controller.signal.aborted) return;
+      const next = results.reduce<Record<string, TechnicalAnalysisResponse | null>>((accumulator, result) => {
+        if (result.status === "fulfilled" && typeof result.value[1]?.technicalScore === "number") {
+          accumulator[result.value[0]] = result.value[1];
+        }
+        return accumulator;
+      }, Object.fromEntries(visibleSymbols.map((symbol) => [symbol, null])));
+      setAnalyses(next);
+    });
+    return () => controller.abort();
+  }, [language, view, visibleSymbols]);
 
-    return (
-      <Link
-        key={symbol}
-        href={`/asset/${encodeURIComponent(symbol)}`}
-        className="rounded-2xl border border-white/10 bg-slate-950/45 p-4 transition hover:-translate-y-0.5 hover:border-cyan-300/35 hover:bg-cyan-300/10"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-lg font-semibold text-white">{instrument.displaySymbol}</p>
-            <p className="mt-1 line-clamp-1 text-xs text-slate-400">{instrument.name}</p>
-          </div>
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-slate-300">
-            {instrument.type.replaceAll("_", " ")}
-          </span>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{isSpanish ? "Precio" : "Price"}</p>
-            <p className="mt-1 font-semibold text-slate-100">{price}</p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{isSpanish ? "Variacion" : "Change"}</p>
-            <p className="mt-1 font-semibold text-slate-100">{change}</p>
-          </div>
-        </div>
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-          <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-xs text-cyan-100">
-            {source}
-          </span>
-          <span className="text-xs text-slate-500">{quote?.lastUpdated ?? (isSpanish ? "Sin fecha" : "No timestamp")}</span>
-        </div>
-        <span className="mt-4 inline-flex text-sm font-semibold text-cyan-100">{isSpanish ? "Abrir analisis" : "Open analysis"}</span>
-      </Link>
-    );
+  function selectView(next: ViewKey) {
+    setView(next);
+    setPage(1);
+    setQuery("");
   }
+
+  const showsIndicators = view === "indicators" || view === "cedearIndicators";
 
   return (
     <AppShell background="argentina">
-      <div className="space-y-8 py-6">
-        <section className="cma-panel-elevated cma-glow-violet p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-200">
-            {isSpanish ? "Modulo Argentina" : "Argentina module"}
-          </p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white">
-            {isSpanish ? "Mercado argentino" : "Argentina Market"}
-          </h1>
-          <p className="mt-4 max-w-4xl text-sm leading-6 text-slate-300">
-            {isSpanish
-              ? "Esta página centraliza analítica específica de Argentina: acciones, CEDEARs, bonos soberanos, instrumentos CER, referencias MEP/CCL e integraciones futuras con BYMA, IOL y CNV."
-              : "This page centralizes Argentina-specific analytics: equities, CEDEARs, sovereign bonds, CER-linked instruments, MEP/CCL references and future BYMA, IOL and CNV integrations."}
-          </p>
-        </section>
-        <MarketHeatmap defaultSegment="argentina" />
-        <section className="cma-panel cma-card-argentina p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
-            {isSpanish ? "Panel local" : "Local panel"}
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
-            {isSpanish ? "Panorama local de mercado" : "Local market snapshot"}
-          </h2>
-          <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
-            {isSpanish
-              ? "Panel inicial para comparar precios locales, variacion, fuente y fecha disponible por instrumento."
-              : "Initial panel for comparing local prices, variation, source and available timestamp by instrument."}
-          </p>
-          <div className="mt-5 space-y-6">
-            {localMarketSections.map((section) => (
-              <div key={section.key}>
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <h3 className="text-base font-semibold text-white">{isSpanish ? section.es : section.en}</h3>
-                  <span className="rounded-full border border-white/10 px-2.5 py-1 text-xs text-slate-400">{section.symbols.length}</span>
-                </div>
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{section.symbols.map(renderInstrumentCard)}</div>
-              </div>
-            ))}
+      <div className="space-y-6 py-6">
+        <section className="cma-panel-elevated p-5 sm:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                {isSpanish ? "Mercado argentino" : "Argentina market"}
+              </h1>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+                {isSpanish
+                  ? "Acciones, CEDEARs y renta fija en vistas compactas para comparar mercado, indicadores y oportunidades."
+                  : "Equities, CEDEARs and fixed income in compact views for comparing markets, indicators and opportunities."}
+              </p>
+            </div>
           </div>
         </section>
-        <section className="cma-panel cma-card-argentina p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-200">
-            {isSpanish ? "Capa CNV" : "CNV layer"}
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
-            {isSpanish ? "Emisoras registradas" : "Registered issuers"}
-          </h2>
-          <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
-            {isSpanish
-              ? "Los documentos y hechos relevantes se incorporaran solo desde una fuente CNV oficial o publica autorizada."
-              : "Documents and relevant events will be added only from an official CNV or authorized public source."}
-          </p>
-          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {cnvIssuers.slice(0, 4).map((issuer) => (
-              <CnvIssuerCard key={issuer.symbol} issuer={issuer} />
-            ))}
-          </div>
-        </section>
-        <section className="cma-panel cma-card-argentina p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
-            {isSpanish ? "Capa de datos local" : "Local data layer"}
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
-            {isSpanish ? "Cobertura de datos Argentina" : "Argentina data coverage"}
-          </h2>
-          <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
-            {isSpanish
-              ? "La capa Argentina prioriza fuentes locales configuradas y cargas manuales validadas. Cuando ninguna fuente responde, informa N/D."
-              : "The Argentina layer prioritizes configured local sources and validated manual loads. When no source responds, it reports N/A."}
-          </p>
-          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            {sources.map((source) => (
-              <article key={source.source} className="cma-card-argentina p-3">
-                <p className="text-sm font-semibold text-white">{argentinaSourceLabel(source.source, isSpanish)}</p>
-                <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">{source.mode}</p>
-                <p className="mt-2 text-xs leading-5 text-slate-400">{source.notes}</p>
-              </article>
-            ))}
-          </div>
-          <div className="mt-5 overflow-x-auto">
-            <table className="min-w-[860px] w-full text-left text-sm">
-              <thead className="border-b border-white/10 text-xs uppercase tracking-[0.12em] text-slate-500">
-                <tr>
-                  <th className="px-3 py-3">Symbol</th>
-                  <th className="px-3 py-3">{isSpanish ? "Nombre" : "Name"}</th>
-                  <th className="px-3 py-3">{isSpanish ? "Tipo" : "Type"}</th>
-                  <th className="px-3 py-3">{isSpanish ? "Precio" : "Price"}</th>
-                  <th className="px-3 py-3">{isSpanish ? "Fuente" : "Source"}</th>
-                  <th className="px-3 py-3">{isSpanish ? "Actualizado" : "Updated"}</th>
-                  <th className="px-3 py-3">{isSpanish ? "Perfil" : "Profile"}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tableInstruments.map((instrument) => {
-                  const quote = quotes[instrument.symbol];
-                  return (
-                    <tr key={instrument.symbol} className="border-b border-white/10 last:border-b-0">
-                      <td className="px-3 py-3 font-semibold text-white">{instrument.displaySymbol}</td>
-                      <td className="px-3 py-3 text-slate-300">{instrument.name}</td>
-                      <td className="px-3 py-3 text-slate-400">{instrument.type.replaceAll("_", " ")}</td>
-                      <td className="px-3 py-3 text-slate-300">
-                        {quote?.price === null || quote?.price === undefined
-                          ? "N/D"
-                          : formatCurrencyValue(quote.price, quote.currency, language)}
-                      </td>
-                      <td className="px-3 py-3">
-                        <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-xs text-cyan-100">
-                          {argentinaSourceLabel(quote?.source ?? instrument.sourceStatus, isSpanish)}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 text-xs text-slate-500">
-                        {quote?.lastUpdated ?? (isSpanish ? "Sin fecha" : "No timestamp")}
-                      </td>
-                      <td className="px-3 py-3">
-                        <Link href={`/asset/${encodeURIComponent(instrument.symbol)}`} className="text-cyan-100 hover:text-white">
-                          {isSpanish ? "Abrir" : "Open"}
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-3 text-xs text-slate-500">
-            {isSpanish
-              ? `Instrumentos registrados: ${formatNumber(instruments.length, language)}. Las cargas manuales no son tiempo real.`
-              : `Registered instruments: ${formatNumber(instruments.length, language)}. Manual loads are not real-time.`}
-          </p>
-        </section>
-        <ArgentinaMarket />
-        <FixedIncomeComparison />
-        <BondSpeciesGuide />
-        <InstrumentUniverseGroups argentinaOnly />
-        <section className="cma-panel p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-200">
-            {isSpanish ? "Universo de instrumentos" : "Instrument universe"}
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
-            {isSpanish ? "Universo registrado" : "Registered universe"}
-          </h2>
-          <div className="mt-5 grid gap-4 lg:grid-cols-3">
-            {universeGroups.map((group) => {
-              const instruments = group.symbols
-                .map((symbol) => ARGENTINA_INSTRUMENT_UNIVERSE.find((item) => item.symbol === symbol))
-                .filter(Boolean);
 
-              return (
-                <article key={group.key} className="cma-card-argentina p-4">
-                  <h3 className="font-semibold text-white">{isSpanish ? group.es : group.en}</h3>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {instruments.map((instrument) => (
-                      <span
-                        key={instrument?.symbol}
-                        className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-sm text-slate-300"
-                      >
-                        {instrument?.symbol}
-                      </span>
-                    ))}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-          <p className="mt-5 rounded-lg border border-amber-300/20 bg-amber-300/10 p-3 text-sm leading-6 text-amber-100">
-            {isSpanish
-              ? "Este catalogo define los instrumentos buscables. La disponibilidad de cada cotizacion depende de la respuesta efectiva del proveedor local."
-              : "This catalog defines searchable instruments. Quote availability depends on the effective response from the local provider."}
-          </p>
-          <Link
-            href="/screener?country=AR"
-            className="mt-4 inline-flex rounded-lg border border-violet-300/30 bg-violet-300/10 px-3 py-2 text-sm font-medium text-violet-100 transition hover:bg-violet-300/15 hover:text-white"
-          >
-            {isSpanish ? "Explorar instrumentos argentinos" : "Explore Argentine instruments"}
-          </Link>
-        </section>
+        <nav aria-label={isSpanish ? "Vistas del mercado argentino" : "Argentina market views"} className="flex gap-2 overflow-x-auto rounded-lg border border-white/10 bg-slate-950/55 p-2">
+          {views.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => selectView(item.key)}
+              className={`min-h-10 shrink-0 rounded-md px-4 text-sm font-semibold transition ${
+                view === item.key ? "bg-cyan-300 text-slate-950" : "text-slate-300 hover:bg-white/[0.07] hover:text-white"
+              }`}
+            >
+              {isSpanish ? item.es : item.en}
+            </button>
+          ))}
+        </nav>
+
+        {view === "heatmap" ? (
+          <MarketHeatmap defaultSegment="argentina" compact showControlsInCompact maxItems={24} />
+        ) : (
+          <section className="cma-panel overflow-hidden">
+            <div className="flex flex-col gap-4 border-b border-white/10 px-4 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-5">
+              <div>
+                <h2 className="text-xl font-semibold text-white">{views.find((item) => item.key === view)?.[language]}</h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  {isSpanish ? `${filtered.length} instrumentos en el universo` : `${filtered.length} instruments in the universe`}
+                </p>
+              </div>
+              <label className="relative w-full sm:max-w-xs"><Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" /><span className="sr-only">{isSpanish ? "Buscar especie" : "Search symbol"}</span><input type="search" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={isSpanish ? "Buscar especie o empresa" : "Search symbol or company"} className="h-10 w-full rounded-md border border-white/10 bg-slate-950/70 pl-9 pr-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-300/40" /></label>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px] text-left text-sm">
+                <thead className="bg-white/[0.035] text-xs uppercase text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">{isSpanish ? "Especie" : "Symbol"}</th>
+                    <th className="px-4 py-3">{isSpanish ? "Nombre" : "Name"}</th>
+                    <th className="px-4 py-3">{isSpanish ? "Ultimo" : "Last"}</th>
+                    <th className="px-4 py-3">% {isSpanish ? "Dia" : "Day"}</th>
+                    {showsIndicators ? <th className="px-4 py-3">Score</th> : null}
+                    {showsIndicators ? <th className="px-4 py-3">RSI 14</th> : null}
+                    {showsIndicators ? <th className="px-4 py-3">MACD</th> : null}
+                    {showsIndicators ? <th className="px-4 py-3">{isSpanish ? "Lectura" : "Reading"}</th> : null}
+                    {view === "cedears" ? <th className="px-4 py-3">Ratio</th> : null}
+                    {view === "bonds" ? <th className="px-4 py-3">{isSpanish ? "Vencimiento" : "Maturity"}</th> : null}
+                    {view === "bonds" ? <th className="px-4 py-3">TIR</th> : null}
+                    {view === "bonds" ? <th className="px-4 py-3">{isSpanish ? "Cupon" : "Coupon"}</th> : null}
+                    <th className="px-4 py-3 text-right">{isSpanish ? "Analisis" : "Analysis"}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visible.map((instrument) => {
+                    const quote = quotes[instrument.symbol];
+                    const analysis = analyses[instrument.symbol];
+                    const change = quote?.changePercent;
+                    return (
+                      <tr key={`${instrument.type}-${instrument.symbol}`} className="border-t border-white/10 transition hover:bg-cyan-300/[0.045]">
+                        <td className="px-4 py-3 font-semibold text-white">{instrument.displaySymbol}</td>
+                        <td className="max-w-64 truncate px-4 py-3 text-slate-300">{instrument.name}</td>
+                        <td className="px-4 py-3 font-medium text-slate-100">
+                          {typeof quote?.price === "number" ? formatCurrencyValue(quote.price, quote.currency, language) : "-"}
+                        </td>
+                        <td className={`px-4 py-3 font-semibold ${typeof change === "number" && change >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
+                          {typeof change === "number" ? formatPercent(change) : "-"}
+                        </td>
+                        {showsIndicators ? <td className="px-4 py-3"><span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${scoreTone(analysis?.technicalScore)}`}>{analysis === undefined ? "..." : analysis?.technicalScore ?? "-"}</span></td> : null}
+                        {showsIndicators ? <td className="px-4 py-3"><span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${rsiTone(analysis?.snapshot.rsi14)}`}>{analysis === undefined ? "..." : analysis?.snapshot.rsi14?.toFixed(1) ?? "-"}</span></td> : null}
+                        {showsIndicators ? <td className="px-4 py-3"><span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${macdTone(analysis)}`}>{analysis === undefined ? "..." : analysis?.snapshot.macd?.toFixed(2) ?? "-"}</span></td> : null}
+                        {showsIndicators ? <td className="px-4 py-3"><span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${scoreTone(analysis?.technicalScore)}`}>{analysis === undefined ? "..." : signalLabel(analysis, isSpanish)}</span></td> : null}
+                        {view === "cedears" ? <td className="px-4 py-3 text-slate-300">{instrument.cedearRatio ? `${instrument.cedearRatio}:1` : "-"}</td> : null}
+                        {view === "bonds" ? <td className="px-4 py-3 text-slate-300">{instrument.maturityDate ?? "-"}</td> : null}
+                        {view === "bonds" ? <td className="px-4 py-3 text-slate-400">-</td> : null}
+                        {view === "bonds" ? <td className="px-4 py-3 text-slate-400">-</td> : null}
+                        <td className="px-4 py-3 text-right">
+                          <Link href={`/asset/${encodeURIComponent(instrument.symbol)}`} className="font-semibold text-cyan-200 hover:text-white">
+                            {isSpanish ? "Abrir" : "Open"}
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {!loading && visible.length === 0 ? (
+              <p className="p-6 text-sm text-slate-400">{isSpanish ? "No hay instrumentos para esta vista." : "No instruments in this view."}</p>
+            ) : null}
+
+            <div className="flex items-center justify-between border-t border-white/10 px-4 py-4 sm:px-5">
+              <button type="button" disabled={page === 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="rounded-md border border-white/10 px-3 py-2 text-sm font-semibold text-slate-200 disabled:opacity-35">
+                {isSpanish ? "Anterior" : "Previous"}
+              </button>
+              <span className="text-sm text-slate-400">{page} / {pageCount}</span>
+              <button type="button" disabled={page === pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))} className="rounded-md border border-white/10 px-3 py-2 text-sm font-semibold text-slate-200 disabled:opacity-35">
+                {isSpanish ? "Siguiente" : "Next"}
+              </button>
+            </div>
+          </section>
+        )}
+        {view === "bonds" ? <FixedIncomeComparison /> : null}
       </div>
     </AppShell>
   );

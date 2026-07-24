@@ -52,6 +52,29 @@ function getTradingViewLogoUrl(logo: ReturnType<typeof getAssetLogoMetadata>) {
   return `https://s3-symbol-logo.tradingview.com/${encodeURIComponent(logo.tradingViewLogoSlug)}--big.svg`;
 }
 
+function getCryptoLogoUrl(logo: ReturnType<typeof getAssetLogoMetadata>) {
+  if (!logo.cryptoLogoId) return null;
+  const iconById: Record<string, string> = {
+    bitcoin: "btc",
+    ethereum: "eth",
+    solana: "sol",
+    bnb: "bnb",
+    xrp: "xrp",
+    cardano: "ada",
+    dogecoin: "doge",
+    avalanche: "avax",
+    chainlink: "link",
+    polkadot: "dot",
+    tether: "usdt",
+    "usd-coin": "usdc",
+    polygon: "matic",
+    litecoin: "ltc",
+    "bitcoin-cash": "bch",
+  };
+  const icon = iconById[logo.cryptoLogoId];
+  return icon ? `https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/${icon}.png` : null;
+}
+
 function AssetLogoMark({ logo }: { logo: ReturnType<typeof getAssetLogoMetadata> }) {
   if (logo.variant === "apple") {
     return (
@@ -104,11 +127,9 @@ function AssetLogoMark({ logo }: { logo: ReturnType<typeof getAssetLogoMetadata>
 
 export function AssetLogo({ symbol, name, type, size = "md", className = "" }: AssetLogoProps) {
   const logo = getAssetLogoMetadata(symbol, type, name);
-  const candidateExternalLogoUrl = getExternalLogoUrl(logo) ?? getTradingViewLogoUrl(logo);
+  const candidateExternalLogoUrl = getCryptoLogoUrl(logo) ?? getExternalLogoUrl(logo) ?? getTradingViewLogoUrl(logo);
   const [failedExternalLogoUrl, setFailedExternalLogoUrl] = useState<string | null>(null);
-  const [loadedExternalLogoUrl, setLoadedExternalLogoUrl] = useState<string | null>(null);
   const externalLogoUrl = candidateExternalLogoUrl !== failedExternalLogoUrl ? candidateExternalLogoUrl : null;
-  const isExternalLoaded = externalLogoUrl !== null && loadedExternalLogoUrl === externalLogoUrl;
 
   return (
     <div
@@ -129,9 +150,8 @@ export function AssetLogo({ symbol, name, type, size = "md", className = "" }: A
         <img
           src={externalLogoUrl}
           alt=""
-          className={`absolute inset-[18%] h-[64%] w-[64%] object-contain transition-opacity ${isExternalLoaded ? "opacity-100" : "opacity-0"}`}
+          className="absolute inset-[18%] h-[64%] w-[64%] object-contain"
           loading="lazy"
-          onLoad={() => setLoadedExternalLogoUrl(externalLogoUrl)}
           onError={() => setFailedExternalLogoUrl(externalLogoUrl)}
         />
       ) : null}

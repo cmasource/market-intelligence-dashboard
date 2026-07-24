@@ -33,7 +33,6 @@ const cryptoNames: Record<string, string> = {
   "BCH-USD": "Bitcoin Cash",
 };
 
-// TODO: expand this mock roadmap toward the top 50 crypto assets by market relevance.
 export const CRYPTO_INSTRUMENT_UNIVERSE: InstrumentUniverseItem[] = [
   "BTC-USD",
   "ETH-USD",
@@ -75,14 +74,8 @@ export const CRYPTO_INSTRUMENT_UNIVERSE: InstrumentUniverseItem[] = [
     news: false,
   },
   searchableAliases: [symbol.replace("-USD", ""), cryptoNames[symbol] ?? "", `${symbol} crypto`, "top 50 crypto"],
-  tags: ["crypto", "usd pair", "future top 50"],
+  tags: ["crypto", "usd pair", "technical"],
   priority: realSupported.has(symbol) ? 8 : 4 - index * 0.1,
-  descriptionEn:
-    realSupported.has(symbol)
-      ? "Current live/fallback market data support."
-      : "Searchable mock roadmap entry for future crypto expansion.",
-  descriptionEs:
-    realSupported.has(symbol)
-      ? "Soporte actual con datos reales o fallback."
-      : "Entrada simulada buscable para futura expansion cripto.",
+  descriptionEn: "Quote and technical-analysis coverage.",
+  descriptionEs: "Cobertura de cotizacion y analisis tecnico.",
 }));

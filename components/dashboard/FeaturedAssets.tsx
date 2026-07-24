@@ -14,7 +14,6 @@ import { isProviderQuoteSupported } from "@/lib/market-data/provider-symbols";
 import { useTheme } from "@/lib/theme/useTheme";
 import type { Asset } from "@/types/asset";
 import { ScoreBadge } from "../ui/ScoreBadge";
-import { SectionHeader } from "../ui/SectionHeader";
 
 type FeaturedAssetsProps = {
   assets: Asset[];
@@ -35,13 +34,15 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
 
   return (
     <section className="cma-panel p-5 sm:p-6">
-      <SectionHeader
-        eyebrow={t("featuredEyebrow")}
-        title={t("featuredTitle")}
-        description={t("featuredDescription")}
-      />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {assets.map((asset) => {
+      <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight text-white">{isSpanish ? "Activos destacados" : "Featured assets"}</h2>
+          <p className="mt-2 text-sm text-slate-400">{isSpanish ? "Seleccionados por lectura combinada y movimiento de mercado." : "Selected by combined reading and market movement."}</p>
+        </div>
+        <Link href="/markets" className="text-sm font-semibold text-cyan-200 hover:text-white">{isSpanish ? "Ver mercados" : "View markets"}</Link>
+      </div>
+      <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-2 md:overflow-visible md:pb-0 xl:grid-cols-3">
+        {assets.map((asset, index) => {
           const quote = quotes[asset.symbol];
           const argentinaQuote = argentinaQuotes[asset.symbol];
           const hasArgentinaQuote = asset.argentinaContext && argentinaQuote && !argentinaQuote.isLoading && typeof argentinaQuote.price === "number";
@@ -62,10 +63,10 @@ export function FeaturedAssets({ assets }: FeaturedAssetsProps) {
           return (
             <article
               key={asset.symbol}
-              className={`cma-card-price p-4 backdrop-blur ${
+              className={`cma-card-price w-[82vw] max-w-sm shrink-0 snap-start p-4 backdrop-blur md:w-auto md:max-w-none ${
                 isLight
                   ? "bg-white/90 shadow-xl shadow-slate-900/10"
-                  : "bg-white/[0.045] shadow-2xl shadow-black/10"
+                  : ["bg-cyan-300/[0.065]", "bg-violet-300/[0.065]", "bg-emerald-300/[0.06]", "bg-amber-300/[0.055]"][index % 4] + " shadow-2xl shadow-black/10"
               }`}
             >
               <div className="flex items-start justify-between gap-4">

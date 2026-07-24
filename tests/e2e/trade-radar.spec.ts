@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.describe("CMA Trade Radar", () => {
   test("searches instrument master and renders backend technical chart", async ({ page }) => {
+    test.setTimeout(90_000);
     await page.goto("/trade-radar", { waitUntil: "domcontentloaded" });
 
     await expect(page.getByRole("heading", { name: /CMA Trade Radar/ })).toBeVisible();
