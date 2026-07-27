@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { CaucionesPanel } from "@/components/argentina/CaucionesPanel";
 import { FixedIncomeComparison } from "@/components/fixed-income/FixedIncomeComparison";
 import { AppShell } from "@/components/layout/AppShell";
 import { MarketHeatmap } from "@/components/market/MarketHeatmap";
@@ -11,7 +12,7 @@ import { formatCurrencyValue, formatPercent } from "@/lib/formatters";
 import type { ArgentinaInstrument, ArgentinaQuote } from "@/lib/argentina";
 import type { TechnicalAnalysisResponse } from "@/lib/analysis/types";
 
-type ViewKey = "heatmap" | "equities" | "indicators" | "cedears" | "cedearIndicators" | "bonds";
+type ViewKey = "heatmap" | "equities" | "indicators" | "cedears" | "cedearIndicators" | "bonds" | "cauciones";
 
 const pageSize = 12;
 
@@ -22,6 +23,7 @@ const views: Array<{ key: ViewKey; es: string; en: string }> = [
   { key: "cedears", es: "CEDEARs", en: "CEDEARs" },
   { key: "cedearIndicators", es: "CEDEARs + indicadores", en: "CEDEARs + indicators" },
   { key: "bonds", es: "Bonos", en: "Bonds" },
+  { key: "cauciones", es: "Cauciones", en: "Repos" },
 ];
 
 function instrumentsForView(items: ArgentinaInstrument[], view: ViewKey) {
@@ -166,6 +168,8 @@ export default function ArgentinaPage() {
 
         {view === "heatmap" ? (
           <MarketHeatmap defaultSegment="argentina" compact showControlsInCompact maxItems={24} />
+        ) : view === "cauciones" ? (
+          <CaucionesPanel />
         ) : (
           <section className="cma-panel overflow-hidden">
             <div className="flex flex-col gap-4 border-b border-white/10 px-4 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-5">

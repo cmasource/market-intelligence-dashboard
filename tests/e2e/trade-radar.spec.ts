@@ -27,6 +27,14 @@ test.describe("CMA Trade Radar", () => {
     await expect(page.locator("body")).toContainText(/US Technical|Technical underlying|subyacente|CEDEAR/);
     await expect(page.locator("body")).not.toContainText(/Unhandled Runtime Error|Hydration failed|This page could not be found/i);
 
+    const watchlistButton = page.getByTestId("watchlist-button-MSFT").first();
+    await expect(watchlistButton).toBeVisible();
+    await watchlistButton.click();
+    const watchlistDialog = page.getByRole("dialog", { name: "Agregar a lista" });
+    await watchlistDialog.getByLabel(/Mi lista/).check();
+    await watchlistDialog.getByRole("button", { name: "Agregar a las listas elegidas" }).click();
+    await expect(watchlistDialog.getByRole("status")).toContainText("Activo agregado");
+
     if (process.env.TRADE_RADAR_QA_SCREENSHOT) {
       await page.screenshot({ path: process.env.TRADE_RADAR_QA_SCREENSHOT, fullPage: false });
     }

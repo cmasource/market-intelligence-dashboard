@@ -31,13 +31,13 @@ The app is transparent about mixed coverage: selected USA and crypto instruments
 
 - Sprint 21 visual identity: CMA Institutional Fintech Terminal design system with premium dark fintech panels, market-grid background, sticky glass header and differentiated card families.
 - Sprint 22 asset page IA: compact executive strip, distinct market signal, technical factor panel, secondary coverage disclosure and first market heatmap.
-- Sprint 24 watchlist/universe UX: browser-local watchlist, broader Argentina/CEDEAR/bond universe and clearer signal-vs-technical module semantics.
+- Browser-local multiple watchlists with legacy migration, Instrument Master search and no account or portfolio semantics.
 - Sprint 25 rankings and brand polish: refined CMA lockup/favicon/footer plus technical, fundamental, combined and performance rankings.
 - Sprint 26 brand/deployment polish: theme-aware logo contrast, padded favicons, hybrid asset logos and local/production parity diagnostics.
 - Dashboard overview
 - Markets universe page
 - Advanced instrument screener
-- Browser-local watchlist with no login and no database
+- Browser-local multiple watchlists with no login and no database
 - Asset detail pages
 - Real/provider USA and crypto market data with fallback
 - Argentina data layer with validated manual quote loads, structured mock fallback and future BYMA/CNV/provider status

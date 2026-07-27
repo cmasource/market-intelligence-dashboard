@@ -74,7 +74,13 @@ test.describe("CMA Markets public smoke tests", () => {
     const button = page.getByTestId("watchlist-button-AAPL").first();
     await expect(button).toBeEnabled();
     await button.click();
-    await expect(button).toHaveAttribute("aria-pressed", "true");
+    const dialog = page.getByRole("dialog", { name: "Agregar a lista" });
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel(/Mi lista/).check();
+    await dialog.getByRole("button", { name: "Agregar a las listas elegidas" }).click();
+    await expect(dialog.getByRole("status")).toContainText("Activo agregado");
+    await dialog.getByRole("button", { name: "Cerrar" }).click();
+    await expect(button).toContainText(/1 (lista|list)/);
     await page.goto("/watchlist");
     await expect(page.getByText("AAPL").first()).toBeVisible();
     await page.reload();
@@ -113,6 +119,16 @@ test.describe("CMA Markets public smoke tests", () => {
     await page.getByRole("button", { name: /Bonds|Bonos/, exact: true }).click();
     await expect(page.getByRole("heading", { name: /Fixed Income Analytics|Analitica de renta fija/ })).toBeVisible();
     await expect(page.locator("body")).toContainText(/AL30|GD30/);
+
+  });
+
+  test("Argentina exposes cauciones with a compact rate table", async ({ page }) => {
+    await page.goto("/argentina");
+    await page.getByRole("button", { name: /Repos|Cauciones/, exact: true }).click();
+    await expect(page.getByTestId("cauciones-panel")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Market repos|Cauciones bursatiles/ })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "TNA" })).toBeVisible();
+    await expect(page.getByRole("cell", { name: "1D", exact: true })).toBeVisible();
   });
 
   test("crypto workspace is searchable and opens supported assets", async ({ page }) => {
@@ -170,6 +186,16 @@ test.describe("CMA Markets public smoke tests", () => {
     expect(Array.isArray(rates.rates)).toBeTruthy();
     expect(rates.rates.length).toBeGreaterThan(0);
     expect(rates.rates.every((item: { name?: unknown; tna?: unknown }) => typeof item.name === "string" && typeof item.tna === "number")).toBeTruthy();
+
+    const caucionesResponse = await request.get("/api/research/cauciones");
+    expect(caucionesResponse.ok()).toBeTruthy();
+    const cauciones = await caucionesResponse.json();
+    expect(Array.isArray(cauciones.quotes)).toBeTruthy();
+    expect(cauciones.quotes.length).toBeGreaterThan(0);
+    expect(cauciones.quotes.some((item: { termDays?: unknown; rateTna?: unknown }) => item.termDays === 1 && typeof item.rateTna === "number")).toBeTruthy();
+    if (cauciones.alert) {
+      expect(cauciones.alert.increasePoints).toBeGreaterThan(cauciones.alert.thresholdPoints);
+    }
   });
 
   test("market and analysis APIs keep stable public contracts and hide secrets", async ({ request }) => {
