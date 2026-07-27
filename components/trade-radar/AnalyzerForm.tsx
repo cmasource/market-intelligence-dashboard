@@ -35,12 +35,12 @@ const intervalOptions: Array<{ value: TradeRadarInterval; label: string }> = [
 ];
 
 const providerOptions: Array<{ value: TradeRadarProviderName; label: string }> = [
-  { value: "auto", label: "Auto" },
-  { value: "twelveData", label: "Twelve Data" },
-  { value: "alphaVantage", label: "Alpha Vantage" },
-  { value: "fmp", label: "FMP" },
+  { value: "auto", label: "Fuente automatica" },
+  { value: "twelveData", label: "Mercado global" },
+  { value: "alphaVantage", label: "Mercado global alternativo" },
+  { value: "fmp", label: "Fundamentales" },
   { value: "byma", label: "BYMA" },
-  { value: "binance", label: "Binance" },
+  { value: "binance", label: "Cripto" },
 ];
 
 export function AnalyzerForm({

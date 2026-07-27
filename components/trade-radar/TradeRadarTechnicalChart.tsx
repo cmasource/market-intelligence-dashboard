@@ -14,6 +14,7 @@ import {
   type Time,
 } from "lightweight-charts";
 import type { TradeRadarAnalysis } from "@/lib/technical/trade-radar";
+import { formatTradeRadarSource } from "@/lib/technical/trade-radar-labels";
 
 type TradeRadarTechnicalChartProps = {
   analysis: TradeRadarAnalysis;
@@ -196,7 +197,7 @@ export function TradeRadarTechnicalChart({ analysis }: TradeRadarTechnicalChartP
             {analysis.symbol} <span className="font-normal text-slate-400">{analysis.interval}</span>
           </h3>
           <p className="mt-1 text-xs leading-5 text-slate-400">
-            Velas OHLCV reales de {analysis.provider}. Medias y niveles calculados en backend sobre la misma muestra.
+            Velas OHLCV reales de {formatTradeRadarSource(analysis.sourceLabel).toLowerCase()}. Medias y niveles calculados en backend sobre la misma muestra.
           </p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs">
