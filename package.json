@@ -12,6 +12,7 @@
     "validate:argentina": "tsx scripts/validate-argentina-data.ts",
     "validate:coverage": "tsx scripts/validate-public-asset-coverage.ts",
     "test:technical": "node --import tsx --test tests/technical/*.test.ts tests/market-data/*.test.ts tests/api/*.test.ts tests/intelligence/*.test.ts",
+    "test:watchlist": "node --import tsx --test tests/watchlist/*.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },

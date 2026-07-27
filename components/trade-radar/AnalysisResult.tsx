@@ -1,6 +1,8 @@
 "use client";
 
 import type { TradeRadarAnalysis } from "@/lib/technical/trade-radar";
+import { WatchlistButton } from "@/components/watchlist/WatchlistButton";
+import { watchlistItemFromInstrument } from "@/lib/watchlist";
 import { IndicatorCards } from "./IndicatorCards";
 import { BymaLocalQuoteTable } from "./BymaLocalQuoteTable";
 import { LevelsTable } from "./LevelsTable";
@@ -18,8 +20,28 @@ type AnalysisResultProps = {
 };
 
 export function AnalysisResult({ analysis }: AnalysisResultProps) {
+  const watchlistItem = analysis.instrument
+    ? watchlistItemFromInstrument(analysis.instrument)
+    : {
+        symbol: analysis.symbol,
+        displaySymbol: analysis.symbol,
+        normalizedSymbol: analysis.resolvedSymbol,
+        providerSymbol: analysis.resolvedSymbol,
+        name: analysis.symbol,
+        assetType: analysis.market,
+        market: analysis.market,
+        currency: analysis.currency,
+      };
+
   return (
     <div className="space-y-5">
+      <section className="cma-panel flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-[var(--cma-text-primary)]">Seguimiento del activo</h2>
+          <p className="mt-1 text-xs text-[var(--cma-text-muted)]">Guardalo en una o varias listas sin registrar una posición.</p>
+        </div>
+        <WatchlistButton item={watchlistItem} />
+      </section>
       <TechnicalVerdict analysis={analysis} />
       {analysis.localLayer ? <BymaLocalQuoteTable quote={analysis.localLayer.quote} /> : null}
       <IndicatorCards analysis={analysis} />

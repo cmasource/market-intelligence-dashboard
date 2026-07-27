@@ -23,6 +23,12 @@ export function TradeRadarPage() {
   const analyzeControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedSymbol = params.get("symbol")?.trim().toUpperCase();
+    if (requestedSymbol) queueMicrotask(() => setSymbol(requestedSymbol));
+  }, []);
+
+  useEffect(() => {
     const controller = new AbortController();
     async function loadStatus() {
       try {

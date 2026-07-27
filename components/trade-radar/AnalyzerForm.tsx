@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { InstrumentSearchResult } from "@/lib/instruments/types";
+import { useInstrumentSearch } from "@/lib/hooks/useInstrumentSearch";
 import type { TradeRadarInterval, TradeRadarMarket, TradeRadarProviderName } from "@/lib/market-data/providers/base";
 
 type AnalyzerFormProps = {
@@ -57,53 +58,8 @@ export function AnalyzerForm({
   onSuggestionSelect,
   onSubmit,
 }: AnalyzerFormProps) {
-  const [suggestions, setSuggestions] = useState<InstrumentSearchResult[]>([]);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
-  const latestQueryRef = useRef("");
-
-  useEffect(() => {
-    const query = symbol.trim();
-    latestQueryRef.current = query;
-
-    if (query.length < 2) {
-      return undefined;
-    }
-
-    const controller = new AbortController();
-    const timeout = window.setTimeout(async () => {
-      setSearchLoading(true);
-      setSearchError(null);
-      try {
-        const params = new URLSearchParams({ q: query, limit: "100" });
-        const response = await fetch(`/api/trade-radar/search?${params.toString()}`, {
-          signal: controller.signal,
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = (await response.json()) as { results?: InstrumentSearchResult[] };
-        if (latestQueryRef.current === query) {
-          setSuggestions(data.results ?? []);
-          setSuggestionsOpen(true);
-        }
-      } catch (error) {
-        if (!controller.signal.aborted && latestQueryRef.current === query) {
-          setSuggestions([]);
-          setSearchError(error instanceof Error ? error.message : "No se pudo buscar el instrumento.");
-          setSuggestionsOpen(true);
-        }
-      } finally {
-        if (!controller.signal.aborted && latestQueryRef.current === query) {
-          setSearchLoading(false);
-        }
-      }
-    }, 250);
-
-    return () => {
-      controller.abort();
-      window.clearTimeout(timeout);
-    };
-  }, [symbol]);
+  const { results: suggestions, loading: searchLoading, error: searchError } = useInstrumentSearch(symbol);
 
   return (
     <form
@@ -123,11 +79,8 @@ export function AnalyzerForm({
           onChange={(event) => {
             const nextSymbol = event.target.value.toUpperCase();
             onSymbolChange(nextSymbol);
-            setSuggestions([]);
             if (nextSymbol.trim().length < 2) {
               setSuggestionsOpen(false);
-              setSearchLoading(false);
-              setSearchError(null);
             } else {
               setSuggestionsOpen(true);
             }

@@ -10,27 +10,24 @@ export default function WatchlistPage() {
 
   return (
     <AppShell>
-      <div className="space-y-8 py-6">
+      <div className="space-y-6 py-6">
         <section className="cma-panel-elevated p-6">
-          <p className="cma-kicker">{language === "es" ? "Lista local" : "Local watchlist"}</p>
+          <p className="cma-kicker">{language === "es" ? "Seguimiento local" : "Local tracking"}</p>
           <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h1 className="text-4xl font-semibold tracking-tight text-white">{language === "es" ? "Mi lista" : "Watchlist"}</h1>
+              <h1 className="text-4xl font-semibold tracking-tight text-white">{language === "es" ? "Mis listas" : "My watchlists"}</h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
                 {language === "es"
-                  ? "Lista local guardada en este navegador. No requiere cuenta y no se sincroniza entre dispositivos."
-                  : "A local list saved in this browser. It does not require an account and does not sync across devices."}
+                  ? "Organizá activos en múltiples listas locales. Son listas de seguimiento: no representan posiciones, operaciones ni rendimiento."
+                  : "Organize assets in multiple local watchlists. They do not represent positions, trades, or performance."}
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link href="/screener" className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-sm font-medium text-cyan-100">
-                {language === "es" ? "Ir al screener" : "Open screener"}
+              <Link href="/trade-radar" className="inline-flex min-h-11 items-center rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-sm font-medium text-cyan-100">
+                {language === "es" ? "Ir a Trade Radar" : "Open Trade Radar"}
               </Link>
-              <Link href="/markets#market-heatmap" className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-300">
-                {language === "es" ? "Ver heatmap" : "View heatmap"}
-              </Link>
-              <Link href="/argentina" className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-300">
-                {language === "es" ? "Ver Argentina" : "View Argentina"}
+              <Link href="/screener" className="inline-flex min-h-11 items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-300">
+                {language === "es" ? "Explorar activos" : "Explore assets"}
               </Link>
             </div>
           </div>
