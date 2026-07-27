@@ -117,6 +117,15 @@ export function formatTradeRadarProvider(provider: string) {
   return providerLabels[provider] ?? fallbackLabel(provider);
 }
 
+export function formatTradeRadarSource(sourceLabel: string) {
+  if (/twelve\s*data/i.test(sourceLabel) || /twelveData/i.test(sourceLabel)) return "Fuente publica de mercado";
+  if (/alpha\s*vantage/i.test(sourceLabel)) return "Fuente publica de mercado";
+  if (/financial\s*modeling\s*prep/i.test(sourceLabel) || /\bfmp\b/i.test(sourceLabel)) return "Fuente fundamental";
+  if (/binance/i.test(sourceLabel)) return "Fuente publica cripto";
+  if (/byma/i.test(sourceLabel)) return "Mercado local";
+  return sourceLabel;
+}
+
 export function formatTradeRadarDelay(delay: string) {
   return delayLabels[delay] ?? fallbackLabel(delay);
 }

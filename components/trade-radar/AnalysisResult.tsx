@@ -7,7 +7,11 @@ import { LevelsTable } from "./LevelsTable";
 import { SuggestedAlerts } from "./SuggestedAlerts";
 import { TechnicalVerdict } from "./TechnicalVerdict";
 import { TradeRadarTechnicalChart } from "./TradeRadarTechnicalChart";
-import { formatTradeRadarCoverage, formatTradeRadarProviderFailure } from "@/lib/technical/trade-radar-labels";
+import {
+  formatTradeRadarCoverage,
+  formatTradeRadarProviderFailure,
+  formatTradeRadarSource,
+} from "@/lib/technical/trade-radar-labels";
 
 type AnalysisResultProps = {
   analysis: TradeRadarAnalysis;
@@ -38,7 +42,7 @@ export function AnalysisResult({ analysis }: AnalysisResultProps) {
             <dl className="mt-3 space-y-2 text-sm">
               <div className="flex justify-between gap-4">
                 <dt className="text-slate-500">Fuente</dt>
-                <dd className="text-right text-slate-200">{analysis.sourceLabel}</dd>
+                <dd className="text-right text-slate-200">{formatTradeRadarSource(analysis.sourceLabel)}</dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-slate-500">Fetch</dt>
