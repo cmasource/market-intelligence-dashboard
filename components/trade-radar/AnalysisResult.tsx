@@ -7,6 +7,7 @@ import { LevelsTable } from "./LevelsTable";
 import { SuggestedAlerts } from "./SuggestedAlerts";
 import { TechnicalVerdict } from "./TechnicalVerdict";
 import { TradeRadarTechnicalChart } from "./TradeRadarTechnicalChart";
+import { formatTradeRadarCoverage, formatTradeRadarProviderFailure } from "@/lib/technical/trade-radar-labels";
 
 type AnalysisResultProps = {
   analysis: TradeRadarAnalysis;
@@ -54,7 +55,7 @@ export function AnalysisResult({ analysis }: AnalysisResultProps) {
                 <ul className="mt-2 space-y-1 text-xs text-slate-300">
                   {analysis.providerFailures.map((failure) => (
                     <li key={`${failure.provider}-${failure.message}`}>
-                      {failure.provider}: {failure.message}
+                      {formatTradeRadarProviderFailure(failure.message)}
                     </li>
                   ))}
                 </ul>
@@ -81,7 +82,7 @@ export function AnalysisResult({ analysis }: AnalysisResultProps) {
               <div className="mt-4 flex flex-wrap gap-2">
                 {analysis.dataCoverage.map((capability) => (
                   <span key={capability} className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[0.68rem] text-slate-300">
-                    {capability}
+                    {formatTradeRadarCoverage(capability)}
                   </span>
                 ))}
               </div>

@@ -1,6 +1,13 @@
 "use client";
 
 import type { TradeRadarAnalysis } from "@/lib/technical/trade-radar";
+import {
+  formatTradeRadarDelay,
+  formatTradeRadarMarket,
+  formatTradeRadarProvider,
+  formatTradeRadarSignalKey,
+  formatTradeRadarStatus,
+} from "@/lib/technical/trade-radar-labels";
 
 type TechnicalVerdictProps = {
   analysis: TradeRadarAnalysis;
@@ -31,10 +38,10 @@ export function TechnicalVerdict({ analysis }: TechnicalVerdictProps) {
             </span>
           ))}
           <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${badgeClass(analysis.dataDelay)}`}>
-            {analysis.dataDelay}
+            {formatTradeRadarDelay(analysis.dataDelay)}
           </span>
           <span className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
-            {analysis.provider}
+            {formatTradeRadarProvider(analysis.provider)}
           </span>
           <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-300">
             {analysis.candlesUsed} velas
@@ -53,7 +60,7 @@ export function TechnicalVerdict({ analysis }: TechnicalVerdictProps) {
         </div>
         <div>
           <dt className="text-slate-500">Mercado</dt>
-          <dd className="mt-1 text-slate-200">{analysis.market}</dd>
+          <dd className="mt-1 text-slate-200">{formatTradeRadarMarket(analysis.market)}</dd>
         </div>
         <div>
           <dt className="text-slate-500">Simbolo resuelto</dt>
@@ -69,8 +76,8 @@ export function TechnicalVerdict({ analysis }: TechnicalVerdictProps) {
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {Object.entries(analysis.signals).map(([key, value]) => (
             <div key={key} className="rounded-lg border border-white/10 bg-slate-950/45 p-3">
-              <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{key}</p>
-              <p className="mt-2 text-sm font-semibold text-white">{value}</p>
+              <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{formatTradeRadarSignalKey(key)}</p>
+              <p className="mt-2 text-sm font-semibold text-white">{formatTradeRadarStatus(key, value)}</p>
             </div>
           ))}
         </div>

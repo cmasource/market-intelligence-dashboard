@@ -14,6 +14,7 @@ import {
 import { atrWilder, avgVolume, ema, latestNumber, rsiWilder, sma } from "./indicators";
 import { calculateSupportResistance, type TechnicalLevel } from "./levels";
 import { buildSuggestedAlerts, calculateSignals, type RadarSignals } from "./signals";
+import { formatTradeRadarStatus } from "./trade-radar-labels";
 
 export type TradeRadarAnalysis = {
   symbol: string;
@@ -109,7 +110,7 @@ function buildSummary(
   const setup = signals?.setup ?? "esperar_confirmacion";
 
   return [
-    `${symbol} cotiza en ${price.toFixed(2)} con estado ${signals?.trendStatus ?? "sin_senal"}.`,
+    `${symbol} cotiza en ${price.toFixed(2)} con lectura ${formatTradeRadarStatus("trendStatus", signals?.trendStatus ?? "sin_senal").toLowerCase()}.`,
     resistance ? `La resistencia inmediata queda cerca de ${resistance}.` : "No se detecto resistencia inmediata confiable.",
     support ? `El soporte operativo mas cercano queda en ${support}.` : "No se detecto soporte inmediato confiable.",
     setup === "vigilancia_breakout"
@@ -158,8 +159,8 @@ function instrumentBadges(resolution: InstrumentResolution | null) {
   if (assetClass === "bond" || assetClass === "bill") badges.push("Bono");
   if (assetClass === "corporate_bond") badges.push("ON");
   if (assetClass === "crypto") badges.push("Crypto");
-  if (resolution.dataCoverage.includes("technical_underlying")) badges.push("Technical underlying");
-  if (resolution.dataCoverage.includes("quote_only") && !resolution.dataCoverage.includes("technical_full")) badges.push("Quote only");
+  if (resolution.dataCoverage.includes("technical_underlying")) badges.push("Tecnico del subyacente");
+  if (resolution.dataCoverage.includes("quote_only") && !resolution.dataCoverage.includes("technical_full")) badges.push("Cotizacion disponible");
 
   return badges;
 }
@@ -254,8 +255,8 @@ export async function analyzeTradeRadar(params: {
       badges: [
         ...instrumentBadges(instrumentResolution),
         `BYMA ${quote.feed === "delay20" ? "Delay20" : quote.feed === "snapshot" ? "Snapshot" : "EOD"}`,
-        "Local Quote Only",
-        "Technical indicators unavailable",
+        "Cotizacion local",
+        "Indicadores no disponibles",
       ],
       localLayer,
       instrument: instrumentResolution?.instrument,
@@ -340,13 +341,13 @@ export async function analyzeTradeRadar(params: {
       response.provider === "byma"
         ? `BYMA ${response.localQuote?.feed === "delay20" ? "Delay20" : response.localQuote?.feed === "snapshot" ? "Snapshot" : "EOD"}`
         : response.market === "cedear"
-          ? "US Technical"
+          ? "Tecnico del subyacente"
           : response.market === "us"
-            ? "US Technical"
+            ? "Tecnico mercado US"
             : response.market === "crypto"
-              ? "Crypto Technical"
-              : "Technical",
-      ...(sampleStatus === "ok" ? [] : ["Technical indicators unavailable"]),
+              ? "Tecnico cripto"
+              : "Tecnico",
+      ...(sampleStatus === "ok" ? [] : ["Indicadores no disponibles"]),
       ...(localLayer ? [`BYMA ${localLayer.quote.feed === "delay20" ? "Delay20" : localLayer.quote.feed === "snapshot" ? "Snapshot" : "EOD"}`] : []),
     ],
     technicalLayer: {

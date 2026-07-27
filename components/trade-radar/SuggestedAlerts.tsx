@@ -1,6 +1,7 @@
 "use client";
 
 import type { TradeRadarAnalysis } from "@/lib/technical/trade-radar";
+import { formatTradeRadarAlertCondition } from "@/lib/technical/trade-radar-labels";
 
 type SuggestedAlertsProps = {
   alerts: TradeRadarAnalysis["suggestedAlerts"];
@@ -14,7 +15,7 @@ export function SuggestedAlerts({ alerts }: SuggestedAlertsProps) {
         {alerts.length ? alerts.map((alert) => (
           <div key={`${alert.condition}-${alert.level}`} className="rounded-lg border border-white/10 bg-slate-950/45 p-3">
             <p className="font-mono text-sm text-white">
-              {alert.condition} {alert.level}
+              {formatTradeRadarAlertCondition(alert.condition)} {alert.level}
             </p>
             <p className="mt-1 text-sm text-slate-300">{alert.reason}</p>
           </div>
