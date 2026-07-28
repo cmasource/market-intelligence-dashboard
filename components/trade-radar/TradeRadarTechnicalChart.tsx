@@ -86,7 +86,7 @@ export function TradeRadarTechnicalChart({ analysis }: TradeRadarTechnicalChartP
       },
       rightPriceScale: {
         borderColor: "rgba(148, 163, 184, 0.16)",
-        scaleMargins: { top: 0.08, bottom: 0.26 },
+        scaleMargins: { top: 0.12, bottom: 0.28 },
       },
       timeScale: {
         borderColor: "rgba(148, 163, 184, 0.16)",
@@ -146,24 +146,24 @@ export function TradeRadarTechnicalChart({ analysis }: TradeRadarTechnicalChartP
     volumeSeries.setData(volumeData);
     chart.priceScale("").applyOptions({ scaleMargins: { top: 0.78, bottom: 0 } });
 
-    for (const support of analysis.levels.supports.slice(0, 3)) {
+    for (const support of analysis.levels.supports.slice(0, 2)) {
       candleSeries.createPriceLine({
         price: support.level,
-        color: "rgba(34, 197, 94, 0.72)",
+        color: "rgba(34, 197, 94, 0.54)",
         lineWidth: 1,
         lineStyle: 2,
-        axisLabelVisible: true,
-        title: `S ${support.type}`,
+        axisLabelVisible: false,
+        title: "",
       });
     }
-    for (const resistance of analysis.levels.resistances.slice(0, 3)) {
+    for (const resistance of analysis.levels.resistances.slice(0, 2)) {
       candleSeries.createPriceLine({
         price: resistance.level,
-        color: "rgba(248, 113, 113, 0.76)",
+        color: "rgba(248, 113, 113, 0.58)",
         lineWidth: 1,
         lineStyle: 2,
-        axisLabelVisible: true,
-        title: `R ${resistance.type}`,
+        axisLabelVisible: false,
+        title: "",
       });
     }
 
@@ -216,13 +216,27 @@ export function TradeRadarTechnicalChart({ analysis }: TradeRadarTechnicalChartP
         />
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
-        <span>
-          Ultimo precio: <span className="font-medium text-slate-200">{formatPrice(analysis.lastPrice, analysis.currency)}</span>
-        </span>
-        <span>
-          Ventana: <span className="font-medium text-slate-200">{analysis.candlesUsed} velas</span>
-        </span>
+      <div className="mt-3 grid gap-3 text-xs text-slate-400 lg:grid-cols-[1fr_auto] lg:items-center">
+        <div className="flex flex-wrap gap-2">
+          {analysis.levels.supports.slice(0, 2).map((support) => (
+            <span key={`support-${support.level}`} className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2.5 py-1 text-emerald-100">
+              Soporte {support.level.toLocaleString("es-AR", { maximumFractionDigits: 2 })}
+            </span>
+          ))}
+          {analysis.levels.resistances.slice(0, 2).map((resistance) => (
+            <span key={`resistance-${resistance.level}`} className="rounded-full border border-rose-300/20 bg-rose-300/10 px-2.5 py-1 text-rose-100">
+              Resistencia {resistance.level.toLocaleString("es-AR", { maximumFractionDigits: 2 })}
+            </span>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-3 lg:justify-end">
+          <span>
+            Ultimo precio: <span className="font-medium text-slate-200">{formatPrice(analysis.lastPrice, analysis.currency)}</span>
+          </span>
+          <span>
+            Ventana: <span className="font-medium text-slate-200">{analysis.candlesUsed} velas</span>
+          </span>
+        </div>
       </div>
     </section>
   );

@@ -32,12 +32,13 @@ The app is transparent about mixed coverage: selected USA and crypto instruments
 - Sprint 21 visual identity: CMA Institutional Fintech Terminal design system with premium dark fintech panels, market-grid background, sticky glass header and differentiated card families.
 - Sprint 22 asset page IA: compact executive strip, distinct market signal, technical factor panel, secondary coverage disclosure and first market heatmap.
 - Browser-local multiple watchlists with legacy migration, Instrument Master search and no account or portfolio semantics.
+- Supabase Auth foundation for email/password, email confirmation, recovery, Google OAuth (PKCE), secure cookie sessions and a private account page. Provider configuration is required before live use.
 - Sprint 25 rankings and brand polish: refined CMA lockup/favicon/footer plus technical, fundamental, combined and performance rankings.
 - Sprint 26 brand/deployment polish: theme-aware logo contrast, padded favicons, hybrid asset logos and local/production parity diagnostics.
 - Dashboard overview
 - Markets universe page
 - Advanced instrument screener
-- Browser-local multiple watchlists with no login and no database
+- Browser-local multiple watchlists with no database or account synchronization
 - Asset detail pages
 - Real/provider USA and crypto market data with fallback
 - Argentina data layer with validated manual quote loads, structured mock fallback and future BYMA/CNV/provider status
@@ -104,7 +105,7 @@ Recommended workflow:
 3. Use the Next.js preset.
 4. Build command: `npm run build`.
 5. Install command: `npm install`.
-6. Environment variables: none required for fallback demo mode. Optional provider keys can be added for live provider data.
+6. Environment variables: none required for fallback market-data demo mode. Supabase Auth requires `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `NEXT_PUBLIC_SITE_URL`; optional provider keys can be added for live market data.
 7. Review the preview deployment before promoting to production.
 
 Alternative workflow:
@@ -113,6 +114,8 @@ Alternative workflow:
 - GitHub + Vercel Dashboard is preferred for ongoing previews, review and collaboration.
 
 See `docs/vercel-deployment.md` for the full deployment checklist.
+
+See `docs/supabase-auth.md` for Supabase Auth setup, redirect URLs, Google OAuth and verification.
 
 ## Disclaimer
 

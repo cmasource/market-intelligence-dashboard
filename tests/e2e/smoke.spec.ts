@@ -45,6 +45,22 @@ test.describe("CMA Markets public smoke tests", () => {
     await expect(page.getByRole("heading", { name: /Inteligencia financiera para decisiones de mercado/ })).toBeVisible();
   });
 
+  test("authentication foundation exposes public entry points and protects account", async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.goto("/auth/login?next=%2Faccount", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: /Sign in to CMA Markets|Ingresá a CMA Markets/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Continue with Google|Continuar con Google/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Create account|Crear cuenta/ })).toBeVisible();
+    await page.getByLabel("Email").fill("qa@example.com");
+    await page.getByLabel(/Password|Contraseña/).fill("secure-password");
+    await page.getByRole("button", { name: /Sign in|Iniciar sesión/, exact: true }).click();
+    await expect(page.getByRole("status")).toContainText(/not connected|no está conectada/);
+
+    const accountResponse = await page.goto("/account", { waitUntil: "domcontentloaded" });
+    expect(accountResponse?.url()).toContain("/auth/login");
+    await expect(page).toHaveURL(/\/auth\/login\?next=%2Faccount/);
+  });
+
   test("dashboard exposes rankings, news, macro monitor and wallet rates", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByTestId("ranking-row")).toHaveCount(15);

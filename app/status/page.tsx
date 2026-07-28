@@ -27,6 +27,7 @@ const implemented = [
   "Methodology page",
   "Screener",
   "Local browser watchlist",
+  "Supabase Auth foundation and private account route",
   "Playwright smoke tests",
 ];
 
@@ -41,7 +42,6 @@ const pending = [
   "PDF reports",
   "Arbitrage intelligence",
   "Backtesting",
-  "User accounts",
   "Database/cache",
 ];
 

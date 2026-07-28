@@ -1,7 +1,11 @@
 import { resolveInstrument } from "@/lib/instruments/resolveInstrument";
 import type { InstrumentResolution } from "@/lib/instruments/types";
+import { calculateEMA, calculateMACD, calculateSMA } from "@/lib/finance/technical";
+import { getFundamentals } from "@/lib/fundamentals-data";
 import { fetchBymaInstrumentLocalQuote, fetchTradeRadarOhlcv } from "@/lib/market-data/providerRouter";
 import { resolveTradeRadarSymbol } from "@/lib/market-data/resolveSymbol";
+import { calculateTechnicalScore, buildTechnicalInterpretation, getMomentumLabel, getTrendLabel } from "@/lib/analysis/technical-score";
+import type { TechnicalIndicatorSnapshot, TechnicalInterpretation } from "@/lib/analysis/types";
 import {
   type BymaQuote,
   type DataDelay,
@@ -47,6 +51,15 @@ export type TradeRadarAnalysis = {
     volume: number | null;
     avgVolume20: number | null;
   };
+  technicalScore: number | null;
+  technicalSnapshot: TechnicalIndicatorSnapshot | null;
+  technicalInterpretation: TechnicalInterpretation | null;
+  tradeSignal: {
+    label: string;
+    tone: "buy" | "sell" | "wait";
+    strength: "strong" | "normal" | "neutral";
+  } | null;
+  fundamentalScore: number | null;
   levels: {
     supports: TechnicalLevel[];
     resistances: TechnicalLevel[];
@@ -137,6 +150,64 @@ function emptyIndicators(volume: number | null = null) {
   };
 }
 
+function latestValue(values: Array<number | null>) {
+  for (let index = values.length - 1; index >= 0; index -= 1) {
+    const value = values[index];
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+  }
+
+  return null;
+}
+
+function volumeTrend(volume: number | null, averageVolume: number | null): TechnicalIndicatorSnapshot["volumeTrend"] {
+  if (volume === null || averageVolume === null || averageVolume <= 0) return "unavailable";
+  if (volume > averageVolume * 1.08) return "increasing";
+  if (volume < averageVolume * 0.92) return "decreasing";
+  return "neutral";
+}
+
+function tradeSignal(score: number | null): TradeRadarAnalysis["tradeSignal"] {
+  if (score === null) return null;
+  if (score >= 80) return { label: "Compra fuerte", tone: "buy", strength: "strong" };
+  if (score >= 65) return { label: "Compra", tone: "buy", strength: "normal" };
+  if (score <= 20) return { label: "Venta fuerte", tone: "sell", strength: "strong" };
+  if (score <= 35) return { label: "Venta", tone: "sell", strength: "normal" };
+  return { label: "Esperar", tone: "wait", strength: "neutral" };
+}
+
+function buildTechnicalSnapshot(bars: OhlcvBar[], levels: TradeRadarAnalysis["levels"]): TechnicalIndicatorSnapshot | null {
+  const closes = bars.map((bar) => bar.close).filter(Number.isFinite);
+  if (!closes.length) return null;
+
+  const macd = calculateMACD(closes);
+  const volume = bars.at(-1)?.volume ?? null;
+  const avgVolume20 = latestValue(avgVolume(bars, 20));
+  const snapshotBase = {
+    lastClose: closes.at(-1) ?? null,
+    sma20: latestValue(calculateSMA(closes, 20)),
+    sma50: latestValue(calculateSMA(closes, 50)),
+    sma200: latestValue(calculateSMA(closes, 200)),
+    ema12: latestValue(calculateEMA(closes, 12)),
+    ema26: latestValue(calculateEMA(closes, 26)),
+    rsi14: latestValue(rsiWilder(closes, 14)),
+    macd: latestValue(macd.macdLine),
+    macdSignal: latestValue(macd.signalLine),
+    macdHistogram: latestValue(macd.histogram),
+    support: levels.supports[0]?.level ?? null,
+    resistance: levels.resistances[0]?.level ?? null,
+    volumeTrend: volumeTrend(volume, avgVolume20),
+  };
+  const trendLabel = getTrendLabel({ ...snapshotBase, trendLabel: "", momentumLabel: "" });
+  const momentumLabel = getMomentumLabel({ ...snapshotBase, trendLabel, momentumLabel: "" });
+
+  return {
+    ...snapshotBase,
+    trendLabel,
+    momentumLabel,
+    volatilityLabel: "Trade Radar OHLCV",
+  };
+}
+
 function toChartSeries(bars: OhlcvBar[], values: Array<number | null>) {
   return bars.flatMap((bar, index) => {
     const value = values[index];
@@ -221,6 +292,8 @@ export async function analyzeTradeRadar(params: {
   }
 
   if (!lastBar) {
+    const requestedFundamentalSymbol = instrumentResolution?.instrument.underlyingSymbol ?? response.resolvedSymbol;
+    const fundamentals = await getFundamentals({ symbol: requestedFundamentalSymbol });
     if (!response.localQuote) throw new Error("No OHLCV bars available after provider normalization.");
     const quote = response.localQuote;
     const quoteTime = quote.broadcastTime ?? quote.date ?? response.fetchedAt;
@@ -243,6 +316,11 @@ export async function analyzeTradeRadar(params: {
       ohlcv: [],
       chartSeries: { ema20: [], ema50: [], ma200: [] },
       indicators: emptyIndicators(quote.volume),
+      technicalScore: null,
+      technicalSnapshot: null,
+      technicalInterpretation: null,
+      tradeSignal: null,
+      fundamentalScore: fundamentals.fundamentalScore ?? null,
       levels: { supports: [], resistances: [] },
       signals: null,
       suggestedAlerts: [],
@@ -283,6 +361,13 @@ export async function analyzeTradeRadar(params: {
   const avgVolume20 = latestNumber(avgVolume(bars, 20));
   const volume = lastBar.volume;
   const levels = calculateSupportResistance(bars, lastBar.close, atr14, { ema20, ema50, ma200 });
+  const technicalSnapshot = buildTechnicalSnapshot(bars, levels);
+  const technicalScore = technicalSnapshot ? calculateTechnicalScore(technicalSnapshot) : null;
+  const technicalInterpretation = technicalSnapshot && technicalScore !== null
+    ? buildTechnicalInterpretation(technicalSnapshot, technicalScore, "es")
+    : null;
+  const requestedFundamentalSymbol = instrumentResolution?.instrument.underlyingSymbol ?? response.resolvedSymbol;
+  const fundamentals = await getFundamentals({ symbol: requestedFundamentalSymbol });
   const sampleStatus = bars.length >= 220 ? "ok" : "insufficient";
   const signals = sampleStatus === "ok"
     ? calculateSignals({
@@ -330,6 +415,11 @@ export async function analyzeTradeRadar(params: {
       volume,
       avgVolume20: round(avgVolume20, 0),
     },
+    technicalScore,
+    technicalSnapshot,
+    technicalInterpretation,
+    tradeSignal: tradeSignal(technicalScore),
+    fundamentalScore: fundamentals.fundamentalScore ?? null,
     levels,
     signals,
     suggestedAlerts,

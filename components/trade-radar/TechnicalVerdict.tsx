@@ -20,6 +20,13 @@ function badgeClass(delay: TradeRadarAnalysis["dataDelay"]) {
   return "border-slate-400/25 bg-slate-500/10 text-slate-200";
 }
 
+function signalClass(signal: TradeRadarAnalysis["tradeSignal"]) {
+  if (!signal) return "border-slate-400/25 bg-slate-500/10 text-slate-200";
+  if (signal.tone === "buy") return "border-emerald-300/35 bg-emerald-300/12 text-emerald-100";
+  if (signal.tone === "sell") return "border-rose-300/35 bg-rose-300/12 text-rose-100";
+  return "border-amber-300/35 bg-amber-300/10 text-amber-100";
+}
+
 export function TechnicalVerdict({ analysis }: TechnicalVerdictProps) {
   return (
     <section className="cma-panel cma-module-technical p-5">
@@ -31,23 +38,44 @@ export function TechnicalVerdict({ analysis }: TechnicalVerdictProps) {
           </h1>
           <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">{analysis.operativeSummary}</p>
         </div>
-        <div className="flex flex-wrap gap-2 lg:justify-end">
-          {analysis.badges.map((badge) => (
-            <span key={badge} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-slate-200">
-              {badge}
-            </span>
-          ))}
-          <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${badgeClass(analysis.dataDelay)}`}>
-            {formatTradeRadarDelay(analysis.dataDelay)}
-          </span>
-          <span className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
-            {formatTradeRadarProvider(analysis.provider)}
-          </span>
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-300">
-            {analysis.candlesUsed} velas
-          </span>
+        <div className="grid min-w-[240px] gap-3 sm:grid-cols-3 lg:max-w-2xl">
+          <div className={`rounded-lg border p-3 ${signalClass(analysis.tradeSignal)}`}>
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.15em] opacity-80">Senal</p>
+            <p className="mt-1 text-xl font-semibold">{analysis.tradeSignal?.label ?? "N/D"}</p>
+          </div>
+          <div className="rounded-lg border border-cyan-300/20 bg-cyan-300/10 p-3 text-cyan-100">
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.15em] opacity-80">Score tecnico</p>
+            <p className="mt-1 text-xl font-semibold tabular-nums">{analysis.technicalScore === null ? "N/D" : `${analysis.technicalScore}/100`}</p>
+          </div>
+          <div className="rounded-lg border border-violet-300/20 bg-violet-300/10 p-3 text-violet-100">
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.15em] opacity-80">Score fundamental</p>
+            <p className="mt-1 text-xl font-semibold tabular-nums">{analysis.fundamentalScore === null ? "N/D" : `${analysis.fundamentalScore}/100`}</p>
+          </div>
         </div>
       </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {analysis.badges.slice(0, 4).map((badge) => (
+          <span key={badge} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-slate-200">
+            {badge}
+          </span>
+        ))}
+        <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${badgeClass(analysis.dataDelay)}`}>
+          {formatTradeRadarDelay(analysis.dataDelay)}
+        </span>
+        <span className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
+          {formatTradeRadarProvider(analysis.provider)}
+        </span>
+        <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-300">
+          {analysis.candlesUsed} velas
+        </span>
+      </div>
+
+      {analysis.technicalInterpretation ? (
+        <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-400">
+          {analysis.technicalInterpretation.label}. {analysis.technicalInterpretation.summary}
+        </p>
+      ) : null}
 
       <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-5">
         <div>

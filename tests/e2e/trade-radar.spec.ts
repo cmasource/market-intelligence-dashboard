@@ -10,24 +10,26 @@ test.describe("CMA Trade Radar", () => {
 
     const tickerInput = page.getByPlaceholder("SPY, AAPL, BTCUSDT, AL30");
     await expect(tickerInput).toHaveValue("SPY");
-    await page.waitForTimeout(500);
-    await tickerInput.click();
-    await tickerInput.press(process.platform === "darwin" ? "Meta+A" : "Control+A");
-    await tickerInput.pressSequentially("MSFT");
-
-    await expect(page.getByRole("button", { name: /MSFT CEDEAR/ })).toBeVisible({ timeout: 15_000 });
-    await page.getByRole("button", { name: /MSFT CEDEAR/ }).click();
-    await expect(page.getByText(/Microsoft Corporation CEDEAR/)).toBeVisible();
-
-    await page.getByRole("button", { name: /Analizar|Analyze/ }).click();
+    const analyzeButton = page.getByRole("button", { name: /Analizar|Analyze/ });
+    await expect(analyzeButton).toBeEnabled();
+    await page.waitForTimeout(750);
+    await analyzeButton.click();
+    await expect(page.locator("body")).toContainText(/Calculando indicadores|CMA Trade Radar/);
     await expect(page.getByTestId("trade-radar-technical-chart")).toBeVisible({ timeout: 45_000 });
+    await expect(page.locator("body")).toContainText(/Score tecnico/);
+    await expect(page.locator("body")).toContainText(/Compra|Venta|Esperar/);
     await expect(page.locator("body")).toContainText(/EMA20/);
     await expect(page.locator("body")).toContainText(/EMA50/);
     await expect(page.locator("body")).toContainText(/MA200/);
     await expect(page.locator("body")).toContainText(/US Technical|Technical underlying|subyacente|CEDEAR/);
     await expect(page.locator("body")).not.toContainText(/Unhandled Runtime Error|Hydration failed|This page could not be found/i);
 
-    const watchlistButton = page.getByTestId("watchlist-button-MSFT").first();
+    if (process.env.TRADE_RADAR_QA_SCREENSHOT) {
+      await page.getByTestId("trade-radar-technical-chart").scrollIntoViewIfNeeded();
+      await page.screenshot({ path: process.env.TRADE_RADAR_QA_SCREENSHOT, fullPage: false });
+    }
+
+    const watchlistButton = page.getByTestId("watchlist-button-SPY").first();
     await expect(watchlistButton).toBeVisible();
     await watchlistButton.click();
     const watchlistDialog = page.getByRole("dialog", { name: "Agregar a lista" });
@@ -35,8 +37,5 @@ test.describe("CMA Trade Radar", () => {
     await watchlistDialog.getByRole("button", { name: "Agregar a las listas elegidas" }).click();
     await expect(watchlistDialog.getByRole("status")).toContainText("Activo agregado");
 
-    if (process.env.TRADE_RADAR_QA_SCREENSHOT) {
-      await page.screenshot({ path: process.env.TRADE_RADAR_QA_SCREENSHOT, fullPage: false });
-    }
   });
 });

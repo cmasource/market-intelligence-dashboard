@@ -8,6 +8,7 @@ import { useLanguage } from "@/lib/i18n/useLanguage";
 import { getWatchlistCount, WATCHLIST_UPDATED_EVENT } from "@/lib/watchlist";
 import { AppearanceToggle } from "./AppearanceToggle";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { AuthNavigation } from "@/components/auth/AuthNavigation";
 
 export const navItems = [
   { labelKey: "navDashboard", href: "/", accent: "from-cyan-300 to-emerald-300" },
@@ -118,6 +119,7 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
         </nav>
 
         <div className={`shrink-0 border-t border-[var(--cma-border-soft)] p-3 ${collapsed ? "space-y-2" : "space-y-2"}`}>
+          <AuthNavigation collapsed={collapsed} onNavigate={onCloseMobile} />
           {!collapsed ? (
             <div className="flex flex-col gap-2">
               <AppearanceToggle />
