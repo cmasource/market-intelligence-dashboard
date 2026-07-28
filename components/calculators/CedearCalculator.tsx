@@ -25,9 +25,12 @@ export function CedearCalculator() {
     const underlyingValue = positiveNumber(underlying);
     const cclValue = positiveNumber(referenceCcl);
     const localValue = positiveNumber(localPrice);
+    const fairPrice = ratioValue && underlyingValue && cclValue ? (underlyingValue / ratioValue) * cclValue : null;
+    const gap = fairPrice && localValue ? ((localValue / fairPrice) - 1) * 100 : null;
     return {
-      fairPrice: ratioValue && underlyingValue && cclValue ? (underlyingValue / ratioValue) * cclValue : null,
+      fairPrice,
       impliedCcl: ratioValue && underlyingValue && localValue ? calculateImpliedCcl(localValue, underlyingValue, ratioValue) : null,
+      gap,
     };
   }, [localPrice, ratio, referenceCcl, underlying]);
 
@@ -71,12 +74,33 @@ export function CedearCalculator() {
         <NumberField label="CCL (ARS/USD)" value={referenceCcl} onChange={setReferenceCcl} />
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Result label={isSpanish ? "Precio de referencia CEDEAR" : "CEDEAR reference price"} value={result.fairPrice} suffix="ARS" />
         <Result label={isSpanish ? "CCL implicito del precio local" : "Local price implied CCL"} value={result.impliedCcl} suffix="ARS/USD" />
+        <div className={`rounded-lg border p-4 ${gapClass(result.gap)}`}>
+          <p className="text-xs uppercase text-slate-500">{isSpanish ? "Brecha vs referencia" : "Gap vs reference"}</p>
+          <p className="mt-2 text-2xl font-semibold text-white">
+            {result.gap === null ? "-" : `${Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 }).format(result.gap)}%`}
+          </p>
+          <p className="mt-1 text-xs text-slate-400">{gapLabel(result.gap, isSpanish)}</p>
+        </div>
       </div>
     </section>
   );
+}
+
+function gapClass(value: number | null) {
+  if (value === null) return "border-white/10 bg-white/[0.035]";
+  if (value > 2) return "border-rose-300/20 bg-rose-300/10";
+  if (value < -2) return "border-emerald-300/20 bg-emerald-300/10";
+  return "border-cyan-300/15 bg-cyan-300/[0.055]";
+}
+
+function gapLabel(value: number | null, isSpanish: boolean) {
+  if (value === null) return isSpanish ? "Cargar precio local y referencia." : "Load local and reference price.";
+  if (value > 2) return isSpanish ? "Cotiza sobre la referencia." : "Trading above reference.";
+  if (value < -2) return isSpanish ? "Cotiza debajo de la referencia." : "Trading below reference.";
+  return isSpanish ? "En linea con la referencia." : "In line with reference.";
 }
 
 function NumberField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {

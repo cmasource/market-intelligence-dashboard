@@ -20,22 +20,22 @@ export function MarketRankings({ compact = false }: MarketRankingsProps) {
   return (
     <section
       id="rankings"
-      className={`cma-panel p-5 sm:p-6 ${isLight ? "bg-white/95" : "bg-slate-950/72"}`}
+      className={`cma-panel p-4 sm:p-5 ${isLight ? "bg-white/95" : "bg-slate-950/72"}`}
       data-testid="market-rankings"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="cma-kicker">{isSpanish ? "Lectura informativa" : "Informational reading"}</p>
-          <h2 className={`mt-2 text-2xl font-semibold tracking-tight ${isLight ? "text-slate-950" : "text-white"}`}>
-            {isSpanish ? "Rankings de oportunidad informativa" : "Informational opportunity rankings"}
+          <p className="cma-kicker">{isSpanish ? "Lecturas CMA" : "CMA readings"}</p>
+          <h2 className={`mt-2 text-xl font-semibold ${isLight ? "text-slate-950" : "text-white"}`}>
+            {isSpanish ? "Oportunidades por señal" : "Opportunities by signal"}
           </h2>
-          <p className={`mt-3 max-w-4xl text-sm leading-6 ${isLight ? "text-slate-700" : "text-slate-300"}`}>
+          <p className={`mt-2 max-w-3xl text-sm leading-6 ${isLight ? "text-slate-700" : "text-slate-300"}`}>
             {isSpanish
               ? "Listas generadas con datos disponibles de precio, técnico, fundamentos y cobertura. No constituyen recomendación de inversión."
               : "Lists generated with available price, technical, fundamentals and coverage data. They are not investment recommendations."}
           </p>
         </div>
-        <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-xs font-semibold text-amber-100">
+        <span className="rounded-md border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] px-3 py-1 text-xs font-medium text-[var(--cma-text-muted)]">
           {isSpanish ? "No constituye recomendación de inversión" : "Not an investment recommendation"}
         </span>
       </div>

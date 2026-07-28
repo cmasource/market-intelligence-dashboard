@@ -1,11 +1,9 @@
 import type { FixedIncomeCashFlow } from "./types";
 
-function calculatePriceFromYield(cashFlows: FixedIncomeCashFlow[], annualYield: number, paymentsPerYear: number) {
-  const ratePerPeriod = annualYield / paymentsPerYear;
-
+function calculatePriceFromYield(cashFlows: FixedIncomeCashFlow[], annualYield: number) {
   return cashFlows.reduce((total, cashFlow) => {
-    if (ratePerPeriod <= -1) return total;
-    return total + cashFlow.totalCashFlow / (1 + ratePerPeriod) ** cashFlow.period;
+    if (annualYield <= -1) return total;
+    return total + cashFlow.totalCashFlow / (1 + annualYield) ** cashFlow.yearFraction;
   }, 0);
 }
 
@@ -16,15 +14,15 @@ export function estimateFixedIncomeYTM(
 ) {
   if (cashFlows.length === 0 || marketPrice <= 0 || paymentsPerYear <= 0) return null;
 
-  let low = -0.95 * paymentsPerYear;
+  let low = -0.95;
   let high = 1;
-  let lowDifference = calculatePriceFromYield(cashFlows, low, paymentsPerYear) - marketPrice;
-  let highDifference = calculatePriceFromYield(cashFlows, high, paymentsPerYear) - marketPrice;
+  let lowDifference = calculatePriceFromYield(cashFlows, low) - marketPrice;
+  let highDifference = calculatePriceFromYield(cashFlows, high) - marketPrice;
   let expansionCount = 0;
 
   while (lowDifference * highDifference > 0 && expansionCount < 20) {
     high *= 2;
-    highDifference = calculatePriceFromYield(cashFlows, high, paymentsPerYear) - marketPrice;
+    highDifference = calculatePriceFromYield(cashFlows, high) - marketPrice;
     expansionCount += 1;
   }
 
@@ -33,7 +31,7 @@ export function estimateFixedIncomeYTM(
   // TIR/YTM es la tasa anual que iguala el valor presente de los flujos al precio de mercado.
   for (let iteration = 0; iteration < 100; iteration += 1) {
     const midpoint = (low + high) / 2;
-    const midpointDifference = calculatePriceFromYield(cashFlows, midpoint, paymentsPerYear) - marketPrice;
+    const midpointDifference = calculatePriceFromYield(cashFlows, midpoint) - marketPrice;
 
     if (Math.abs(midpointDifference) < 0.000001) return midpoint;
 
@@ -55,14 +53,12 @@ export function calculatePresentValueForCashFlows(
 ): FixedIncomeCashFlow[] {
   if (paymentsPerYear <= 0 || !Number.isFinite(annualYield)) return cashFlows;
 
-  const ratePerPeriod = annualYield / paymentsPerYear;
-
   return cashFlows.map((cashFlow) => {
-    if (ratePerPeriod <= -1) {
+    if (annualYield <= -1) {
       return { ...cashFlow, discountFactor: null, presentValue: null };
     }
 
-    const discountFactor = 1 / (1 + ratePerPeriod) ** cashFlow.period;
+    const discountFactor = 1 / (1 + annualYield) ** cashFlow.yearFraction;
     return {
       ...cashFlow,
       discountFactor,

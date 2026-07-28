@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { Search } from "lucide-react";
 import { AssetLogo } from "@/components/assets/AssetLogo";
 import { formatCurrencyValue, formatDisplayCurrency, formatPercent } from "@/lib/formatters";
 import { useArgentinaQuotes } from "@/lib/hooks/useArgentinaQuotes";
@@ -110,12 +111,12 @@ export function AssetSearch({ assets }: AssetSearchProps) {
   }
 
   return (
-    <section className="cma-panel-glass cma-glow-violet h-full p-4 sm:p-5" id="markets">
-      <p className="cma-kicker mb-2">{isSpanish ? "Market Intelligence Terminal" : "Market Intelligence Terminal"}</p>
-      <label htmlFor="asset-search" className="text-sm font-medium text-slate-200">
+    <section className="cma-panel-glass p-3 sm:p-4" id="markets">
+      <label htmlFor="asset-search" className="sr-only">
         {t("assetSearchLabel")}
       </label>
-      <div className="mt-3 rounded-md border border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] p-2 focus-within:border-[var(--cma-border-strong)]">
+      <div className="flex items-center gap-3 rounded-md border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] px-3 focus-within:border-[var(--cma-border-strong)]">
+        <Search aria-hidden="true" size={18} className="shrink-0 text-[var(--cma-accent-cyan)]" />
         <input
           id="asset-search"
           type="search"
@@ -125,8 +126,9 @@ export function AssetSearch({ assets }: AssetSearchProps) {
             if (event.key === "Enter") handleEnterSearch();
           }}
           placeholder={t("assetSearchPlaceholder")}
-          className="w-full bg-transparent px-3 py-3 text-base text-white outline-none placeholder:text-slate-500"
+          className="min-w-0 flex-1 bg-transparent py-3 text-sm text-[var(--cma-text-primary)] outline-none placeholder:text-[var(--cma-text-muted)] sm:text-base"
         />
+        <span className="hidden rounded border border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] px-2 py-1 text-[10px] font-semibold text-[var(--cma-text-muted)] sm:inline">⌘ K</span>
       </div>
       {isMounted && recentSymbols.length ? (
         <div className="mt-3">
@@ -147,7 +149,7 @@ export function AssetSearch({ assets }: AssetSearchProps) {
           </div>
         </div>
       ) : null}
-      <div className="mt-4 max-h-[30rem] space-y-2 overflow-y-auto pr-3">
+      <div className="mt-3 max-h-[24rem] space-y-1.5 overflow-y-auto pr-1">
         {visibleInstruments.length ? (
           visibleInstruments.map((instrument, index) => {
             const asset = assetBySymbol.get(instrument.symbol);
@@ -218,7 +220,7 @@ export function AssetSearch({ assets }: AssetSearchProps) {
               <Link
                 href={`/asset/${encodeURIComponent(instrument.symbol)}`}
                 onClick={() => saveRecentSymbol(instrument.symbol)}
-                className={`group grid gap-4 rounded-lg border p-3 transition sm:grid-cols-[minmax(0,1fr)_auto] ${resultTone(instrument)}`}
+                className={`group grid gap-3 rounded-md border p-3 transition sm:grid-cols-[minmax(0,1fr)_auto] ${resultTone(instrument)}`}
               >
                 {content}
               </Link>

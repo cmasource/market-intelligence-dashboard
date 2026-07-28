@@ -77,8 +77,8 @@ export default function UsaPage() {
   }, [allStocks, cedearUnderlyings, etfs, query, view]);
   const pageCount = Math.max(1, Math.ceil(selected.length / pageSize));
   const visible = useMemo(() => selected.slice((page - 1) * pageSize, page * pageSize), [page, selected]);
-  const visibleSymbols = useMemo(() => visible.map((item) => item.symbol), [visible]);
-  const quoteSymbols = useMemo(() => visible.map((item) => item.primarySymbol ?? item.symbol), [visible]);
+  const visibleSymbols = useMemo(() => visible.map((item) => item.underlyingSymbol ?? item.primarySymbol ?? item.symbol), [visible]);
+  const quoteSymbols = visibleSymbols;
   const quotes = useProviderQuotes(quoteSymbols);
 
   useEffect(() => {
@@ -86,11 +86,13 @@ export default function UsaPage() {
     const controller = new AbortController();
     Promise.allSettled(visibleSymbols.map(async (symbol) => {
       const response = await fetch(`/api/analysis/technical/${encodeURIComponent(symbol)}?timeframe=1Y&language=${language}`, { signal: controller.signal });
-      return [symbol, (await response.json()) as TechnicalAnalysisResponse] as const;
+      if (!response.ok) return [symbol, null] as const;
+      const analysis = (await response.json()) as TechnicalAnalysisResponse;
+      return [symbol, analysis.candlesCount > 0 && !analysis.isFallback ? analysis : null] as const;
     })).then((results) => {
       if (controller.signal.aborted) return;
       setAnalyses(results.reduce<Record<string, TechnicalAnalysisResponse | null>>((output, result) => {
-        if (result.status === "fulfilled" && typeof result.value[1]?.technicalScore === "number") output[result.value[0]] = result.value[1];
+        if (result.status === "fulfilled") output[result.value[0]] = result.value[1];
         return output;
       }, Object.fromEntries(visibleSymbols.map((symbol) => [symbol, null]))));
     });
@@ -132,11 +134,12 @@ export default function UsaPage() {
               <table className="w-full min-w-[760px] text-left text-sm">
                 <thead className="bg-white/[0.035] text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">{isSpanish ? "Activo" : "Asset"}</th><th className="px-4 py-3">{isSpanish ? "Ultimo" : "Last"}</th><th className="px-4 py-3">% {isSpanish ? "Dia" : "Day"}</th>{["indicators", "cedearUnderlyings"].includes(view) ? <><th className="px-4 py-3">Score</th><th className="px-4 py-3">RSI</th><th className="px-4 py-3">MACD</th><th className="px-4 py-3">{isSpanish ? "Lectura" : "Reading"}</th></> : null}<th className="px-4 py-3 text-right">{isSpanish ? "Analisis" : "Analysis"}</th></tr></thead>
                 <tbody>{visible.map((instrument: InstrumentUniverseItem) => {
-                  const quote = quotes[instrument.primarySymbol ?? instrument.symbol];
-                  const analysis = analyses[instrument.symbol];
+                  const analysisSymbol = instrument.underlyingSymbol ?? instrument.primarySymbol ?? instrument.symbol;
+                  const quote = quotes[analysisSymbol];
+                  const analysis = analyses[analysisSymbol];
                   const score = analysis?.technicalScore;
                   const showsIndicators = ["indicators", "cedearUnderlyings"].includes(view);
-                  return <tr key={instrument.symbol} className="border-t border-white/10 hover:bg-cyan-300/[0.045]"><td className="px-4 py-3"><span className="flex items-center gap-3"><AssetLogo symbol={instrument.primarySymbol ?? instrument.symbol} name={instrument.displayName} type={instrument.category} size="sm" /><span><span className="block font-semibold text-white">{instrument.underlyingSymbol ?? instrument.symbol}</span><span className="block max-w-64 truncate text-xs text-slate-400">{instrument.displayName}</span></span></span></td><td className="px-4 py-3 font-medium text-slate-100">{typeof quote?.price === "number" ? formatCurrencyValue(quote.price, quote.currency, language) : "-"}</td><td className={`px-4 py-3 font-semibold ${typeof quote?.changePercent === "number" && quote.changePercent >= 0 ? "text-emerald-300" : "text-rose-300"}`}>{typeof quote?.changePercent === "number" ? formatPercent(quote.changePercent) : "-"}</td>{showsIndicators ? <><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${tone(score)}`}>{analysis === undefined ? "..." : score ?? "-"}</span></td><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${rsiTone(analysis?.snapshot.rsi14)}`}>{analysis === undefined ? "..." : analysis?.snapshot.rsi14?.toFixed(1) ?? "-"}</span></td><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${macdTone(analysis)}`}>{analysis === undefined ? "..." : analysis?.snapshot.macd?.toFixed(2) ?? "-"}</span></td><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${tone(score)}`}>{analysis === undefined ? "..." : typeof score === "number" ? score >= 65 ? (isSpanish ? "Compra" : "Buy") : score <= 35 ? (isSpanish ? "Venta" : "Sell") : (isSpanish ? "Esperar" : "Wait") : "-"}</span></td></> : null}<td className="px-4 py-3 text-right"><Link href={`/asset/${encodeURIComponent(instrument.symbol)}`} className="font-semibold text-cyan-200 hover:text-white">{isSpanish ? "Abrir" : "Open"}</Link></td></tr>;
+                  return <tr key={`${instrument.symbol}-${analysisSymbol}`} className="border-t border-white/10 hover:bg-cyan-300/[0.045]"><td className="px-4 py-3"><span className="flex items-center gap-3"><AssetLogo symbol={analysisSymbol} name={instrument.displayName} type={instrument.category} size="sm" /><span><span className="block font-semibold text-white">{analysisSymbol}</span><span className="block max-w-64 truncate text-xs text-slate-400">{instrument.displayName}</span></span></span></td><td className="px-4 py-3 font-medium text-slate-100">{typeof quote?.price === "number" ? formatCurrencyValue(quote.price, quote.currency, language) : "-"}</td><td className={`px-4 py-3 font-semibold ${typeof quote?.changePercent === "number" ? quote.changePercent >= 0 ? "text-emerald-300" : "text-rose-300" : "text-slate-500"}`}>{typeof quote?.changePercent === "number" ? formatPercent(quote.changePercent) : "-"}</td>{showsIndicators ? <><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${tone(score)}`}>{analysis === undefined ? "..." : score ?? "-"}</span></td><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${rsiTone(analysis?.snapshot.rsi14)}`}>{analysis === undefined ? "..." : analysis?.snapshot.rsi14?.toFixed(1) ?? "-"}</span></td><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${macdTone(analysis)}`}>{analysis === undefined ? "..." : analysis?.snapshot.macd?.toFixed(2) ?? "-"}</span></td><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${tone(score)}`}>{analysis === undefined ? "..." : typeof score === "number" ? score >= 65 ? (isSpanish ? "Compra" : "Buy") : score <= 35 ? (isSpanish ? "Venta" : "Sell") : (isSpanish ? "Esperar" : "Wait") : (isSpanish ? "Sin analisis" : "No analysis")}</span></td></> : null}<td className="px-4 py-3 text-right"><Link href={`/asset/${encodeURIComponent(analysisSymbol)}`} className="font-semibold text-cyan-200 hover:text-white">{isSpanish ? "Abrir" : "Open"}</Link></td></tr>;
                 })}</tbody>
               </table>
             </div>

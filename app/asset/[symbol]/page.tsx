@@ -9,6 +9,7 @@ import { FundamentalAnalysisCard } from "@/components/asset/FundamentalAnalysisC
 import { InvestmentDecisionPanel } from "@/components/asset/InvestmentDecisionPanel";
 import { NewsPanel } from "@/components/asset/NewsPanel";
 import { RelatedInstrumentsCard } from "@/components/asset/RelatedInstrumentsCard";
+import { ResearchTearsheetCard } from "@/components/asset/ResearchTearsheetCard";
 import { TechnicalAnalysisCard } from "@/components/asset/TechnicalAnalysisCard";
 import { CedearAnalyticsCard } from "@/components/cedears/CedearAnalyticsCard";
 import { InteractiveAssetChart } from "@/components/charts/InteractiveAssetChart";
@@ -55,6 +56,7 @@ export default async function AssetDetailPage({
       <div className="space-y-6">
         <AssetHeader asset={asset} />
         {!isFixedIncome ? <InvestmentDecisionPanel asset={asset} /> : null}
+        {!isFixedIncome ? <ResearchTearsheetCard asset={asset} /> : null}
         {tradingViewMapping.verified ? (
           <TradingViewAdvancedChart symbol={asset.symbol} height={620} />
         ) : (

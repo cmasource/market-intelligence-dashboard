@@ -236,9 +236,9 @@ function fixedIncome(symbol: string): Instrument {
     providerSymbol: symbol,
     tradingViewSymbol: `BCBA:${symbol}`,
     settlementPeriods: ["0000", "0001", "0002"],
-    tags: [assetClass, "renta fija", "byma", "quote only"],
+    tags: [assetClass, "renta fija", "byma"],
     dataCapabilities: ["quote_only"],
-    warnings: ["Renta fija queda en modo solo cotizacion hasta implementar TIR, paridad, duration y cashflows."],
+    warnings: ["Las metricas de renta fija se publican solo para especies con flujos contractuales validados."],
     source: "seed",
     enabled: true,
   };
@@ -268,7 +268,7 @@ function crypto(symbol: string, name: string): Instrument {
 
 const cedearStocks = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AMD", "AVGO", "KO", "PEP", "MCD", "WMT", "JPM", "BAC", "DIS", "NFLX", "MELI"];
 const cedearEtfs = ["SPY", "QQQ", "DIA", "IWM", "EWZ", "ARKK", "XLF", "XLK", "XLE"];
-const fixedIncomeSymbols = ["AL30", "AL30D", "GD30", "GD30D", "AE38", "AL35", "TX26", "TZX26", "S31L6", "S30J6"];
+const fixedIncomeSymbols = ["AL30", "AL30D", "AL30C", "GD30", "GD30D", "GD30C", "AE38", "AE38D", "AL35", "AL35D", "TX26", "TZX26", "S31L6", "S30N6", "D31L6"];
 
 const usBySymbol = new Map([...usEtfs, ...usStocks, ...adrSeeds].map((item) => [item.symbol, item]));
 const seededLocalEquitySymbols = new Set<string>(localEquities.map(([symbol]) => symbol));

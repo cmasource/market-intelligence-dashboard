@@ -24,6 +24,18 @@ export type QuoteCurrency = "ARS" | "USD" | "UNKNOWN";
 export type SettlementContext = "pesos" | "dollar_mep" | "dollar_cable" | "cer_linked" | "unknown";
 export type IndexationType = "CER" | "none" | "unknown";
 
+export type FixedIncomeCashFlow = {
+  period: number;
+  date?: string;
+  yearFraction: number;
+  coupon: number;
+  amortization: number;
+  principal: number;
+  totalCashFlow: number;
+  discountFactor?: number | null;
+  presentValue?: number | null;
+};
+
 export type FixedIncomeInstrument = {
   symbol: string;
   underlyingSymbol: string;
@@ -62,18 +74,8 @@ export type FixedIncomeInstrument = {
   fxAdjustment?: number;
   sourceLabel: string;
   isMock: boolean;
-};
-
-export type FixedIncomeCashFlow = {
-  period: number;
-  date?: string;
-  yearFraction: number;
-  coupon: number;
-  amortization: number;
-  principal: number;
-  totalCashFlow: number;
-  discountFactor?: number | null;
-  presentValue?: number | null;
+  contractualCashFlows?: FixedIncomeCashFlow[];
+  analyticalReferenceSymbol?: string;
 };
 
 export type AccruedInterestInputs = {

@@ -27,7 +27,7 @@ export function AppShell({ children, width = "dashboard" }: AppShellProps) {
       <Sidebar mobileOpen={mobileNavOpen} onCloseMobile={() => setMobileNavOpen(false)} />
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader onOpenMobileNav={() => setMobileNavOpen(true)} />
-        <main className={`mx-auto w-full flex-1 ${widthClasses[width]} px-4 py-6 sm:px-6 lg:px-8`}>{children}</main>
+        <main className={`mx-auto w-full flex-1 ${widthClasses[width]} px-4 py-5 sm:px-6 lg:px-7 lg:py-7`}>{children}</main>
         <AppFooter />
       </div>
     </div>

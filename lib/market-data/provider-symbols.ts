@@ -61,11 +61,18 @@ export const providerQuoteSymbols = new Set([
   ...seededProviderQuoteSymbols,
   ...instrumentMasterSeed
     .filter((instrument) =>
-      instrument.market !== "argentina"
-      && instrument.providerSymbol
-      && instrument.dataCapabilities.some((capability) => ["technical_full", "fundamentals_full", "quote_only"].includes(capability)),
+      instrument.providerSymbol
+      && (
+        instrument.dataCapabilities.includes("technical_underlying")
+        || instrument.dataCapabilities.includes("fundamentals_underlying")
+        || (
+          instrument.market !== "argentina"
+          && instrument.dataCapabilities.some((capability) => ["technical_full", "fundamentals_full", "quote_only"].includes(capability))
+        )
+      ),
     )
-    .flatMap((instrument) => [instrument.symbol, instrument.providerSymbol as string]),
+    .flatMap((instrument) => [instrument.symbol, instrument.providerSymbol as string, instrument.underlyingSymbol ?? ""])
+    .filter(Boolean),
 ]);
 
 export function isProviderQuoteSupported(symbol: string) {

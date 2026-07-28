@@ -1,6 +1,7 @@
 "use client";
 
 import type { TradeRadarAnalysis } from "@/lib/technical/trade-radar";
+import { buildScoreSemantic, scoreToneClass } from "@/lib/analysis/score-semantics";
 import {
   formatTradeRadarDelay,
   formatTradeRadarMarket,
@@ -20,14 +21,13 @@ function badgeClass(delay: TradeRadarAnalysis["dataDelay"]) {
   return "border-slate-400/25 bg-slate-500/10 text-slate-200";
 }
 
-function signalClass(signal: TradeRadarAnalysis["tradeSignal"]) {
-  if (!signal) return "border-slate-400/25 bg-slate-500/10 text-slate-200";
-  if (signal.tone === "buy") return "border-emerald-300/35 bg-emerald-300/12 text-emerald-100";
-  if (signal.tone === "sell") return "border-rose-300/35 bg-rose-300/12 text-rose-100";
-  return "border-amber-300/35 bg-amber-300/10 text-amber-100";
-}
-
 export function TechnicalVerdict({ analysis }: TechnicalVerdictProps) {
+  const technicalSemantic = buildScoreSemantic({
+    score: analysis.technicalScore,
+    confidence: analysis.sampleStatus === "ok" ? "medium" : "limited",
+    language: "es",
+  });
+
   return (
     <section className="cma-panel cma-module-technical p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -39,9 +39,9 @@ export function TechnicalVerdict({ analysis }: TechnicalVerdictProps) {
           <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">{analysis.operativeSummary}</p>
         </div>
         <div className="grid min-w-[240px] gap-3 sm:grid-cols-3 lg:max-w-2xl">
-          <div className={`rounded-lg border p-3 ${signalClass(analysis.tradeSignal)}`}>
+          <div className={`rounded-lg border p-3 ${scoreToneClass(technicalSemantic.tone)}`}>
             <p className="text-[0.68rem] font-semibold uppercase tracking-[0.15em] opacity-80">Senal</p>
-            <p className="mt-1 text-xl font-semibold">{analysis.tradeSignal?.label ?? "N/D"}</p>
+            <p className="mt-1 text-xl font-semibold">{technicalSemantic.actionLabel}</p>
           </div>
           <div className="rounded-lg border border-cyan-300/20 bg-cyan-300/10 p-3 text-cyan-100">
             <p className="text-[0.68rem] font-semibold uppercase tracking-[0.15em] opacity-80">Score tecnico</p>

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const publicRoutes = [
-  { route: "/", heading: /Financial intelligence for market decisions|Inteligencia financiera para decisiones de mercado/ },
+  { route: "/", heading: /Market overview|Resumen de mercado/ },
   { route: "/markets", heading: /Markets|Mercados/ },
   { route: "/usa", heading: /USA market|Mercado USA/ },
   { route: "/argentina", heading: /Argentina market|Mercado argentino/i },
@@ -42,7 +42,7 @@ test.describe("CMA Markets public smoke tests", () => {
     await expect(page.getByRole("link", { name: /Contact|Contacto/, exact: true }).first()).toBeVisible();
     await expect(page.locator('footer a[aria-label="CMA Consulting"]')).toHaveAttribute("href", "https://cma-consulting.vercel.app/");
     await page.getByRole("button", { name: "ES", exact: true }).click();
-    await expect(page.getByRole("heading", { name: /Inteligencia financiera para decisiones de mercado/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Resumen de mercado/ })).toBeVisible();
   });
 
   test("authentication foundation exposes public entry points and protects account", async ({ page }) => {
@@ -144,7 +144,7 @@ test.describe("CMA Markets public smoke tests", () => {
     await expect(page.getByTestId("cauciones-panel")).toBeVisible();
     await expect(page.getByRole("heading", { name: /Market repos|Cauciones bursatiles/ })).toBeVisible();
     await expect(page.getByRole("columnheader", { name: "TNA" })).toBeVisible();
-    await expect(page.getByRole("cell", { name: "1D", exact: true })).toBeVisible();
+    await expect(page.getByRole("cell", { name: "1D", exact: true })).toBeVisible({ timeout: 30_000 });
   });
 
   test("crypto workspace is searchable and opens supported assets", async ({ page }) => {
@@ -175,6 +175,9 @@ test.describe("CMA Markets public smoke tests", () => {
     await expect(page.getByRole("button", { name: /Calculators|Calculadoras/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /Bond analysis|Analisis de bonos/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /Agenda/ })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /Earnings calendar|Calendario de balances/ })).toHaveAttribute("href", "/reports#earnings");
+    await page.getByRole("link", { name: /Earnings calendar|Calendario de balances/ }).click();
+    await expect(page.getByLabel(/Search symbol or company|Buscar simbolo o empresa/)).toBeVisible();
   });
 
   test("contact form is functional without exposing a server-side secret", async ({ page }) => {

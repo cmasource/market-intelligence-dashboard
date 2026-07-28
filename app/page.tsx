@@ -4,16 +4,16 @@ import { AssetSearch } from "@/components/dashboard/AssetSearch";
 import { FeaturedAssets } from "@/components/dashboard/FeaturedAssets";
 import { ArgentinaMacroMonitor } from "@/components/dashboard/ArgentinaMacroMonitor";
 import { MarketNewsPreview } from "@/components/dashboard/MarketNewsPreview";
-import { MarketPulseVisual } from "@/components/dashboard/MarketPulseVisual";
 import { AppShell } from "@/components/layout/AppShell";
 import { MarketHeatmap } from "@/components/market/MarketHeatmap";
 import { MarketRankings } from "@/components/rankings/MarketRankings";
-import { Button } from "@/components/ui/Button";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { mockAssets } from "@/lib/mock-data";
+import { ArrowUpRight, Clock3 } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const isSpanish = language === "es";
   const featuredAssets = [...mockAssets]
     .sort((a, b) => {
@@ -25,28 +25,34 @@ export default function Home() {
 
   return (
     <AppShell>
-      <div className="space-y-10">
-        <section className="grid gap-6 py-4 xl:grid-cols-[1.04fr_0.96fr] xl:items-stretch">
-          <div className="cma-panel-elevated flex h-full flex-col justify-between p-5 sm:p-8">
+      <div className="space-y-6 lg:space-y-7">
+        <section className="pt-1">
+          <div className="mb-5 flex flex-col gap-4 border-b border-[var(--cma-border-soft)] pb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="cma-kicker">{t("heroEyebrow")}</p>
-              <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-tight text-[var(--cma-text-primary)] sm:text-5xl lg:text-6xl">
-                {t("heroTitle")}
+              <p className="cma-kicker">{isSpanish ? "Mercado argentino · ahora" : "Argentina market · now"}</p>
+              <h1 className="mt-2 text-3xl font-semibold text-[var(--cma-text-primary)] sm:text-4xl">
+                {isSpanish ? "Resumen de mercado" : "Market overview"}
               </h1>
-              <p className="mt-4 max-w-3xl text-base leading-7 text-[var(--cma-text-secondary)]">{t("heroSubtitle")}</p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Button href="#markets" variant="primary">
-                  {isSpanish ? "Buscar activo" : "Search asset"}
-                </Button>
-                <Button href="/argentina">{isSpanish ? "Ver Argentina" : "View Argentina"}</Button>
-              </div>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--cma-text-secondary)]">
+                {isSpanish
+                  ? "Señales, precios y contexto para decidir qué analizar a continuación."
+                  : "Signals, prices and context to decide what to analyze next."}
+              </p>
             </div>
-            <MarketPulseVisual />
-            <p className="mt-4 rounded-md border border-amber-800/40 bg-[var(--cma-bg-panel)] p-3 text-sm leading-6 text-amber-400">
-              {t("disclaimer")}
-            </p>
+            <div className="flex items-center gap-2 text-xs text-[var(--cma-text-muted)]">
+              <Clock3 size={14} aria-hidden="true" />
+              <span>{isSpanish ? "Mercado en seguimiento" : "Market monitoring"}</span>
+            </div>
           </div>
           <AssetSearch assets={mockAssets} />
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <Link href="/argentina" className="inline-flex items-center gap-1.5 font-medium text-[var(--cma-text-secondary)] transition hover:text-[var(--cma-accent-cyan)]">
+              {isSpanish ? "Mercado argentino" : "Argentina market"}<ArrowUpRight size={14} />
+            </Link>
+            <Link href="/markets" className="inline-flex items-center gap-1.5 font-medium text-[var(--cma-text-secondary)] transition hover:text-[var(--cma-accent-cyan)]">
+              {isSpanish ? "Todos los mercados" : "All markets"}<ArrowUpRight size={14} />
+            </Link>
+          </div>
         </section>
 
         <MarketRankings compact />

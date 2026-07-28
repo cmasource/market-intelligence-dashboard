@@ -4,6 +4,7 @@ import { calculateEMA, calculateMACD, calculateSMA } from "@/lib/finance/technic
 import { getFundamentals } from "@/lib/fundamentals-data";
 import { fetchBymaInstrumentLocalQuote, fetchTradeRadarOhlcv } from "@/lib/market-data/providerRouter";
 import { resolveTradeRadarSymbol } from "@/lib/market-data/resolveSymbol";
+import { getTechnicalAnalysis } from "@/lib/analysis/technical-analysis-service";
 import { calculateTechnicalScore, buildTechnicalInterpretation, getMomentumLabel, getTrendLabel } from "@/lib/analysis/technical-score";
 import type { TechnicalIndicatorSnapshot, TechnicalInterpretation } from "@/lib/analysis/types";
 import {
@@ -175,6 +176,18 @@ function tradeSignal(score: number | null): TradeRadarAnalysis["tradeSignal"] {
   return { label: "Esperar", tone: "wait", strength: "neutral" };
 }
 
+async function getCanonicalDailyTechnical(symbol: string, interval: TradeRadarInterval) {
+  if (interval !== "1d") return null;
+
+  try {
+    const analysis = await getTechnicalAnalysis(symbol, "1Y", "es");
+    if (analysis.isFallback) return null;
+    return analysis;
+  } catch {
+    return null;
+  }
+}
+
 function buildTechnicalSnapshot(bars: OhlcvBar[], levels: TradeRadarAnalysis["levels"]): TechnicalIndicatorSnapshot | null {
   const closes = bars.map((bar) => bar.close).filter(Number.isFinite);
   if (!closes.length) return null;
@@ -293,10 +306,15 @@ export async function analyzeTradeRadar(params: {
 
   if (!lastBar) {
     const requestedFundamentalSymbol = instrumentResolution?.instrument.underlyingSymbol ?? response.resolvedSymbol;
-    const fundamentals = await getFundamentals({ symbol: requestedFundamentalSymbol });
+    const technicalAnalysisSymbol = instrumentResolution?.technicalLayer?.symbol ?? response.resolvedSymbol;
+    const [fundamentals, canonicalTechnical] = await Promise.all([
+      getFundamentals({ symbol: requestedFundamentalSymbol }),
+      getCanonicalDailyTechnical(technicalAnalysisSymbol, params.interval),
+    ]);
     if (!response.localQuote) throw new Error("No OHLCV bars available after provider normalization.");
     const quote = response.localQuote;
     const quoteTime = quote.broadcastTime ?? quote.date ?? response.fetchedAt;
+    const publishedTechnicalScore = canonicalTechnical?.technicalScore ?? null;
     return {
       symbol: response.symbol,
       resolvedSymbol: response.resolvedSymbol,
@@ -316,10 +334,10 @@ export async function analyzeTradeRadar(params: {
       ohlcv: [],
       chartSeries: { ema20: [], ema50: [], ma200: [] },
       indicators: emptyIndicators(quote.volume),
-      technicalScore: null,
-      technicalSnapshot: null,
-      technicalInterpretation: null,
-      tradeSignal: null,
+      technicalScore: publishedTechnicalScore,
+      technicalSnapshot: canonicalTechnical?.snapshot ?? null,
+      technicalInterpretation: canonicalTechnical?.interpretation ?? null,
+      tradeSignal: tradeSignal(publishedTechnicalScore),
       fundamentalScore: fundamentals.fundamentalScore ?? null,
       levels: { supports: [], resistances: [] },
       signals: null,
@@ -367,7 +385,14 @@ export async function analyzeTradeRadar(params: {
     ? buildTechnicalInterpretation(technicalSnapshot, technicalScore, "es")
     : null;
   const requestedFundamentalSymbol = instrumentResolution?.instrument.underlyingSymbol ?? response.resolvedSymbol;
-  const fundamentals = await getFundamentals({ symbol: requestedFundamentalSymbol });
+  const technicalAnalysisSymbol = instrumentResolution?.technicalLayer?.symbol ?? response.resolvedSymbol;
+  const [fundamentals, canonicalTechnical] = await Promise.all([
+    getFundamentals({ symbol: requestedFundamentalSymbol }),
+    getCanonicalDailyTechnical(technicalAnalysisSymbol, params.interval),
+  ]);
+  const publishedTechnicalScore = canonicalTechnical?.technicalScore ?? technicalScore;
+  const publishedTechnicalSnapshot = canonicalTechnical?.snapshot ?? technicalSnapshot;
+  const publishedTechnicalInterpretation = canonicalTechnical?.interpretation ?? technicalInterpretation;
   const sampleStatus = bars.length >= 220 ? "ok" : "insufficient";
   const signals = sampleStatus === "ok"
     ? calculateSignals({
@@ -415,10 +440,10 @@ export async function analyzeTradeRadar(params: {
       volume,
       avgVolume20: round(avgVolume20, 0),
     },
-    technicalScore,
-    technicalSnapshot,
-    technicalInterpretation,
-    tradeSignal: tradeSignal(technicalScore),
+    technicalScore: publishedTechnicalScore,
+    technicalSnapshot: publishedTechnicalSnapshot,
+    technicalInterpretation: publishedTechnicalInterpretation,
+    tradeSignal: tradeSignal(publishedTechnicalScore),
     fundamentalScore: fundamentals.fundamentalScore ?? null,
     levels,
     signals,

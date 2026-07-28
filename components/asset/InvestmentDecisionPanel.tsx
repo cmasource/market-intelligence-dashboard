@@ -123,7 +123,7 @@ export function InvestmentDecisionPanel({ asset }: { asset: Asset }) {
           eyebrow={isSpanish ? "Lectura integrada" : "Integrated reading"}
           title={marketSignal.label}
           description={marketSignal.description}
-          action={loading ? <Badge tone="accent">{isSpanish ? "Actualizando" : "Refreshing"}</Badge> : undefined}
+          action={loading ? <Badge tone="accent">{isSpanish ? "Actualizando" : "Refreshing"}</Badge> : null}
         />
         <SignalGauge
           score={marketSignal.score}

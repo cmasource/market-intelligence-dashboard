@@ -9,12 +9,12 @@ export async function GET(
     return Response.json({ error: "Symbol is required." }, { status: 400 });
   }
 
-  return Response.json(
-    {
-      error: "Validated cash flows and official terms are required before publishing fixed-income analytics.",
-      symbol: normalizedSymbol,
-      quoteEndpoint: `/api/market-data/quote/${encodeURIComponent(normalizedSymbol)}`,
-    },
-    { status: 501, headers: { "Cache-Control": "no-store" } },
-  );
+  try {
+    const analytics = await getFixedIncomeAnalytics(normalizedSymbol);
+    return Response.json(analytics, { headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" } });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Fixed income analysis unavailable.";
+    return Response.json({ error: message, symbol: normalizedSymbol }, { status: message.startsWith("Unsupported") ? 404 : 503 });
+  }
 }
+import { getFixedIncomeAnalytics } from "@/lib/fixed-income";

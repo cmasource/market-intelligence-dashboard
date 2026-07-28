@@ -7,15 +7,14 @@ export function calculateMacaulayDurationFromCashFlows(
 ) {
   if (cashFlows.length === 0 || !Number.isFinite(annualYield) || paymentsPerYear <= 0) return null;
 
-  const ratePerPeriod = annualYield / paymentsPerYear;
-  if (ratePerPeriod <= -1) return null;
+  if (annualYield <= -1) return null;
 
   let presentValueTotal = 0;
   let weightedTimeTotal = 0;
 
   for (const cashFlow of cashFlows) {
-    const presentValue = cashFlow.totalCashFlow / (1 + ratePerPeriod) ** cashFlow.period;
-    const timeInYears = cashFlow.period / paymentsPerYear;
+    const presentValue = cashFlow.totalCashFlow / (1 + annualYield) ** cashFlow.yearFraction;
+    const timeInYears = cashFlow.yearFraction;
 
     presentValueTotal += presentValue;
     weightedTimeTotal += timeInYears * presentValue;
@@ -31,7 +30,7 @@ export function calculateModifiedDuration(
   paymentsPerYear: number,
 ) {
   if (!Number.isFinite(macaulayDuration) || !Number.isFinite(annualYield) || paymentsPerYear <= 0) return null;
-  const denominator = 1 + annualYield / paymentsPerYear;
+  const denominator = 1 + annualYield;
   if (denominator <= 0) return null;
 
   // Duration modificada aproxima sensibilidad porcentual del precio ante cambios de tasa.

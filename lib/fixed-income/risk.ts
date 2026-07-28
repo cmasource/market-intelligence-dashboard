@@ -45,9 +45,9 @@ export function buildFixedIncomeRiskProfile(
     legalRisk,
     overallRisk,
     bulletPoints: [
-      "Argentine sovereign instruments are treated conservatively in this mock MVP model.",
-      "Duration risk reflects estimated price sensitivity to rate changes.",
-      "Currency, legal and liquidity risks remain material for local fixed income analysis.",
+      "Los instrumentos soberanos argentinos se evalúan con un criterio conservador.",
+      "La duration aproxima la sensibilidad del precio frente a cambios de tasa.",
+      "El riesgo soberano, cambiario y de liquidez sigue siendo relevante.",
     ],
   };
 }
@@ -66,11 +66,11 @@ export function buildFixedIncomeInterpretation(
     tone: analytics.risk.overallRisk === "very_high" ? "warning" : "neutral",
     summary: cerContext
       ? "This CER-linked instrument is modeled with simplified inflation adjustment and remains exposed to local curve, liquidity and indexation risks."
-      : "This bond shows elevated yield potential and material sovereign, currency and liquidity risks in the mock analytics model.",
+      : "El rendimiento estimado debe evaluarse junto con el riesgo soberano, cambiario y de liquidez.",
     bulletPoints: [
       elevatedYield
         ? "Estimated yield is elevated, which can reflect both carry and credit-risk compensation."
-        : "Estimated yield should be interpreted with the mock cash-flow assumptions in mind.",
+        : "La TIR estimada debe leerse junto con el precio y los flujos contractuales disponibles.",
       highDuration
         ? "Modified duration indicates meaningful sensitivity to rate and spread changes."
         : "Duration sensitivity is present but contained under the current simplified assumptions.",

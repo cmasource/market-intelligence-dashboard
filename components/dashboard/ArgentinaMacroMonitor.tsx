@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ExternalLink, Landmark, WalletCards } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 
@@ -49,72 +49,37 @@ export function ArgentinaMacroMonitor() {
 
   return (
     <section className="cma-panel overflow-hidden">
-      <div className="border-b border-white/10 px-5 py-5 sm:px-6">
-        <p className="cma-kicker">{isSpanish ? "Monitor argentino" : "Argentina monitor"}</p>
-        <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-          <h2 className="text-2xl font-semibold text-white">{isSpanish ? "Datos macro y rendimientos en pesos" : "Macro data and peso yields"}</h2>
-          <a href="https://www.bcra.gob.ar/estadisticas-indicadores/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-200 hover:text-white">
-            BCRA <ExternalLink size={13} aria-hidden="true" />
-          </a>
+      <header className="flex flex-col gap-4 border-b border-white/10 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="flex items-start gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-cyan-300/20 bg-cyan-300/8 text-cyan-200"><Landmark size={19} aria-hidden="true" /></span>
+          <div><p className="cma-kicker">{isSpanish ? "Monitor argentino" : "Argentina monitor"}</p><h2 className="mt-1 text-2xl font-semibold text-white">{isSpanish ? "Datos macro y rendimientos en pesos" : "Macro data and peso yields"}</h2><p className="mt-1 text-sm text-slate-400">{isSpanish ? "Indicadores monetarios, cambiarios y tasas comparables." : "Comparable monetary, FX and rate indicators."}</p></div>
         </div>
-      </div>
+        <a href="https://www.bcra.gob.ar/estadisticas-indicadores/" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border border-white/10 px-3 text-xs font-semibold text-cyan-200 transition hover:bg-white/[0.05] hover:text-white">BCRA <ExternalLink size={13} aria-hidden="true" /></a>
+      </header>
 
-      <div className="grid lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="grid gap-px bg-white/10 sm:grid-cols-2 xl:grid-cols-3">
-          {macro.map((metric) => {
-            const positive = (metric.change ?? 0) >= 0;
-            const date = new Date(`${metric.date}T12:00:00`).toLocaleDateString(isSpanish ? "es-AR" : "en-US", { day: "2-digit", month: "short" });
-            return (
-              <article key={metric.id} className="min-h-32 bg-slate-950/75 p-4">
-                <p className="max-w-44 text-xs font-semibold uppercase leading-5 text-slate-400">{metric.label}</p>
-                <p className="mt-3 text-xl font-semibold tabular-nums text-white">{formatMetric(metric)}</p>
-                <div className="mt-1 flex items-center justify-between gap-2 text-xs">
-                  <span className="text-slate-500">{metric.unit}</span>
-                  {typeof metric.change === "number" ? (
-                    <span className={`tabular-nums ${positive ? "text-emerald-300" : "text-rose-300"}`}>
-                      {positive ? "+" : "-"}{Math.abs(metric.change).toLocaleString("es-AR", { maximumFractionDigits: 2 })}
-                    </span>
-                  ) : null}
-                </div>
-                <p className="mt-3 text-[11px] text-slate-600">{isSpanish ? "Actualizado" : "Updated"} {date}</p>
-              </article>
-            );
-          })}
-          {exchangeRates.length ? (
-            <div className="grid bg-slate-950/75 sm:col-span-2 sm:grid-cols-3 xl:col-span-3">
-              {exchangeRates.map((rate) => (
-                <article key={rate.code} className="border-t border-white/10 p-4 sm:border-r sm:last:border-r-0">
-                  <p className="text-xs font-semibold uppercase text-slate-500">{rate.code} / ARS</p>
-                  <p className="mt-2 text-lg font-semibold tabular-nums text-white">{rate.value.toLocaleString("es-AR", { maximumFractionDigits: 2 })}</p>
-                  <p className="mt-1 truncate text-xs text-slate-500">{rate.label}</p>
+      <div className="grid xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.75fr)]">
+        <div className="min-w-0 p-4 sm:p-5">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {macro.map((metric) => {
+              const positive = (metric.change ?? 0) >= 0;
+              const date = new Date(`${metric.date}T12:00:00`).toLocaleDateString(isSpanish ? "es-AR" : "en-US", { day: "2-digit", month: "short" });
+              const ChangeIcon = positive ? ArrowUpRight : ArrowDownRight;
+              return (
+                <article key={metric.id} className="rounded-md border border-white/8 bg-white/[0.025] px-3.5 py-3 transition hover:border-cyan-300/15 hover:bg-cyan-300/[0.025]">
+                  <div className="flex min-h-10 items-start justify-between gap-3"><p className="text-[11px] font-semibold uppercase leading-4 text-slate-400">{metric.label}</p>{typeof metric.change === "number" ? <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold tabular-nums ${positive ? "text-emerald-300" : "text-rose-300"}`}><ChangeIcon size={12} />{Math.abs(metric.change).toLocaleString("es-AR", { maximumFractionDigits: 2 })}</span> : null}</div>
+                  <div className="mt-2 flex items-baseline gap-2"><p className="text-xl font-semibold tabular-nums text-white">{formatMetric(metric)}</p><span className="text-[11px] text-slate-500">{metric.unit}</span></div>
+                  <p className="mt-2 text-[10px] text-slate-600">{isSpanish ? "Actualizado" : "Updated"} {date}</p>
                 </article>
-              ))}
-            </div>
-          ) : null}
+              );
+            })}
+          </div>
+          {exchangeRates.length ? <div className="mt-4 border-t border-white/8 pt-4"><p className="mb-2 text-[11px] font-semibold uppercase text-slate-500">{isSpanish ? "Tipo de cambio de referencia" : "Reference exchange rates"}</p><div className="grid gap-2 sm:grid-cols-3">{exchangeRates.map((rate) => <article key={rate.code} className="flex items-center justify-between gap-3 rounded-md bg-slate-950/55 px-3 py-2.5"><div><p className="text-[11px] font-semibold text-slate-400">{rate.code} / ARS</p><p className="mt-0.5 max-w-24 truncate text-[10px] text-slate-600">{rate.label}</p></div><p className="text-base font-semibold tabular-nums text-slate-100">{rate.value.toLocaleString("es-AR", { maximumFractionDigits: 2 })}</p></article>)}</div></div> : null}
         </div>
 
-        <div className="border-t border-white/10 bg-violet-400/[0.055] p-4 lg:border-l lg:border-t-0 sm:p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase text-violet-200">{isSpanish ? "Cuentas remuneradas" : "Interest-bearing accounts"}</p>
-              <p className="mt-1 text-sm text-slate-400">{isSpanish ? "TNA publicada, con topes y condiciones" : "Published APR, caps and conditions"}</p>
-            </div>
-            <a href="https://comparatasas.ar/metodologia/" target="_blank" rel="noopener noreferrer" aria-label={isSpanish ? "Ver metodologia" : "View methodology"} className="grid h-9 w-9 place-items-center rounded-md border border-violet-300/20 text-violet-100 hover:bg-violet-300/10">
-              <ExternalLink size={16} />
-            </a>
-          </div>
-          <div className="mt-4 divide-y divide-white/8">
-            {rates.slice(0, 6).map((rate) => (
-              <article key={`${rate.name}-${rate.date}`} className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 py-2.5">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-100">{rate.name}</p>
-                  <p className="mt-0.5 truncate text-xs text-slate-500">{rate.conditions ?? (isSpanish ? "Sin tope informado" : "No cap reported")}</p>
-                </div>
-                <p className="text-right text-base font-semibold tabular-nums text-emerald-300">{rate.tna.toFixed(1)}% <span className="block text-[10px] font-normal text-slate-500">TNA</span></p>
-              </article>
-            ))}
-          </div>
-        </div>
+        <aside className="border-t border-white/10 bg-violet-400/[0.035] p-4 xl:border-l xl:border-t-0 sm:p-5">
+          <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2.5"><span className="grid h-8 w-8 place-items-center rounded-md bg-violet-300/10 text-violet-200"><WalletCards size={16} /></span><div><p className="text-xs font-semibold uppercase text-violet-200">{isSpanish ? "Cuentas remuneradas" : "Interest-bearing accounts"}</p><p className="mt-0.5 text-xs text-slate-500">{isSpanish ? "Ordenadas por TNA publicada" : "Ranked by published APR"}</p></div></div><a href="https://comparatasas.ar/metodologia/" target="_blank" rel="noopener noreferrer" aria-label={isSpanish ? "Ver metodologia" : "View methodology"} className="grid h-8 w-8 place-items-center rounded-md border border-violet-300/15 text-violet-100 hover:bg-violet-300/10"><ExternalLink size={14} /></a></div>
+          <ol className="mt-4 divide-y divide-white/8">{rates.slice(0, 6).map((rate, index) => <li key={`${rate.name}-${rate.date}`} className="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-center gap-2.5 py-2.5"><span className="text-xs font-semibold tabular-nums text-slate-600">{String(index + 1).padStart(2, "0")}</span><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-100">{rate.name}</p><p className="mt-0.5 truncate text-[11px] text-slate-500">{rate.conditions ?? (isSpanish ? "Sin tope informado" : "No cap reported")}</p></div><div className="text-right"><p className="text-base font-semibold tabular-nums text-emerald-300">{rate.tna.toFixed(1)}%</p><p className="text-[9px] uppercase text-slate-600">TNA</p></div></li>)}</ol>
+        </aside>
       </div>
     </section>
   );

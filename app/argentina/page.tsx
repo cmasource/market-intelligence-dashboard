@@ -11,6 +11,7 @@ import { useLanguage } from "@/lib/i18n/useLanguage";
 import { formatCurrencyValue, formatPercent } from "@/lib/formatters";
 import type { ArgentinaInstrument, ArgentinaQuote } from "@/lib/argentina";
 import type { TechnicalAnalysisResponse } from "@/lib/analysis/types";
+import type { BondComparisonItem } from "@/lib/fixed-income";
 
 type ViewKey = "heatmap" | "equities" | "indicators" | "cedears" | "cedearIndicators" | "bonds" | "cauciones";
 
@@ -73,6 +74,7 @@ export default function ArgentinaPage() {
   const [instruments, setInstruments] = useState<ArgentinaInstrument[]>([]);
   const [quotes, setQuotes] = useState<Record<string, ArgentinaQuote>>({});
   const [analyses, setAnalyses] = useState<Record<string, TechnicalAnalysisResponse | null>>({});
+  const [fixedIncome, setFixedIncome] = useState<Record<string, BondComparisonItem>>({});
   const [loading, setLoading] = useState(true);
 
   const filtered = useMemo(() => {
@@ -101,6 +103,16 @@ export default function ArgentinaPage() {
       .catch(() => undefined);
     return () => controller.abort();
   }, [view, visibleSymbols]);
+
+  useEffect(() => {
+    if (view !== "bonds") return;
+    const controller = new AbortController();
+    fetch("/api/fixed-income/comparison", { signal: controller.signal })
+      .then((response) => response.json() as Promise<BondComparisonItem[]>)
+      .then((items) => setFixedIncome(Object.fromEntries(items.map((item) => [item.symbol, item]))))
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [view]);
 
   useEffect(() => {
     if (!["indicators", "cedearIndicators"].includes(view) || !visibleSymbols.length) return;
@@ -197,7 +209,7 @@ export default function ArgentinaPage() {
                     {view === "cedears" ? <th className="px-4 py-3">Ratio</th> : null}
                     {view === "bonds" ? <th className="px-4 py-3">{isSpanish ? "Vencimiento" : "Maturity"}</th> : null}
                     {view === "bonds" ? <th className="px-4 py-3">TIR</th> : null}
-                    {view === "bonds" ? <th className="px-4 py-3">{isSpanish ? "Cupon" : "Coupon"}</th> : null}
+                    {view === "bonds" ? <th className="px-4 py-3">{isSpanish ? "Paridad" : "Parity"}</th> : null}
                     <th className="px-4 py-3 text-right">{isSpanish ? "Analisis" : "Analysis"}</th>
                   </tr>
                 </thead>
@@ -205,6 +217,7 @@ export default function ArgentinaPage() {
                   {visible.map((instrument) => {
                     const quote = quotes[instrument.symbol];
                     const analysis = analyses[instrument.symbol];
+                    const fixedIncomeItem = fixedIncome[instrument.symbol];
                     const change = quote?.changePercent;
                     return (
                       <tr key={`${instrument.type}-${instrument.symbol}`} className="border-t border-white/10 transition hover:bg-cyan-300/[0.045]">
@@ -222,8 +235,8 @@ export default function ArgentinaPage() {
                         {showsIndicators ? <td className="px-4 py-3"><span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${scoreTone(analysis?.technicalScore)}`}>{analysis === undefined ? "..." : signalLabel(analysis, isSpanish)}</span></td> : null}
                         {view === "cedears" ? <td className="px-4 py-3 text-slate-300">{instrument.cedearRatio ? `${instrument.cedearRatio}:1` : "-"}</td> : null}
                         {view === "bonds" ? <td className="px-4 py-3 text-slate-300">{instrument.maturityDate ?? "-"}</td> : null}
-                        {view === "bonds" ? <td className="px-4 py-3 text-slate-400">-</td> : null}
-                        {view === "bonds" ? <td className="px-4 py-3 text-slate-400">-</td> : null}
+                        {view === "bonds" ? <td className="px-4 py-3 font-semibold text-emerald-300">{typeof fixedIncomeItem?.estimatedYTM === "number" ? `${(fixedIncomeItem.estimatedYTM * 100).toFixed(2)}%` : "-"}</td> : null}
+                        {view === "bonds" ? <td className="px-4 py-3 text-slate-300">{typeof fixedIncomeItem?.parity === "number" ? `${(fixedIncomeItem.parity * 100).toFixed(2)}%` : "-"}</td> : null}
                         <td className="px-4 py-3 text-right">
                           <Link href={`/asset/${encodeURIComponent(instrument.symbol)}`} className="font-semibold text-cyan-200 hover:text-white">
                             {isSpanish ? "Abrir" : "Open"}

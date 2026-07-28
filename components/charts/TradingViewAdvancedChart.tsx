@@ -35,10 +35,20 @@ export function TradingViewAdvancedChart({
   const priceActionLabel = language === "es" ? "Acci\u00f3n del precio" : "Price action";
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return undefined;
+    const root = containerRef.current;
+    if (!root) return undefined;
+    const widgetKey = `${mapping.tradingViewSymbol}-${interval}-${resolvedTheme}-${resolvedLocale}`;
+    if (root.dataset.tradingviewWidgetKey === widgetKey) return undefined;
+    root.dataset.tradingviewWidgetKey = widgetKey;
 
-    container.innerHTML = "";
+    for (const child of Array.from(root.children)) {
+      child.setAttribute("aria-hidden", "true");
+      if (child instanceof HTMLElement) child.style.display = "none";
+    }
+
+    const container = document.createElement("div");
+    container.className = "tradingview-widget-container h-full w-full";
+    container.dataset.tradingviewWidgetInstance = widgetKey;
 
     const widgetContainer = document.createElement("div");
     widgetContainer.className = "tradingview-widget-container__widget";
@@ -68,9 +78,21 @@ export function TradingViewAdvancedChart({
 
     container.appendChild(widgetContainer);
     container.appendChild(script);
+    root.appendChild(container);
+
+    const cleanupStaleWidgets = window.setTimeout(() => {
+      for (const child of Array.from(root.children)) {
+        if (child instanceof HTMLElement && child.dataset.tradingviewWidgetInstance !== widgetKey) {
+          root.removeChild(child);
+        }
+      }
+    }, 6000);
 
     return () => {
-      container.innerHTML = "";
+      // TradingView's async embed can still execute after React dev-mode effect
+      // cleanup. Removing the script immediately leaves the embed without a
+      // parent node and raises an external querySelector error in local QA.
+      window.clearTimeout(cleanupStaleWidgets);
     };
   }, [interval, mapping.tradingViewSymbol, resolvedLocale, resolvedTheme]);
 
@@ -103,7 +125,7 @@ export function TradingViewAdvancedChart({
         data-tradingview-verified={String(mapping.verified)}
         style={{ height: chartHeight, minHeight: 420, width: "100%" }}
       >
-        <div ref={containerRef} className="tradingview-widget-container h-full w-full" />
+        <div ref={containerRef} className="h-full w-full" />
       </div>
 
       <div className="mt-3 space-y-1 text-xs leading-5 text-slate-400">

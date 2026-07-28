@@ -107,7 +107,7 @@ export function CaucionesPanel() {
         <div className="grid gap-px bg-white/10 sm:grid-cols-3">
           {highlights.map((quote) => (
             <article key={quote.label} className="bg-cyan-300/[0.045] p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">{quote.label}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">{quote.termDays}D</p>
               <p className="mt-2 text-2xl font-semibold tabular-nums text-white">{formatRate(quote.rateTna)}</p>
               <div className="mt-2 flex items-center justify-between gap-3 text-xs">
                 <span className="text-slate-500">TNA</span>
@@ -136,7 +136,7 @@ export function CaucionesPanel() {
           <tbody>
             {quotes.map((quote) => (
               <tr key={quote.label} className={`border-t border-white/10 ${quote.termDays === 1 ? "bg-cyan-300/[0.055]" : "hover:bg-white/[0.035]"}`}>
-                <td className="px-4 py-3 font-semibold text-white">{quote.label}</td>
+                <td className="px-4 py-3 font-semibold text-white">{quote.termDays}D</td>
                 <td className="px-4 py-3 font-semibold tabular-nums text-slate-100">{formatRate(quote.rateTna)}</td>
                 <td className={`px-4 py-3 font-semibold tabular-nums ${(quote.variationPoints ?? 0) >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
                   {formatPoints(quote.variationPoints)}

@@ -3,6 +3,8 @@ import test from "node:test";
 import { GET as getInstrumentStatus } from "@/app/api/instruments/status/route";
 import { resolveInstrument } from "@/lib/instruments/resolveInstrument";
 import { searchInstruments } from "@/lib/instruments/searchInstruments";
+import { isProviderQuoteSupported } from "@/lib/market-data/provider-symbols";
+import { getYahooSymbol } from "@/lib/market-data/symbol-map";
 
 test("instrument search prioritizes exact US symbols and includes CEDEAR alternatives", () => {
   const results = searchInstruments({ query: "MSFT", limit: 5 });
@@ -27,6 +29,11 @@ test("CEDEAR resolution points technical layer to US underlying", () => {
   assert.equal(resolution?.technicalLayer?.market, "us");
   assert.equal(resolution?.localLayer?.market, "argentina");
   assert.equal(resolution?.dataCoverage.includes("technical_underlying"), true);
+});
+
+test("expanded CEDEAR underlyings are admitted by market-data providers", () => {
+  assert.equal(isProviderQuoteSupported("ADBE"), true);
+  assert.equal(getYahooSymbol("ADBE"), "ADBE");
 });
 
 test("local Argentine equity resolution uses associated ADR when available", () => {

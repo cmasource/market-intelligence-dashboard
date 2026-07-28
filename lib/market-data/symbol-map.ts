@@ -77,12 +77,12 @@ const seededYahooSymbols = [
 ];
 const providerMarketSymbols = instrumentMasterSeed
   .filter((instrument) =>
-    instrument.market === "us"
-    && instrument.dataCapabilities.includes("technical_full")
+    (instrument.dataCapabilities.includes("technical_full") || instrument.dataCapabilities.includes("technical_underlying"))
     && instrument.providerSymbol
     && instrument.assetClass !== "crypto",
   )
-  .map((instrument) => instrument.providerSymbol as string);
+  .flatMap((instrument) => [instrument.providerSymbol as string, instrument.underlyingSymbol ?? ""])
+  .filter(Boolean);
 const yahooSymbols = new Set([...seededYahooSymbols, ...providerMarketSymbols]);
 const etfSymbols = new Set(instrumentMasterSeed
   .filter((instrument) => instrument.assetClass === "etf" && instrument.providerSymbol)
@@ -109,7 +109,7 @@ const argentinaSymbols = new Set([
   "ALUA", "COME", "BYMA", "VALO", "TRAN", "TGNO4", "MIRG", "METR", "AGRO", "HARG", "MOLI",
   "TXAR", "CRES", "IRSA", "EDN", "DESP",
 ]);
-const bondSymbols = new Set(["AL30", "AL30D", "AL30C", "GD30", "GD30D", "GD30C", "TX26", "AE38", "AE38D", "GD35", "GD35D", "GD38", "GD38D", "AL35", "AL35D", "TZX26", "DICP", "PARP", "S31Y6"]);
+const bondSymbols = new Set(["AL30", "AL30D", "AL30C", "GD30", "GD30D", "GD30C", "TX26", "AE38", "AE38D", "GD35", "GD35D", "GD38", "GD38D", "AL35", "AL35D", "TZX26", "DICP", "PARP", "S31L6", "S30N6", "D31L6"]);
 const argentinaProviderAliases: Record<string, string> = {
   YPFD: "YPF",
   PAMP: "PAM",

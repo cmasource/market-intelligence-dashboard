@@ -17,6 +17,10 @@ function getAdjustedPrincipal(instrument: FixedIncomeInstrument) {
 }
 
 export function buildFixedIncomeCashFlows(instrument: FixedIncomeInstrument): FixedIncomeCashFlow[] {
+  if (instrument.contractualCashFlows?.length) {
+    return instrument.contractualCashFlows.map((cashFlow) => ({ ...cashFlow }));
+  }
+
   if (
     !isValidPositiveNumber(instrument.faceValue) ||
     !isValidPositiveNumber(instrument.couponFrequency) ||

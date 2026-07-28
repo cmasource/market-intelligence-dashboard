@@ -4,15 +4,15 @@
   --background: #0b0f14;
   --foreground: #e6e9ed;
   --cma-bg-base: #0b0f14;
-  --cma-bg-panel: #10151c;
-  --cma-bg-elevated: #151b23;
+  --cma-bg-panel: #101720;
+  --cma-bg-elevated: #151e28;
   --cma-bg-glass: #10151c;
   --cma-border-soft: rgba(230, 233, 237, 0.09);
   --cma-border-strong: rgba(45, 178, 168, 0.4);
   --cma-text-primary: #f3f5f7;
-  --cma-text-secondary: #b7bfc9;
-  --cma-text-muted: #7a8390;
-  --cma-accent-cyan: #2db2a8;
+  --cma-text-secondary: #aeb9c5;
+  --cma-text-muted: #718195;
+  --cma-accent-cyan: #27b7ae;
   --cma-accent-blue: #2db2a8;
   --cma-accent-violet: #7a8390;
   --cma-positive: #2f9e6e;
@@ -317,7 +317,7 @@ html {
 .cma-panel-glass {
   position: relative;
   border: 1px solid var(--cma-border-soft);
-  border-radius: 12px;
+  border-radius: 8px;
   color: var(--cma-text-primary);
   overflow: hidden;
   background: var(--cma-bg-panel);
@@ -336,7 +336,7 @@ html {
 .cma-card-risk,
 .cma-card-news,
 .cma-card-argentina {
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid var(--cma-border-soft);
   background: var(--cma-bg-panel);
   transition: border-color 150ms ease;
@@ -405,32 +405,16 @@ html {
 .cma-market-tape {
   position: relative;
   flex: 1;
-  height: 2rem;
+  height: 1.9rem;
   overflow: hidden;
-  border: 1px solid rgba(52, 211, 153, 0.18);
-  border-radius: 0.5rem;
-  background: #071a14;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .cma-market-tape::before,
 .cma-market-tape::after {
-  position: absolute;
-  top: 0;
-  z-index: 1;
-  width: 4rem;
-  height: 100%;
-  content: "";
-  pointer-events: none;
-}
-
-.cma-market-tape::before {
-  left: 0;
-  background: linear-gradient(90deg, #071a14, rgba(7, 26, 20, 0));
-}
-
-.cma-market-tape::after {
-  right: 0;
-  background: linear-gradient(270deg, #071a14, rgba(7, 26, 20, 0));
+  content: none;
 }
 
 .cma-market-tape-track {

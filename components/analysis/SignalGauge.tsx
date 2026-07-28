@@ -54,16 +54,10 @@ export function SignalGauge({ score, confidenceLabel, language }: SignalGaugePro
 
   return (
     <div className="mx-auto w-full max-w-72 text-center" role="img" aria-label={accessibleLabel}>
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-center gap-3">
         <p className="text-xs font-semibold uppercase text-slate-400">
           {language === "es" ? "Indicador compra / venta" : "Buy / sell indicator"}
         </p>
-        <span
-          className="rounded-full border px-2.5 py-1 text-xs font-semibold text-white"
-          style={{ borderColor: activeZone?.color ?? "#64748b", backgroundColor: `${activeZone?.color ?? "#64748b"}22` }}
-        >
-          {decisionLabel}
-        </span>
       </div>
 
       <svg className="mt-2 h-auto w-full" viewBox="0 0 280 164" aria-hidden="true">

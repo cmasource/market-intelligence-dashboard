@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { BondCalculator } from "@/components/calculators/BondCalculator";
 import { CedearCalculator } from "@/components/calculators/CedearCalculator";
+import { EquityValuationCalculator } from "@/components/calculators/EquityValuationCalculator";
 import { FixedIncomeComparison } from "@/components/fixed-income/FixedIncomeComparison";
 import { AppShell } from "@/components/layout/AppShell";
 import { NewsList } from "@/components/news/NewsList";
@@ -38,6 +40,7 @@ export default function ReportsPage() {
   const [view, setView] = useState<ReportView>("news");
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [earnings, setEarnings] = useState<EarningsEvent[]>([]);
+  const [earningsQuery, setEarningsQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,6 +57,35 @@ export default function ReportsPage() {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    const syncView = () => {
+      const next = window.location.hash.replace("#", "") as ReportView;
+      if (views.some((item) => item.key === next)) setView(next);
+    };
+    syncView();
+    const syncCustomView = (event: Event) => {
+      const next = (event as CustomEvent<string>).detail as ReportView;
+      if (views.some((item) => item.key === next)) setView(next);
+    };
+    window.addEventListener("hashchange", syncView);
+    window.addEventListener("cma-report-view", syncCustomView);
+    return () => {
+      window.removeEventListener("hashchange", syncView);
+      window.removeEventListener("cma-report-view", syncCustomView);
+    };
+  }, []);
+
+  const filteredEarnings = useMemo(() => {
+    const normalized = earningsQuery.trim().toLowerCase();
+    if (!normalized) return earnings;
+    return earnings.filter((item) => item.symbol?.toLowerCase().includes(normalized));
+  }, [earnings, earningsQuery]);
+
+  function selectView(next: ReportView) {
+    setView(next);
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${next}`);
+  }
+
   return (
     <AppShell>
       <div className="space-y-6 py-6">
@@ -68,7 +100,7 @@ export default function ReportsPage() {
 
         <nav aria-label={isSpanish ? "Secciones de reportes" : "Report sections"} className="flex gap-2 overflow-x-auto rounded-lg border border-white/10 bg-slate-950/55 p-2">
           {views.map((item) => (
-            <button key={item.key} type="button" onClick={() => setView(item.key)} className={`min-h-10 shrink-0 rounded-md px-4 text-sm font-semibold transition ${view === item.key ? "bg-cyan-300 text-slate-950" : "text-slate-300 hover:bg-white/[0.07] hover:text-white"}`}>
+            <button key={item.key} type="button" onClick={() => selectView(item.key)} className={`min-h-10 shrink-0 rounded-md px-4 text-sm font-semibold transition ${view === item.key ? "bg-cyan-300 text-slate-950" : "text-slate-300 hover:bg-white/[0.07] hover:text-white"}`}>
               {item[language]}
             </button>
           ))}
@@ -86,14 +118,15 @@ export default function ReportsPage() {
           <EventTable
             title={isSpanish ? "Proximos balances" : "Upcoming earnings"}
             columns={[isSpanish ? "Empresa" : "Company", isSpanish ? "Fecha" : "Date", "EPS est.", isSpanish ? "Ingresos est." : "Revenue est."]}
-            rows={earnings.map((item) => [item.symbol ?? "-", `${formatDate(item.date, isSpanish ? "es-AR" : "en-US")} | Q${item.quarter ?? "-"} ${item.year ?? ""}`, compact(item.epsEstimate), compact(item.revenueEstimate)])}
+            rows={filteredEarnings.map((item) => [item.symbol ?? "-", `${formatDate(item.date, isSpanish ? "es-AR" : "en-US")} | Q${item.quarter ?? "-"} ${item.year ?? ""}`, compact(item.epsEstimate), compact(item.revenueEstimate)])}
             empty={isSpanish ? "No hay balances para el rango consultado." : "No earnings events for the selected range."}
+            search={{ value: earningsQuery, onChange: setEarningsQuery, placeholder: isSpanish ? "Buscar simbolo o empresa" : "Search symbol or company" }}
           />
         ) : null}
 
         {view === "bonds" ? <FixedIncomeComparison /> : null}
 
-        {view === "calculators" ? <div className="space-y-4"><CedearCalculator /><BondCalculator /></div> : null}
+        {view === "calculators" ? <div className="space-y-4"><CedearCalculator /><EquityValuationCalculator /><BondCalculator /></div> : null}
       </div>
     </AppShell>
   );
@@ -103,10 +136,10 @@ function LoadingText({ isSpanish }: { isSpanish: boolean }) {
   return <p className="rounded-lg border border-white/10 bg-white/[0.035] p-4 text-sm text-slate-400">{isSpanish ? "Cargando..." : "Loading..."}</p>;
 }
 
-function EventTable({ title, columns, rows, empty }: { title: string; columns: string[]; rows: string[][]; empty: string }) {
+function EventTable({ title, columns, rows, empty, search }: { title: string; columns: string[]; rows: string[][]; empty: string; search?: { value: string; onChange: (value: string) => void; placeholder: string } }) {
   return (
     <section className="cma-panel overflow-hidden">
-      <div className="border-b border-white/10 px-5 py-4"><h2 className="text-xl font-semibold text-white">{title}</h2></div>
+      <div className="flex flex-col gap-3 border-b border-white/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-semibold text-white">{title}</h2><p className="mt-1 text-xs text-slate-500">{rows.length} resultados</p></div>{search ? <label className="relative w-full sm:max-w-xs"><Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" /><span className="sr-only">{search.placeholder}</span><input type="search" value={search.value} onChange={(event) => search.onChange(event.target.value)} placeholder={search.placeholder} className="h-10 w-full rounded-md border border-white/10 bg-slate-950/70 pl-9 pr-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-300/40" /></label> : null}</div>
       {rows.length ? (
         <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-white/[0.035] text-xs uppercase text-slate-500"><tr>{columns.map((column) => <th key={column} className="px-4 py-3">{column}</th>)}</tr></thead><tbody>{rows.slice(0, 30).map((row, index) => <tr key={`${row[0]}-${index}`} className="border-t border-white/10 hover:bg-cyan-300/[0.04]">{row.map((cell, cellIndex) => <td key={`${cell}-${cellIndex}`} className={`px-4 py-3 ${cellIndex === 0 ? "font-semibold text-white" : "text-slate-300"}`}>{cell}</td>)}</tr>)}</tbody></table></div>
       ) : <p className="p-6 text-sm text-slate-400">{empty}</p>}
