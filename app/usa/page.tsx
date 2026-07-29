@@ -6,14 +6,17 @@ import { useEffect, useMemo, useState } from "react";
 import { AssetLogo } from "@/components/assets/AssetLogo";
 import { AppShell } from "@/components/layout/AppShell";
 import { MarketHeatmap } from "@/components/market/MarketHeatmap";
+import { SortableTableHeader } from "@/components/ui/SortableTableHeader";
 import { formatCurrencyValue, formatPercent } from "@/lib/formatters";
 import { useProviderQuotes } from "@/lib/hooks/useProviderQuotes";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { instrumentUniverse, type InstrumentUniverseItem } from "@/lib/instrument-universe";
 import type { TechnicalAnalysisResponse } from "@/lib/analysis/types";
+import { nextSortState, sortTableRows, type SortState } from "@/lib/ui/sortable-table";
 
 type View = "overview" | "stocks" | "indicators" | "cedearUnderlyings" | "etfs";
 const pageSize = 10;
+type UsaSortKey = "asset" | "price" | "change" | "score" | "rsi" | "macd" | "reading";
 
 function tone(score: number | null | undefined) {
   if (typeof score !== "number") return "text-slate-400";
@@ -42,6 +45,7 @@ export default function UsaPage() {
   const [view, setView] = useState<View>("overview");
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortState<UsaSortKey>>({ key: "asset", direction: "asc" });
   const [analyses, setAnalyses] = useState<Record<string, TechnicalAnalysisResponse | null>>({});
   const stocks = useMemo(() => instrumentUniverse.filter((item) => item.country === "US" && item.category === "equity" && item.isSearchable), []);
   const etfs = useMemo(() => instrumentUniverse.filter((item) => item.category === "etf" && item.isSearchable), []);
@@ -75,11 +79,32 @@ export default function UsaPage() {
     if (!normalized) return source;
     return source.filter((item) => [item.symbol, item.displayName, item.underlyingSymbol, ...(item.searchableAliases ?? [])].some((value) => value?.toLowerCase().includes(normalized)));
   }, [allStocks, cedearUnderlyings, etfs, query, view]);
+  const orderedSelected = useMemo(() => {
+    if (sort.key !== "asset") return selected;
+    return sortTableRows(selected, sort, {
+      asset: (item) => `${item.underlyingSymbol ?? item.primarySymbol ?? item.symbol} ${item.displayName}`,
+      price: () => null,
+      change: () => null,
+      score: () => null,
+      rsi: () => null,
+      macd: () => null,
+      reading: () => null,
+    });
+  }, [selected, sort]);
   const pageCount = Math.max(1, Math.ceil(selected.length / pageSize));
-  const visible = useMemo(() => selected.slice((page - 1) * pageSize, page * pageSize), [page, selected]);
-  const visibleSymbols = useMemo(() => visible.map((item) => item.underlyingSymbol ?? item.primarySymbol ?? item.symbol), [visible]);
+  const pageItems = useMemo(() => orderedSelected.slice((page - 1) * pageSize, page * pageSize), [orderedSelected, page]);
+  const visibleSymbols = useMemo(() => pageItems.map((item) => item.underlyingSymbol ?? item.primarySymbol ?? item.symbol), [pageItems]);
   const quoteSymbols = visibleSymbols;
   const quotes = useProviderQuotes(quoteSymbols);
+  const visible = useMemo(() => sort.key === "asset" ? pageItems : sortTableRows(pageItems, sort, {
+    asset: (item) => `${item.underlyingSymbol ?? item.primarySymbol ?? item.symbol} ${item.displayName}`,
+    price: (item) => quotes[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.price,
+    change: (item) => quotes[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.changePercent,
+    score: (item) => analyses[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.technicalScore,
+    rsi: (item) => analyses[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.snapshot.rsi14,
+    macd: (item) => analyses[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.snapshot.macd,
+    reading: (item) => analyses[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.technicalScore,
+  }), [analyses, pageItems, quotes, sort]);
 
   useEffect(() => {
     if (!["indicators", "cedearUnderlyings"].includes(view) || !visibleSymbols.length) return;
@@ -103,6 +128,7 @@ export default function UsaPage() {
     setView(next);
     setPage(1);
     setQuery("");
+    setSort({ key: "asset", direction: "asc" });
   }
 
   const labels: Record<View, string> = {
@@ -132,7 +158,18 @@ export default function UsaPage() {
             <div className="flex flex-col gap-4 border-b border-white/10 px-4 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-5"><div><h2 className="text-xl font-semibold text-white">{labels[view]}</h2><p className="mt-1 text-sm text-slate-400">{selected.length} {isSpanish ? "instrumentos" : "instruments"}</p></div><label className="relative w-full sm:max-w-xs"><Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" /><span className="sr-only">{isSpanish ? "Buscar instrumento" : "Search instrument"}</span><input type="search" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={isSpanish ? "Buscar simbolo o empresa" : "Search symbol or company"} className="h-10 w-full rounded-md border border-white/10 bg-slate-950/70 pl-9 pr-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-300/40" /></label></div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] text-left text-sm">
-                <thead className="bg-white/[0.035] text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">{isSpanish ? "Activo" : "Asset"}</th><th className="px-4 py-3">{isSpanish ? "Ultimo" : "Last"}</th><th className="px-4 py-3">% {isSpanish ? "Dia" : "Day"}</th>{["indicators", "cedearUnderlyings"].includes(view) ? <><th className="px-4 py-3">Score</th><th className="px-4 py-3">RSI</th><th className="px-4 py-3">MACD</th><th className="px-4 py-3">{isSpanish ? "Lectura" : "Reading"}</th></> : null}<th className="px-4 py-3 text-right">{isSpanish ? "Analisis" : "Analysis"}</th></tr></thead>
+                <thead className="bg-white/[0.035] text-xs uppercase text-slate-500"><tr>
+                  <SortableTableHeader columnKey="asset" label={isSpanish ? "Activo" : "Asset"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key))} />
+                  <SortableTableHeader columnKey="price" label={isSpanish ? "Ultimo" : "Last"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
+                  <SortableTableHeader columnKey="change" label={`% ${isSpanish ? "Dia" : "Day"}`} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
+                  {["indicators", "cedearUnderlyings"].includes(view) ? <>
+                    <SortableTableHeader columnKey="score" label="Score" activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
+                    <SortableTableHeader columnKey="rsi" label="RSI" activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
+                    <SortableTableHeader columnKey="macd" label="MACD" activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
+                    <SortableTableHeader columnKey="reading" label={isSpanish ? "Lectura" : "Reading"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
+                  </> : null}
+                  <th className="px-4 py-3 text-right">{isSpanish ? "Analisis" : "Analysis"}</th>
+                </tr></thead>
                 <tbody>{visible.map((instrument: InstrumentUniverseItem) => {
                   const analysisSymbol = instrument.underlyingSymbol ?? instrument.primarySymbol ?? instrument.symbol;
                   const quote = quotes[analysisSymbol];

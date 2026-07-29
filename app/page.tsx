@@ -29,7 +29,7 @@ export default function Home() {
         <section className="pt-1">
           <div className="mb-5 flex flex-col gap-4 border-b border-[var(--cma-border-soft)] pb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="cma-kicker">{isSpanish ? "Mercado argentino · ahora" : "Argentina market · now"}</p>
+              <p className="cma-kicker">{isSpanish ? "Mercados · en vivo" : "Global markets · live"}</p>
               <h1 className="mt-2 text-3xl font-semibold text-[var(--cma-text-primary)] sm:text-4xl">
                 {isSpanish ? "Resumen de mercado" : "Market overview"}
               </h1>

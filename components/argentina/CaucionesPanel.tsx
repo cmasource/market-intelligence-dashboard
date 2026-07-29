@@ -4,6 +4,8 @@ import { AlertTriangle, ExternalLink } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import type { CaucionAlert, CaucionQuote } from "@/lib/argentina/cauciones";
+import { SortableTableHeader } from "@/components/ui/SortableTableHeader";
+import { nextSortState, sortTableRows, type SortState } from "@/lib/ui/sortable-table";
 
 type CaucionesResponse = {
   updatedAt?: string;
@@ -15,6 +17,7 @@ type CaucionesResponse = {
   alert?: CaucionAlert | null;
   error?: string;
 };
+type CaucionSortKey = "term" | "rate" | "change" | "previous" | "bid" | "ask" | "range" | "volume" | "updated";
 
 function formatRate(value: number | null | undefined) {
   if (typeof value !== "number" || !Number.isFinite(value)) return "-";
@@ -47,6 +50,7 @@ export function CaucionesPanel() {
   const isSpanish = language === "es";
   const [payload, setPayload] = useState<CaucionesResponse>({});
   const [loading, setLoading] = useState(true);
+  const [sort, setSort] = useState<SortState<CaucionSortKey>>({ key: "term", direction: "asc" });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -61,6 +65,17 @@ export function CaucionesPanel() {
   }, []);
 
   const quotes = useMemo(() => payload.quotes ?? [], [payload.quotes]);
+  const sortedQuotes = useMemo(() => sortTableRows(quotes, sort, {
+    term: (quote) => quote.termDays,
+    rate: (quote) => quote.rateTna,
+    change: (quote) => quote.variationPoints,
+    previous: (quote) => quote.previousRateTna,
+    bid: (quote) => quote.bidRateTna,
+    ask: (quote) => quote.askRateTna,
+    range: (quote) => quote.maxRateTna,
+    volume: (quote) => quote.volume,
+    updated: (quote) => quote.lastQuote ? new Date(quote.lastQuote) : null,
+  }), [quotes, sort]);
   const highlights = useMemo(() => [1, 7, 30].map((term) => quotes.find((quote) => quote.termDays === term)).filter((quote): quote is CaucionQuote => Boolean(quote)), [quotes]);
 
   return (
@@ -122,19 +137,19 @@ export function CaucionesPanel() {
         <table className="w-full min-w-[980px] text-left text-sm">
           <thead className="bg-white/[0.035] text-xs uppercase text-slate-500">
             <tr>
-              <th className="px-4 py-3">{isSpanish ? "Plazo" : "Term"}</th>
-              <th className="px-4 py-3">TNA</th>
-              <th className="px-4 py-3">{isSpanish ? "Var. diaria" : "Daily change"}</th>
-              <th className="px-4 py-3">{isSpanish ? "Cierre previo" : "Previous close"}</th>
-              <th className="px-4 py-3">{isSpanish ? "Toma" : "Bid"}</th>
-              <th className="px-4 py-3">{isSpanish ? "Coloca" : "Ask"}</th>
-              <th className="px-4 py-3">{isSpanish ? "Min / Max" : "Low / High"}</th>
-              <th className="px-4 py-3">{isSpanish ? "Volumen" : "Volume"}</th>
-              <th className="px-4 py-3">{isSpanish ? "Ultima operacion" : "Last quote"}</th>
+              <SortableTableHeader columnKey="term" label={isSpanish ? "Plazo" : "Term"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key))} />
+              <SortableTableHeader columnKey="rate" label="TNA" activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
+              <SortableTableHeader columnKey="change" label={isSpanish ? "Var. diaria" : "Daily change"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
+              <SortableTableHeader columnKey="previous" label={isSpanish ? "Cierre previo" : "Previous close"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
+              <SortableTableHeader columnKey="bid" label={isSpanish ? "Toma" : "Bid"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
+              <SortableTableHeader columnKey="ask" label={isSpanish ? "Coloca" : "Ask"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
+              <SortableTableHeader columnKey="range" label={isSpanish ? "Min / Max" : "Low / High"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
+              <SortableTableHeader columnKey="volume" label={isSpanish ? "Volumen" : "Volume"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
+              <SortableTableHeader columnKey="updated" label={isSpanish ? "Ultima operacion" : "Last quote"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
             </tr>
           </thead>
           <tbody>
-            {quotes.map((quote) => (
+            {sortedQuotes.map((quote) => (
               <tr key={quote.label} className={`border-t border-white/10 ${quote.termDays === 1 ? "bg-cyan-300/[0.055]" : "hover:bg-white/[0.035]"}`}>
                 <td className="px-4 py-3 font-semibold text-white">{quote.termDays}D</td>
                 <td className="px-4 py-3 font-semibold tabular-nums text-slate-100">{formatRate(quote.rateTna)}</td>

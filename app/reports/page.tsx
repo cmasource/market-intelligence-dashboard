@@ -8,12 +8,15 @@ import { EquityValuationCalculator } from "@/components/calculators/EquityValuat
 import { FixedIncomeComparison } from "@/components/fixed-income/FixedIncomeComparison";
 import { AppShell } from "@/components/layout/AppShell";
 import { NewsList } from "@/components/news/NewsList";
+import { SortableTableHeader } from "@/components/ui/SortableTableHeader";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import type { NewsArticle } from "@/lib/news";
+import { nextSortState, sortTableRows, type SortState, type SortValue } from "@/lib/ui/sortable-table";
 
 type ReportView = "news" | "earnings" | "bonds" | "calculators";
 type EarningsEvent = { date?: string; epsEstimate?: number | null; quarter?: number; revenueEstimate?: number | null; symbol?: string; year?: number };
 type ListResponse<T> = { events?: T[]; articles?: NewsArticle[] };
+type EventRow = { cells: string[]; sortValues: SortValue[] };
 
 const views: Array<{ key: ReportView; es: string; en: string }> = [
   { key: "news", es: "Noticias", en: "News" },
@@ -118,7 +121,10 @@ export default function ReportsPage() {
           <EventTable
             title={isSpanish ? "Proximos balances" : "Upcoming earnings"}
             columns={[isSpanish ? "Empresa" : "Company", isSpanish ? "Fecha" : "Date", "EPS est.", isSpanish ? "Ingresos est." : "Revenue est."]}
-            rows={filteredEarnings.map((item) => [item.symbol ?? "-", `${formatDate(item.date, isSpanish ? "es-AR" : "en-US")} | Q${item.quarter ?? "-"} ${item.year ?? ""}`, compact(item.epsEstimate), compact(item.revenueEstimate)])}
+            rows={filteredEarnings.map((item) => ({
+              cells: [item.symbol ?? "-", `${formatDate(item.date, isSpanish ? "es-AR" : "en-US")} | Q${item.quarter ?? "-"} ${item.year ?? ""}`, compact(item.epsEstimate), compact(item.revenueEstimate)],
+              sortValues: [item.symbol, item.date ? new Date(item.date) : null, item.epsEstimate, item.revenueEstimate],
+            }))}
             empty={isSpanish ? "No hay balances para el rango consultado." : "No earnings events for the selected range."}
             search={{ value: earningsQuery, onChange: setEarningsQuery, placeholder: isSpanish ? "Buscar simbolo o empresa" : "Search symbol or company" }}
           />
@@ -136,12 +142,15 @@ function LoadingText({ isSpanish }: { isSpanish: boolean }) {
   return <p className="rounded-lg border border-white/10 bg-white/[0.035] p-4 text-sm text-slate-400">{isSpanish ? "Cargando..." : "Loading..."}</p>;
 }
 
-function EventTable({ title, columns, rows, empty, search }: { title: string; columns: string[]; rows: string[][]; empty: string; search?: { value: string; onChange: (value: string) => void; placeholder: string } }) {
+function EventTable({ title, columns, rows, empty, search }: { title: string; columns: string[]; rows: EventRow[]; empty: string; search?: { value: string; onChange: (value: string) => void; placeholder: string } }) {
+  const [sort, setSort] = useState<SortState<string>>({ key: "1", direction: "asc" });
+  const accessors = useMemo(() => Object.fromEntries(columns.map((_, index) => [String(index), (row: EventRow) => row.sortValues[index]])) as Record<string, (row: EventRow) => SortValue>, [columns]);
+  const sortedRows = useMemo(() => sortTableRows(rows, sort, accessors), [accessors, rows, sort]);
   return (
     <section className="cma-panel overflow-hidden">
       <div className="flex flex-col gap-3 border-b border-white/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-semibold text-white">{title}</h2><p className="mt-1 text-xs text-slate-500">{rows.length} resultados</p></div>{search ? <label className="relative w-full sm:max-w-xs"><Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" /><span className="sr-only">{search.placeholder}</span><input type="search" value={search.value} onChange={(event) => search.onChange(event.target.value)} placeholder={search.placeholder} className="h-10 w-full rounded-md border border-white/10 bg-slate-950/70 pl-9 pr-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-300/40" /></label> : null}</div>
       {rows.length ? (
-        <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-white/[0.035] text-xs uppercase text-slate-500"><tr>{columns.map((column) => <th key={column} className="px-4 py-3">{column}</th>)}</tr></thead><tbody>{rows.slice(0, 30).map((row, index) => <tr key={`${row[0]}-${index}`} className="border-t border-white/10 hover:bg-cyan-300/[0.04]">{row.map((cell, cellIndex) => <td key={`${cell}-${cellIndex}`} className={`px-4 py-3 ${cellIndex === 0 ? "font-semibold text-white" : "text-slate-300"}`}>{cell}</td>)}</tr>)}</tbody></table></div>
+        <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-white/[0.035] text-xs uppercase text-slate-500"><tr>{columns.map((column, index) => <SortableTableHeader key={column} columnKey={String(index)} label={column} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, index === 0 ? "asc" : "desc"))} />)}</tr></thead><tbody>{sortedRows.slice(0, 30).map((row, index) => <tr key={`${row.cells[0]}-${index}`} className="border-t border-white/10 hover:bg-cyan-300/[0.04]">{row.cells.map((cell, cellIndex) => <td key={`${cell}-${cellIndex}`} className={`px-4 py-3 ${cellIndex === 0 ? "font-semibold text-white" : "text-slate-300"}`}>{cell}</td>)}</tr>)}</tbody></table></div>
       ) : <p className="p-6 text-sm text-slate-400">{empty}</p>}
     </section>
   );

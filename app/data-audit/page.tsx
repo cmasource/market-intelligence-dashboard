@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
+import { SortableTableHeader } from "@/components/ui/SortableTableHeader";
 import { DataCoverageBadges } from "@/components/data-coverage/DataCoverageBadges";
 import { ProviderStatusPanel } from "@/components/providers/ProviderStatusPanel";
 import { cnvIssuers } from "@/lib/cnv";
@@ -13,6 +14,7 @@ import { useLanguage } from "@/lib/i18n/useLanguage";
 import { formatCurrencyValue } from "@/lib/formatters";
 import type { ArgentinaInstrument, ArgentinaQuote, ArgentinaSourceStatus } from "@/lib/argentina";
 import type { ProviderVerificationResult } from "@/lib/providers";
+import { nextSortState, sortTableRows, type SortState } from "@/lib/ui/sortable-table";
 
 type FundamentalsAuditSnapshot = {
   provider?: string;
@@ -20,6 +22,9 @@ type FundamentalsAuditSnapshot = {
   coverageRatio?: number;
   missingFields?: string[];
 };
+type CoverageSortKey = "symbol" | "type" | "market" | "technical" | "fundamentals" | "fixedIncome" | "chart" | "notes";
+type ArgentinaAuditSortKey = "symbol" | "name" | "price" | "source" | "real" | "updated" | "status";
+type UniverseAuditSortKey = "symbol" | "name" | "category" | "market" | "coverage" | "provider" | "note";
 
 const auditSymbols = new Set([
   "AAPL",
@@ -165,6 +170,9 @@ export default function DataAuditPage() {
   const [argentinaInstruments, setArgentinaInstruments] = useState<ArgentinaInstrument[]>([]);
   const [argentinaSources, setArgentinaSources] = useState<ArgentinaSourceStatus[]>([]);
   const [fundamentalsAudit, setFundamentalsAudit] = useState<FundamentalsAuditSnapshot | null>(null);
+  const [coverageSort, setCoverageSort] = useState<SortState<CoverageSortKey>>({ key: "symbol", direction: "asc" });
+  const [argentinaSort, setArgentinaSort] = useState<SortState<ArgentinaAuditSortKey>>({ key: "symbol", direction: "asc" });
+  const [universeSort, setUniverseSort] = useState<SortState<UniverseAuditSortKey>>({ key: "symbol", direction: "asc" });
   const auditItems = instrumentUniverse.filter(
     (instrument) =>
       auditSymbols.has(instrument.symbol) ||
@@ -174,6 +182,16 @@ export default function DataAuditPage() {
     .filter((instrument) => auditSymbols.has(instrument.symbol) || instrument.priority && instrument.priority >= 7)
     .map((instrument) => getAnalysisCoverage(instrument.symbol));
   const analysisSummary = getAnalysisCoverageSummary(analysisCoverageItems);
+  const sortedAnalysisCoverageItems = useMemo(() => sortTableRows(analysisCoverageItems, coverageSort, {
+    symbol: (item) => item.symbol,
+    type: (item) => item.assetType,
+    market: (item) => item.market,
+    technical: (item) => item.technical.status,
+    fundamentals: (item) => item.fundamentals.status,
+    fixedIncome: (item) => item.fixedIncome.status,
+    chart: (item) => item.chart.verified ? item.chart.tradingViewSymbol : null,
+    notes: (item) => `${item.technical.reason} ${item.fundamentals.reason} ${item.fixedIncome.reason}`,
+  }), [analysisCoverageItems, coverageSort]);
 
   useEffect(() => {
     let active = true;
@@ -235,6 +253,27 @@ export default function DataAuditPage() {
   const argentinaAuditItems = argentinaAuditSymbols
     .map((symbol) => argentinaInstruments.find((instrument) => instrument.symbol === symbol))
     .filter((instrument): instrument is ArgentinaInstrument => Boolean(instrument));
+  const sortedArgentinaAuditItems = useMemo(() => sortTableRows(argentinaAuditItems, argentinaSort, {
+    symbol: (item) => item.displaySymbol,
+    name: (item) => item.name,
+    price: (item) => argentinaQuotes[item.symbol]?.price,
+    source: (item) => argentinaQuotes[item.symbol]?.source ?? item.sourceStatus,
+    real: (item) => argentinaQuotes[item.symbol]?.isRealData,
+    updated: (item) => {
+      const updatedAt = argentinaQuotes[item.symbol]?.lastUpdated;
+      return updatedAt ? new Date(updatedAt) : null;
+    },
+    status: (item) => argentinaQuotes[item.symbol]?.isRealData,
+  }), [argentinaAuditItems, argentinaQuotes, argentinaSort]);
+  const sortedAuditItems = useMemo(() => sortTableRows(auditItems, universeSort, {
+    symbol: (item) => item.symbol,
+    name: (item) => item.displayName,
+    category: (item) => item.category,
+    market: (item) => item.market,
+    coverage: (item) => Object.values(item.dataCoverage).filter(Boolean).length,
+    provider: (item) => item.sourceStatus,
+    note: (item) => getInstrumentContextCoverage(item.symbol, { category: item.category, country: item.country }).notes?.[0],
+  }), [auditItems, universeSort]);
 
   return (
     <AppShell>
@@ -355,18 +394,18 @@ export default function DataAuditPage() {
             <table className="min-w-[1080px] w-full text-left text-sm">
               <thead className="border-b border-white/10 text-xs uppercase tracking-[0.12em] text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">Symbol</th>
-                  <th className="px-4 py-3">{isSpanish ? "Tipo" : "Type"}</th>
-                  <th className="px-4 py-3">{isSpanish ? "Mercado" : "Market"}</th>
-                  <th className="px-4 py-3">{isSpanish ? "Tecnico" : "Technical"}</th>
-                  <th className="px-4 py-3">{isSpanish ? "Fundamentos" : "Fundamentals"}</th>
-                  <th className="px-4 py-3">{isSpanish ? "Renta fija" : "Fixed income"}</th>
-                  <th className="px-4 py-3">{isSpanish ? "Grafico" : "Chart"}</th>
-                  <th className="px-4 py-3">{isSpanish ? "Notas" : "Notes"}</th>
+                  <SortableTableHeader columnKey="symbol" label="Symbol" activeKey={coverageSort.key} direction={coverageSort.direction} onSort={(key) => setCoverageSort((current) => nextSortState(current, key))} />
+                  <SortableTableHeader columnKey="type" label={isSpanish ? "Tipo" : "Type"} activeKey={coverageSort.key} direction={coverageSort.direction} onSort={(key) => setCoverageSort((current) => nextSortState(current, key))} />
+                  <SortableTableHeader columnKey="market" label={isSpanish ? "Mercado" : "Market"} activeKey={coverageSort.key} direction={coverageSort.direction} onSort={(key) => setCoverageSort((current) => nextSortState(current, key))} />
+                  <SortableTableHeader columnKey="technical" label={isSpanish ? "Tecnico" : "Technical"} activeKey={coverageSort.key} direction={coverageSort.direction} onSort={(key) => setCoverageSort((current) => nextSortState(current, key))} />
+                  <SortableTableHeader columnKey="fundamentals" label={isSpanish ? "Fundamentos" : "Fundamentals"} activeKey={coverageSort.key} direction={coverageSort.direction} onSort={(key) => setCoverageSort((current) => nextSortState(current, key))} />
+                  <SortableTableHeader columnKey="fixedIncome" label={isSpanish ? "Renta fija" : "Fixed income"} activeKey={coverageSort.key} direction={coverageSort.direction} onSort={(key) => setCoverageSort((current) => nextSortState(current, key))} />
+                  <SortableTableHeader columnKey="chart" label={isSpanish ? "Grafico" : "Chart"} activeKey={coverageSort.key} direction={coverageSort.direction} onSort={(key) => setCoverageSort((current) => nextSortState(current, key))} />
+                  <SortableTableHeader columnKey="notes" label={isSpanish ? "Notas" : "Notes"} activeKey={coverageSort.key} direction={coverageSort.direction} onSort={(key) => setCoverageSort((current) => nextSortState(current, key))} />
                 </tr>
               </thead>
               <tbody>
-                {analysisCoverageItems.map((coverage, index) => (
+                {sortedAnalysisCoverageItems.map((coverage, index) => (
                   <tr key={`${coverage.symbol}-${coverage.assetType}-${coverage.market ?? "unknown"}-${index}`} className="border-b border-white/10 last:border-b-0">
                     <td className="px-4 py-4 font-semibold text-white">{coverage.symbol}</td>
                     <td className="px-4 py-4 text-slate-300">{formatCategory(coverage.assetType)}</td>
@@ -416,17 +455,17 @@ export default function DataAuditPage() {
             <table className="min-w-[940px] w-full text-left text-sm">
               <thead className="border-b border-white/10 text-xs uppercase tracking-[0.12em] text-slate-500">
                 <tr>
-                  <th className="px-3 py-3">Symbol</th>
-                  <th className="px-3 py-3">{isSpanish ? "Nombre" : "Name"}</th>
-                  <th className="px-3 py-3">{isSpanish ? "Precio" : "Price"}</th>
-                  <th className="px-3 py-3">{isSpanish ? "Fuente" : "Source"}</th>
-                  <th className="px-3 py-3">{isSpanish ? "Dato real" : "Real data"}</th>
-                  <th className="px-3 py-3">{isSpanish ? "Actualizado" : "Updated"}</th>
-                  <th className="px-3 py-3">{isSpanish ? "Estado" : "Status"}</th>
+                  <SortableTableHeader columnKey="symbol" label="Symbol" activeKey={argentinaSort.key} direction={argentinaSort.direction} onSort={(key) => setArgentinaSort((current) => nextSortState(current, key))} className="px-3" />
+                  <SortableTableHeader columnKey="name" label={isSpanish ? "Nombre" : "Name"} activeKey={argentinaSort.key} direction={argentinaSort.direction} onSort={(key) => setArgentinaSort((current) => nextSortState(current, key))} className="px-3" />
+                  <SortableTableHeader columnKey="price" label={isSpanish ? "Precio" : "Price"} activeKey={argentinaSort.key} direction={argentinaSort.direction} onSort={(key) => setArgentinaSort((current) => nextSortState(current, key, "desc"))} className="px-3" />
+                  <SortableTableHeader columnKey="source" label={isSpanish ? "Fuente" : "Source"} activeKey={argentinaSort.key} direction={argentinaSort.direction} onSort={(key) => setArgentinaSort((current) => nextSortState(current, key))} className="px-3" />
+                  <SortableTableHeader columnKey="real" label={isSpanish ? "Dato real" : "Real data"} activeKey={argentinaSort.key} direction={argentinaSort.direction} onSort={(key) => setArgentinaSort((current) => nextSortState(current, key, "desc"))} className="px-3" />
+                  <SortableTableHeader columnKey="updated" label={isSpanish ? "Actualizado" : "Updated"} activeKey={argentinaSort.key} direction={argentinaSort.direction} onSort={(key) => setArgentinaSort((current) => nextSortState(current, key, "desc"))} className="px-3" />
+                  <SortableTableHeader columnKey="status" label={isSpanish ? "Estado" : "Status"} activeKey={argentinaSort.key} direction={argentinaSort.direction} onSort={(key) => setArgentinaSort((current) => nextSortState(current, key, "desc"))} className="px-3" />
                 </tr>
               </thead>
               <tbody>
-                {argentinaAuditItems.map((instrument) => {
+                {sortedArgentinaAuditItems.map((instrument) => {
                   const quote = argentinaQuotes[instrument.symbol];
                   return (
                     <tr key={instrument.symbol} className="border-b border-white/10 last:border-b-0">
@@ -487,18 +526,18 @@ export default function DataAuditPage() {
             <table className="min-w-[1120px] w-full text-left text-sm">
               <thead className="border-b border-white/10 bg-white/[0.04] text-xs uppercase tracking-[0.12em] text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">Symbol</th>
-                  <th className="px-4 py-3">{isSpanish ? "Nombre" : "Name"}</th>
-                  <th className="px-4 py-3">{isSpanish ? "Categoria" : "Category"}</th>
-                  <th className="px-4 py-3">{isSpanish ? "Mercado" : "Market"}</th>
-                  <th className="px-4 py-3">{isSpanish ? "Cobertura" : "Coverage"}</th>
-                  <th className="px-4 py-3">{isSpanish ? "Proveedor efectivo" : "Actual provider"}</th>
+                  <SortableTableHeader columnKey="symbol" label="Symbol" activeKey={universeSort.key} direction={universeSort.direction} onSort={(key) => setUniverseSort((current) => nextSortState(current, key))} />
+                  <SortableTableHeader columnKey="name" label={isSpanish ? "Nombre" : "Name"} activeKey={universeSort.key} direction={universeSort.direction} onSort={(key) => setUniverseSort((current) => nextSortState(current, key))} />
+                  <SortableTableHeader columnKey="category" label={isSpanish ? "Categoria" : "Category"} activeKey={universeSort.key} direction={universeSort.direction} onSort={(key) => setUniverseSort((current) => nextSortState(current, key))} />
+                  <SortableTableHeader columnKey="market" label={isSpanish ? "Mercado" : "Market"} activeKey={universeSort.key} direction={universeSort.direction} onSort={(key) => setUniverseSort((current) => nextSortState(current, key))} />
+                  <SortableTableHeader columnKey="coverage" label={isSpanish ? "Cobertura" : "Coverage"} activeKey={universeSort.key} direction={universeSort.direction} onSort={(key) => setUniverseSort((current) => nextSortState(current, key, "desc"))} />
+                  <SortableTableHeader columnKey="provider" label={isSpanish ? "Proveedor efectivo" : "Actual provider"} activeKey={universeSort.key} direction={universeSort.direction} onSort={(key) => setUniverseSort((current) => nextSortState(current, key))} />
                   <th className="px-4 py-3">{isSpanish ? "Reporte" : "Report"}</th>
-                  <th className="px-4 py-3">{isSpanish ? "Nota" : "Note"}</th>
+                  <SortableTableHeader columnKey="note" label={isSpanish ? "Nota" : "Note"} activeKey={universeSort.key} direction={universeSort.direction} onSort={(key) => setUniverseSort((current) => nextSortState(current, key))} />
                 </tr>
               </thead>
               <tbody>
-                {auditItems.map((instrument) => {
+                {sortedAuditItems.map((instrument) => {
                   const coverage = getInstrumentContextCoverage(instrument.symbol, {
                     category: instrument.category,
                     country: instrument.country,
