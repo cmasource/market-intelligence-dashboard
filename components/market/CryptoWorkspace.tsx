@@ -2,12 +2,12 @@
 
 import { Search } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AssetLogo } from "@/components/assets/AssetLogo";
 import { SortableTableHeader } from "@/components/ui/SortableTableHeader";
-import type { TechnicalAnalysisResponse } from "@/lib/analysis/types";
 import { formatCurrencyValue, formatPercent } from "@/lib/formatters";
 import { useProviderQuotes } from "@/lib/hooks/useProviderQuotes";
+import { useTechnicalAnalyses } from "@/lib/hooks/useTechnicalAnalyses";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { instrumentUniverse } from "@/lib/instrument-universe";
 import { nextSortState, sortTableRows, type SortState } from "@/lib/ui/sortable-table";
@@ -35,55 +35,32 @@ export function CryptoWorkspace() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<SortState<CryptoSortKey>>({ key: "asset", direction: "asc" });
-  const [analyses, setAnalyses] = useState<Record<string, TechnicalAnalysisResponse | null>>({});
   const instruments = useMemo(() => instrumentUniverse.filter((item) => item.category === "crypto" && item.isSearchable), []);
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     return normalized ? instruments.filter((item) => [item.symbol, item.displayName, ...(item.searchableAliases ?? [])].some((value) => value?.toLowerCase().includes(normalized))) : instruments;
   }, [instruments, query]);
+  const symbols = useMemo(() => filtered.map((item) => item.symbol), [filtered]);
+  const quotes = useProviderQuotes(symbols);
+  const analyses = useTechnicalAnalyses(symbols, { language, timeframe: "1Y" });
   const orderedFiltered = useMemo(() => {
-    if (sort.key !== "asset") return filtered;
     return sortTableRows(filtered, sort, {
       asset: (item) => `${item.symbol} ${item.displayName}`,
-      price: () => null,
-      change: () => null,
-      score: () => null,
-      rsi: () => null,
-      macd: () => null,
-      reading: () => null,
+      price: (item) => quotes[item.symbol]?.price,
+      change: (item) => quotes[item.symbol]?.changePercent,
+      score: (item) => analyses[item.symbol]?.technicalScore,
+      rsi: (item) => analyses[item.symbol]?.snapshot.rsi14,
+      macd: (item) => analyses[item.symbol]?.snapshot.macd,
+      reading: (item) => analyses[item.symbol]?.technicalScore,
     });
-  }, [filtered, sort]);
+  }, [analyses, filtered, quotes, sort]);
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const pageItems = useMemo(() => orderedFiltered.slice((page - 1) * pageSize, page * pageSize), [orderedFiltered, page]);
-  const symbols = useMemo(() => pageItems.map((item) => item.symbol), [pageItems]);
-  const quotes = useProviderQuotes(symbols);
-  const visible = useMemo(() => sort.key === "asset" ? pageItems : sortTableRows(pageItems, sort, {
-    asset: (item) => `${item.symbol} ${item.displayName}`,
-    price: (item) => quotes[item.symbol]?.price,
-    change: (item) => quotes[item.symbol]?.changePercent,
-    score: (item) => analyses[item.symbol]?.technicalScore,
-    rsi: (item) => analyses[item.symbol]?.snapshot.rsi14,
-    macd: (item) => analyses[item.symbol]?.snapshot.macd,
-    reading: (item) => analyses[item.symbol]?.technicalScore,
-  }), [analyses, pageItems, quotes, sort]);
+  const visible = useMemo(() => orderedFiltered.slice((page - 1) * pageSize, page * pageSize), [orderedFiltered, page]);
 
-  useEffect(() => {
-    if (!symbols.length) return;
-    const controller = new AbortController();
-    Promise.allSettled(symbols.map(async (symbol) => {
-      const response = await fetch(`/api/analysis/technical/${encodeURIComponent(symbol)}?timeframe=1Y&language=${language}`, { signal: controller.signal });
-      if (!response.ok) return [symbol, null] as const;
-      const analysis = (await response.json()) as TechnicalAnalysisResponse;
-      return [symbol, analysis.candlesCount > 0 && !analysis.isFallback ? analysis : null] as const;
-    })).then((results) => {
-      if (controller.signal.aborted) return;
-      setAnalyses(results.reduce<Record<string, TechnicalAnalysisResponse | null>>((output, result) => {
-        if (result.status === "fulfilled") output[result.value[0]] = result.value[1];
-        return output;
-      }, Object.fromEntries(symbols.map((symbol) => [symbol, null]))));
-    });
-    return () => controller.abort();
-  }, [language, symbols]);
+  function updateSort(key: CryptoSortKey, initialDirection: "asc" | "desc" = "asc") {
+    setSort((current) => nextSortState(current, key, initialDirection));
+    setPage(1);
+  }
 
   return (
     <section className="cma-panel overflow-hidden">
@@ -94,13 +71,13 @@ export function CryptoWorkspace() {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[820px] text-left text-sm">
           <thead className="bg-white/[0.035] text-xs uppercase text-slate-500"><tr>
-            <SortableTableHeader columnKey="asset" label={isSpanish ? "Activo" : "Asset"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key))} />
-            <SortableTableHeader columnKey="price" label={isSpanish ? "Ultimo" : "Last"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
-            <SortableTableHeader columnKey="change" label={`% ${isSpanish ? "Dia" : "Day"}`} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
-            <SortableTableHeader columnKey="score" label="Score" activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
-            <SortableTableHeader columnKey="rsi" label="RSI" activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
-            <SortableTableHeader columnKey="macd" label="MACD" activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
-            <SortableTableHeader columnKey="reading" label={isSpanish ? "Lectura" : "Reading"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
+            <SortableTableHeader columnKey="asset" label={isSpanish ? "Activo" : "Asset"} activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key)} />
+            <SortableTableHeader columnKey="price" label={isSpanish ? "Ultimo" : "Last"} activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} />
+            <SortableTableHeader columnKey="change" label={`% ${isSpanish ? "Dia" : "Day"}`} activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} />
+            <SortableTableHeader columnKey="score" label="Score" activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} />
+            <SortableTableHeader columnKey="rsi" label="RSI" activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} />
+            <SortableTableHeader columnKey="macd" label="MACD" activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} />
+            <SortableTableHeader columnKey="reading" label={isSpanish ? "Lectura" : "Reading"} activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} />
             <th className="px-4 py-3 text-right">{isSpanish ? "Grafico" : "Chart"}</th>
           </tr></thead>
           <tbody>{visible.map((item) => {

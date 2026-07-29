@@ -10,6 +10,7 @@ import { MarketHeatmap } from "@/components/market/MarketHeatmap";
 import { SortableTableHeader } from "@/components/ui/SortableTableHeader";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { formatCurrencyValue, formatPercent } from "@/lib/formatters";
+import { useTechnicalAnalyses } from "@/lib/hooks/useTechnicalAnalyses";
 import type { ArgentinaInstrument, ArgentinaQuote } from "@/lib/argentina";
 import type { TechnicalAnalysisResponse } from "@/lib/analysis/types";
 import type { BondComparisonItem } from "@/lib/fixed-income";
@@ -19,7 +20,6 @@ type ViewKey = "heatmap" | "equities" | "indicators" | "cedears" | "cedearIndica
 
 const pageSize = 12;
 type ArgentinaSortKey = "symbol" | "name" | "price" | "change" | "score" | "rsi" | "macd" | "reading" | "ratio" | "maturity" | "ytm" | "parity";
-const globalArgentinaSortKeys = new Set<ArgentinaSortKey>(["symbol", "name", "ratio", "maturity"]);
 
 const views: Array<{ key: ViewKey; es: string; en: string }> = [
   { key: "heatmap", es: "Mapa de calor", en: "Heatmap" },
@@ -78,49 +78,35 @@ export default function ArgentinaPage() {
   const [sort, setSort] = useState<SortState<ArgentinaSortKey>>({ key: "symbol", direction: "asc" });
   const [instruments, setInstruments] = useState<ArgentinaInstrument[]>([]);
   const [quotes, setQuotes] = useState<Record<string, ArgentinaQuote>>({});
-  const [analyses, setAnalyses] = useState<Record<string, TechnicalAnalysisResponse | null>>({});
   const [fixedIncome, setFixedIncome] = useState<Record<string, BondComparisonItem>>({});
   const [loading, setLoading] = useState(true);
+  const showsIndicators = view === "indicators" || view === "cedearIndicators";
 
   const filtered = useMemo(() => {
     const source = instrumentsForView(instruments, view);
     const normalized = query.trim().toLowerCase();
     return normalized ? source.filter((item) => [item.symbol, item.displaySymbol, item.name, item.underlyingSymbol].some((value) => value?.toLowerCase().includes(normalized))) : source;
   }, [instruments, query, view]);
+  const filteredSymbols = useMemo(() => filtered.map((item) => item.symbol), [filtered]);
+  const analyses = useTechnicalAnalyses(filteredSymbols, { enabled: showsIndicators, language, timeframe: "1Y" });
   const orderedFiltered = useMemo(() => {
-    if (!globalArgentinaSortKeys.has(sort.key)) return filtered;
     return sortTableRows(filtered, sort, {
       symbol: (item) => item.displaySymbol,
       name: (item) => item.name,
       ratio: (item) => item.cedearRatio,
       maturity: (item) => item.maturityDate,
-      price: () => null,
-      change: () => null,
-      score: () => null,
-      rsi: () => null,
-      macd: () => null,
-      reading: () => null,
-      ytm: () => null,
-      parity: () => null,
+      price: (item) => quotes[item.symbol]?.price,
+      change: (item) => quotes[item.symbol]?.changePercent,
+      score: (item) => analyses[item.symbol]?.technicalScore,
+      rsi: (item) => analyses[item.symbol]?.snapshot.rsi14,
+      macd: (item) => analyses[item.symbol]?.snapshot.macd,
+      reading: (item) => analyses[item.symbol]?.technicalScore,
+      ytm: (item) => fixedIncome[item.symbol]?.estimatedYTM,
+      parity: (item) => fixedIncome[item.symbol]?.parity,
     });
-  }, [filtered, sort]);
+  }, [analyses, filtered, fixedIncome, quotes, sort]);
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const pageItems = useMemo(() => orderedFiltered.slice((page - 1) * pageSize, page * pageSize), [orderedFiltered, page]);
-  const visibleSymbols = useMemo(() => pageItems.map((item) => item.symbol), [pageItems]);
-  const visible = useMemo(() => globalArgentinaSortKeys.has(sort.key) ? pageItems : sortTableRows(pageItems, sort, {
-    symbol: (item) => item.displaySymbol,
-    name: (item) => item.name,
-    price: (item) => quotes[item.symbol]?.price,
-    change: (item) => quotes[item.symbol]?.changePercent,
-    score: (item) => analyses[item.symbol]?.technicalScore,
-    rsi: (item) => analyses[item.symbol]?.snapshot.rsi14,
-    macd: (item) => analyses[item.symbol]?.snapshot.macd,
-    reading: (item) => analyses[item.symbol]?.technicalScore,
-    ratio: (item) => item.cedearRatio,
-    maturity: (item) => item.maturityDate,
-    ytm: (item) => fixedIncome[item.symbol]?.estimatedYTM,
-    parity: (item) => fixedIncome[item.symbol]?.parity,
-  }), [analyses, fixedIncome, pageItems, quotes, sort]);
+  const visible = useMemo(() => orderedFiltered.slice((page - 1) * pageSize, page * pageSize), [orderedFiltered, page]);
 
   useEffect(() => {
     fetch("/api/argentina/instruments")
@@ -131,14 +117,19 @@ export default function ArgentinaPage() {
   }, []);
 
   useEffect(() => {
-    if (!visibleSymbols.length || view === "heatmap") return;
+    if (!filteredSymbols.length || view === "heatmap" || view === "cauciones") return;
     const controller = new AbortController();
-    fetch(`/api/argentina/quotes?symbols=${visibleSymbols.join(",")}`, { signal: controller.signal })
+    fetch("/api/argentina/quotes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ symbols: filteredSymbols }),
+      signal: controller.signal,
+    })
       .then((response) => response.json())
-      .then((payload: { quotes?: Record<string, ArgentinaQuote> }) => setQuotes(payload.quotes ?? {}))
+      .then((payload: { quotes?: Record<string, ArgentinaQuote> }) => setQuotes((current) => ({ ...current, ...(payload.quotes ?? {}) })))
       .catch(() => undefined);
     return () => controller.abort();
-  }, [view, visibleSymbols]);
+  }, [filteredSymbols, view]);
 
   useEffect(() => {
     if (view !== "bonds") return;
@@ -150,29 +141,6 @@ export default function ArgentinaPage() {
     return () => controller.abort();
   }, [view]);
 
-  useEffect(() => {
-    if (!["indicators", "cedearIndicators"].includes(view) || !visibleSymbols.length) return;
-    const controller = new AbortController();
-    Promise.allSettled(
-      visibleSymbols.map(async (symbol) => {
-        const response = await fetch(`/api/analysis/technical/${encodeURIComponent(symbol)}?timeframe=1Y&language=${language}`, {
-          signal: controller.signal,
-        });
-        return [symbol, (await response.json()) as TechnicalAnalysisResponse] as const;
-      }),
-    ).then((results) => {
-      if (controller.signal.aborted) return;
-      const next = results.reduce<Record<string, TechnicalAnalysisResponse | null>>((accumulator, result) => {
-        if (result.status === "fulfilled" && typeof result.value[1]?.technicalScore === "number") {
-          accumulator[result.value[0]] = result.value[1];
-        }
-        return accumulator;
-      }, Object.fromEntries(visibleSymbols.map((symbol) => [symbol, null])));
-      setAnalyses(next);
-    });
-    return () => controller.abort();
-  }, [language, view, visibleSymbols]);
-
   function selectView(next: ViewKey) {
     setView(next);
     setPage(1);
@@ -180,7 +148,10 @@ export default function ArgentinaPage() {
     setSort({ key: "symbol", direction: "asc" });
   }
 
-  const showsIndicators = view === "indicators" || view === "cedearIndicators";
+  function updateSort(key: ArgentinaSortKey, initialDirection: "asc" | "desc" = "asc") {
+    setSort((current) => nextSortState(current, key, initialDirection));
+    setPage(1);
+  }
 
   return (
     <AppShell background="argentina">
@@ -235,18 +206,18 @@ export default function ArgentinaPage() {
               <table className="w-full min-w-[900px] text-left text-sm">
                 <thead className="bg-white/[0.035] text-xs uppercase text-slate-500">
                   <tr>
-                    <SortableTableHeader columnKey="symbol" label={isSpanish ? "Especie" : "Symbol"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key))} />
-                    <SortableTableHeader columnKey="name" label={isSpanish ? "Nombre" : "Name"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key))} />
-                    <SortableTableHeader columnKey="price" label={isSpanish ? "Ultimo" : "Last"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
-                    <SortableTableHeader columnKey="change" label={`% ${isSpanish ? "Dia" : "Day"}`} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
-                    {showsIndicators ? <SortableTableHeader columnKey="score" label="Score" activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} /> : null}
-                    {showsIndicators ? <SortableTableHeader columnKey="rsi" label="RSI 14" activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} /> : null}
-                    {showsIndicators ? <SortableTableHeader columnKey="macd" label="MACD" activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} /> : null}
-                    {showsIndicators ? <SortableTableHeader columnKey="reading" label={isSpanish ? "Lectura" : "Reading"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} /> : null}
-                    {view === "cedears" ? <SortableTableHeader columnKey="ratio" label="Ratio" activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} /> : null}
-                    {view === "bonds" ? <SortableTableHeader columnKey="maturity" label={isSpanish ? "Vencimiento" : "Maturity"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key))} /> : null}
-                    {view === "bonds" ? <SortableTableHeader columnKey="ytm" label="TIR" activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} /> : null}
-                    {view === "bonds" ? <SortableTableHeader columnKey="parity" label={isSpanish ? "Paridad" : "Parity"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} /> : null}
+                    <SortableTableHeader columnKey="symbol" label={isSpanish ? "Especie" : "Symbol"} activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key)} />
+                    <SortableTableHeader columnKey="name" label={isSpanish ? "Nombre" : "Name"} activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key)} />
+                    <SortableTableHeader columnKey="price" label={isSpanish ? "Ultimo" : "Last"} activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} />
+                    <SortableTableHeader columnKey="change" label={`% ${isSpanish ? "Dia" : "Day"}`} activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} />
+                    {showsIndicators ? <SortableTableHeader columnKey="score" label="Score" activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} /> : null}
+                    {showsIndicators ? <SortableTableHeader columnKey="rsi" label="RSI 14" activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} /> : null}
+                    {showsIndicators ? <SortableTableHeader columnKey="macd" label="MACD" activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} /> : null}
+                    {showsIndicators ? <SortableTableHeader columnKey="reading" label={isSpanish ? "Lectura" : "Reading"} activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} /> : null}
+                    {view === "cedears" ? <SortableTableHeader columnKey="ratio" label="Ratio" activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} /> : null}
+                    {view === "bonds" ? <SortableTableHeader columnKey="maturity" label={isSpanish ? "Vencimiento" : "Maturity"} activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key)} /> : null}
+                    {view === "bonds" ? <SortableTableHeader columnKey="ytm" label="TIR" activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} /> : null}
+                    {view === "bonds" ? <SortableTableHeader columnKey="parity" label={isSpanish ? "Paridad" : "Parity"} activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} /> : null}
                     <th className="px-4 py-3 text-right">{isSpanish ? "Analisis" : "Analysis"}</th>
                   </tr>
                 </thead>
@@ -263,7 +234,7 @@ export default function ArgentinaPage() {
                         <td className="px-4 py-3 font-medium text-slate-100">
                           {typeof quote?.price === "number" ? formatCurrencyValue(quote.price, quote.currency, language) : "-"}
                         </td>
-                        <td className={`px-4 py-3 font-semibold ${typeof change === "number" && change >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
+                        <td className={`px-4 py-3 font-semibold ${typeof change === "number" ? change >= 0 ? "text-emerald-300" : "text-rose-300" : "text-slate-500"}`}>
                           {typeof change === "number" ? formatPercent(change) : "-"}
                         </td>
                         {showsIndicators ? <td className="px-4 py-3"><span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${scoreTone(analysis?.technicalScore)}`}>{analysis === undefined ? "..." : analysis?.technicalScore ?? "-"}</span></td> : null}

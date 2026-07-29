@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AssetLogo } from "@/components/assets/AssetLogo";
 import { AppShell } from "@/components/layout/AppShell";
 import { MarketHeatmap } from "@/components/market/MarketHeatmap";
 import { SortableTableHeader } from "@/components/ui/SortableTableHeader";
 import { formatCurrencyValue, formatPercent } from "@/lib/formatters";
 import { useProviderQuotes } from "@/lib/hooks/useProviderQuotes";
+import { useTechnicalAnalyses } from "@/lib/hooks/useTechnicalAnalyses";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { instrumentUniverse, type InstrumentUniverseItem } from "@/lib/instrument-universe";
 import type { TechnicalAnalysisResponse } from "@/lib/analysis/types";
@@ -46,7 +47,6 @@ export default function UsaPage() {
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortState<UsaSortKey>>({ key: "asset", direction: "asc" });
-  const [analyses, setAnalyses] = useState<Record<string, TechnicalAnalysisResponse | null>>({});
   const stocks = useMemo(() => instrumentUniverse.filter((item) => item.country === "US" && item.category === "equity" && item.isSearchable), []);
   const etfs = useMemo(() => instrumentUniverse.filter((item) => item.category === "etf" && item.isSearchable), []);
   const cedearUnderlyings = useMemo(() => {
@@ -79,50 +79,31 @@ export default function UsaPage() {
     if (!normalized) return source;
     return source.filter((item) => [item.symbol, item.displayName, item.underlyingSymbol, ...(item.searchableAliases ?? [])].some((value) => value?.toLowerCase().includes(normalized)));
   }, [allStocks, cedearUnderlyings, etfs, query, view]);
+  const analysisSymbols = useMemo(() => selected.map((item) => item.underlyingSymbol ?? item.primarySymbol ?? item.symbol), [selected]);
+  const quotes = useProviderQuotes(analysisSymbols);
+  const analyses = useTechnicalAnalyses(analysisSymbols, {
+    enabled: ["indicators", "cedearUnderlyings"].includes(view),
+    language,
+    timeframe: "1Y",
+  });
   const orderedSelected = useMemo(() => {
-    if (sort.key !== "asset") return selected;
     return sortTableRows(selected, sort, {
       asset: (item) => `${item.underlyingSymbol ?? item.primarySymbol ?? item.symbol} ${item.displayName}`,
-      price: () => null,
-      change: () => null,
-      score: () => null,
-      rsi: () => null,
-      macd: () => null,
-      reading: () => null,
+      price: (item) => quotes[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.price,
+      change: (item) => quotes[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.changePercent,
+      score: (item) => analyses[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.technicalScore,
+      rsi: (item) => analyses[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.snapshot.rsi14,
+      macd: (item) => analyses[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.snapshot.macd,
+      reading: (item) => analyses[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.technicalScore,
     });
-  }, [selected, sort]);
+  }, [analyses, quotes, selected, sort]);
   const pageCount = Math.max(1, Math.ceil(selected.length / pageSize));
-  const pageItems = useMemo(() => orderedSelected.slice((page - 1) * pageSize, page * pageSize), [orderedSelected, page]);
-  const visibleSymbols = useMemo(() => pageItems.map((item) => item.underlyingSymbol ?? item.primarySymbol ?? item.symbol), [pageItems]);
-  const quoteSymbols = visibleSymbols;
-  const quotes = useProviderQuotes(quoteSymbols);
-  const visible = useMemo(() => sort.key === "asset" ? pageItems : sortTableRows(pageItems, sort, {
-    asset: (item) => `${item.underlyingSymbol ?? item.primarySymbol ?? item.symbol} ${item.displayName}`,
-    price: (item) => quotes[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.price,
-    change: (item) => quotes[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.changePercent,
-    score: (item) => analyses[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.technicalScore,
-    rsi: (item) => analyses[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.snapshot.rsi14,
-    macd: (item) => analyses[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.snapshot.macd,
-    reading: (item) => analyses[item.underlyingSymbol ?? item.primarySymbol ?? item.symbol]?.technicalScore,
-  }), [analyses, pageItems, quotes, sort]);
+  const visible = useMemo(() => orderedSelected.slice((page - 1) * pageSize, page * pageSize), [orderedSelected, page]);
 
-  useEffect(() => {
-    if (!["indicators", "cedearUnderlyings"].includes(view) || !visibleSymbols.length) return;
-    const controller = new AbortController();
-    Promise.allSettled(visibleSymbols.map(async (symbol) => {
-      const response = await fetch(`/api/analysis/technical/${encodeURIComponent(symbol)}?timeframe=1Y&language=${language}`, { signal: controller.signal });
-      if (!response.ok) return [symbol, null] as const;
-      const analysis = (await response.json()) as TechnicalAnalysisResponse;
-      return [symbol, analysis.candlesCount > 0 && !analysis.isFallback ? analysis : null] as const;
-    })).then((results) => {
-      if (controller.signal.aborted) return;
-      setAnalyses(results.reduce<Record<string, TechnicalAnalysisResponse | null>>((output, result) => {
-        if (result.status === "fulfilled") output[result.value[0]] = result.value[1];
-        return output;
-      }, Object.fromEntries(visibleSymbols.map((symbol) => [symbol, null]))));
-    });
-    return () => controller.abort();
-  }, [language, view, visibleSymbols]);
+  function updateSort(key: UsaSortKey, initialDirection: "asc" | "desc" = "asc") {
+    setSort((current) => nextSortState(current, key, initialDirection));
+    setPage(1);
+  }
 
   function changeView(next: View) {
     setView(next);
@@ -159,14 +140,14 @@ export default function UsaPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] text-left text-sm">
                 <thead className="bg-white/[0.035] text-xs uppercase text-slate-500"><tr>
-                  <SortableTableHeader columnKey="asset" label={isSpanish ? "Activo" : "Asset"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key))} />
-                  <SortableTableHeader columnKey="price" label={isSpanish ? "Ultimo" : "Last"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
-                  <SortableTableHeader columnKey="change" label={`% ${isSpanish ? "Dia" : "Day"}`} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
+                  <SortableTableHeader columnKey="asset" label={isSpanish ? "Activo" : "Asset"} activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key)} />
+                  <SortableTableHeader columnKey="price" label={isSpanish ? "Ultimo" : "Last"} activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} />
+                  <SortableTableHeader columnKey="change" label={`% ${isSpanish ? "Dia" : "Day"}`} activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} />
                   {["indicators", "cedearUnderlyings"].includes(view) ? <>
-                    <SortableTableHeader columnKey="score" label="Score" activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
-                    <SortableTableHeader columnKey="rsi" label="RSI" activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
-                    <SortableTableHeader columnKey="macd" label="MACD" activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
-                    <SortableTableHeader columnKey="reading" label={isSpanish ? "Lectura" : "Reading"} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, "desc"))} />
+                    <SortableTableHeader columnKey="score" label="Score" activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} />
+                    <SortableTableHeader columnKey="rsi" label="RSI" activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} />
+                    <SortableTableHeader columnKey="macd" label="MACD" activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} />
+                    <SortableTableHeader columnKey="reading" label={isSpanish ? "Lectura" : "Reading"} activeKey={sort.key} direction={sort.direction} onSort={(key) => updateSort(key, "desc")} />
                   </> : null}
                   <th className="px-4 py-3 text-right">{isSpanish ? "Analisis" : "Analysis"}</th>
                 </tr></thead>
