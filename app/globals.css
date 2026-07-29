@@ -417,6 +417,33 @@ html {
   content: none;
 }
 
+.cma-welcome-panel {
+  overflow: visible;
+}
+
+.cma-welcome-enter {
+  animation: cma-welcome-enter 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.cma-welcome-enter-delay {
+  animation-delay: 80ms;
+}
+
+.cma-welcome-enter-search {
+  animation-delay: 160ms;
+}
+
+@keyframes cma-welcome-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .cma-market-tape-track {
   display: inline-flex;
   min-width: max-content;

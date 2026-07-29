@@ -14,6 +14,7 @@ import type { Asset } from "@/types/asset";
 
 type AssetSearchProps = {
   assets: Asset[];
+  variant?: "default" | "hero";
 };
 
 function resultTone(instrument: InstrumentUniverseItem) {
@@ -24,12 +25,13 @@ function resultTone(instrument: InstrumentUniverseItem) {
   return "border-emerald-300/15 bg-emerald-300/[0.055] hover:border-emerald-300/35 hover:bg-emerald-300/[0.095]";
 }
 
-export function AssetSearch({ assets }: AssetSearchProps) {
+export function AssetSearch({ assets, variant = "default" }: AssetSearchProps) {
   const [query, setQuery] = useState("");
   const [recentSymbols, setRecentSymbols] = useState<string[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const { t, language } = useLanguage();
   const isSpanish = language === "es";
+  const isHero = variant === "hero";
   const visibleResultLimit = 6;
   const supportedAssetSymbols = useMemo(() => new Set(assets.map((asset) => asset.symbol)), [assets]);
   const assetBySymbol = useMemo(() => new Map(assets.map((asset) => [asset.symbol, asset])), [assets]);
@@ -50,11 +52,12 @@ export function AssetSearch({ assets }: AssetSearchProps) {
     const normalizedQuery = query.trim().toLowerCase();
 
     if (!normalizedQuery) {
+      if (isHero) return [];
       return searchInstrumentUniverse("", 10);
     }
 
     return searchInstrumentUniverse(normalizedQuery, 12);
-  }, [query]);
+  }, [isHero, query]);
   const visibleInstruments = filteredInstruments.slice(0, visibleResultLimit);
   const hiddenResultsCount = Math.max(0, filteredInstruments.length - visibleInstruments.length);
   const quoteSymbols = useMemo(() => visibleInstruments.map((instrument) => instrument.symbol), [visibleInstruments]);
@@ -111,11 +114,11 @@ export function AssetSearch({ assets }: AssetSearchProps) {
   }
 
   return (
-    <section className="cma-panel-glass p-3 sm:p-4" id="markets">
+    <section className={isHero ? "relative" : "cma-panel-glass p-3 sm:p-4"} id="markets">
       <label htmlFor="asset-search" className="sr-only">
         {t("assetSearchLabel")}
       </label>
-      <div className="flex items-center gap-3 rounded-md border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] px-3 focus-within:border-[var(--cma-border-strong)]">
+      <div className={`flex items-center gap-3 rounded-md border bg-[var(--cma-bg-elevated)] focus-within:border-[var(--cma-border-strong)] ${isHero ? "min-h-16 border-[var(--cma-border-strong)] px-4 sm:px-5" : "border-[var(--cma-border-soft)] px-3"}`}>
         <Search aria-hidden="true" size={18} className="shrink-0 text-[var(--cma-accent-cyan)]" />
         <input
           id="asset-search"
@@ -126,11 +129,11 @@ export function AssetSearch({ assets }: AssetSearchProps) {
             if (event.key === "Enter") handleEnterSearch();
           }}
           placeholder={t("assetSearchPlaceholder")}
-          className="min-w-0 flex-1 bg-transparent py-3 text-sm text-[var(--cma-text-primary)] outline-none placeholder:text-[var(--cma-text-muted)] sm:text-base"
+          className={`min-w-0 flex-1 bg-transparent text-[var(--cma-text-primary)] outline-none placeholder:text-[var(--cma-text-muted)] ${isHero ? "py-4 text-base" : "py-3 text-sm sm:text-base"}`}
         />
         <span className="hidden rounded border border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] px-2 py-1 text-[10px] font-semibold text-[var(--cma-text-muted)] sm:inline">⌘ K</span>
       </div>
-      {isMounted && recentSymbols.length ? (
+      {!isHero && isMounted && recentSymbols.length ? (
         <div className="mt-3">
           <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
             {isSpanish ? "Búsquedas recientes" : "Recent searches"}
@@ -149,7 +152,7 @@ export function AssetSearch({ assets }: AssetSearchProps) {
           </div>
         </div>
       ) : null}
-      <div className="mt-3 max-h-[24rem] space-y-1.5 overflow-y-auto pr-1">
+      <div className={`${isHero ? `${query.trim() ? "block" : "hidden"} mt-2 rounded-md border border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] p-2 shadow-2xl` : "mt-3 pr-1"} max-h-[24rem] space-y-1.5 overflow-y-auto`}>
         {visibleInstruments.length ? (
           visibleInstruments.map((instrument, index) => {
             const asset = assetBySymbol.get(instrument.symbol);
@@ -227,11 +230,11 @@ export function AssetSearch({ assets }: AssetSearchProps) {
               </Fragment>
             );
           })
-        ) : (
+        ) : query.trim() ? (
           <div className="rounded-lg border border-white/10 bg-white/[0.035] p-4 text-sm text-slate-400">
             {t("assetSearchNoResults")}
           </div>
-        )}
+        ) : null}
         {hiddenResultsCount > 0 ? (
           <Link
             href={query.trim() ? `/screener?query=${encodeURIComponent(query.trim())}` : "/screener"}
