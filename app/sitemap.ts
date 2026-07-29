@@ -10,7 +10,6 @@ const demoRoutes = [
   "/argentina",
   "/crypto",
   "/reports",
-  "/agents",
   "/status",
   "/asset/AAPL",
   "/asset/MSFT",

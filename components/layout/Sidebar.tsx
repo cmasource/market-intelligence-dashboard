@@ -7,7 +7,6 @@ import { useEffect, useState } from "react";
 import {
   BarChart3,
   Bitcoin,
-  Bot,
   Calculator,
   CalendarDays,
   ChevronDown,
@@ -39,7 +38,6 @@ export const navItems = [
   { labelKey: "navWatchlist", href: "/watchlist", icon: ListChecks },
   { labelKey: "navReports", href: "/reports", icon: ScanSearch },
   { labelKey: "navContact", href: "/contact", icon: Contact },
-  { labelKey: "navAgents", href: "/agents", icon: Bot },
 ];
 
 const reportItems = [
