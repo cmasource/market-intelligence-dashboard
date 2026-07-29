@@ -6,12 +6,12 @@ function tag(item: string, name: string) {
   return match?.[1] ? sanitizeNewsText(match[1].replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "")) : undefined;
 }
 
-export async function getGoogleNewsRss(query: string, limit = 6): Promise<NewsResponse> {
+export async function getGoogleNewsRss(query: string, limit = 6, language: "en" | "es" = "en"): Promise<NewsResponse> {
   const url = new URL("https://news.google.com/rss/search");
-  url.searchParams.set("q", `${query} stock market`);
-  url.searchParams.set("hl", "en-US");
-  url.searchParams.set("gl", "US");
-  url.searchParams.set("ceid", "US:en");
+  url.searchParams.set("q", language === "es" ? `${query} acciones bolsa mercado` : `${query} stock market`);
+  url.searchParams.set("hl", language === "es" ? "es-419" : "en-US");
+  url.searchParams.set("gl", language === "es" ? "AR" : "US");
+  url.searchParams.set("ceid", language === "es" ? "AR:es-419" : "US:en");
 
   try {
     const response = await fetch(url, { next: { revalidate: 300 } });

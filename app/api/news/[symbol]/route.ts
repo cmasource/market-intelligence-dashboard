@@ -2,15 +2,16 @@ import { getNewsForSymbol } from "@/lib/news";
 import { sanitizeNewsArticle } from "@/lib/news/sanitize-news";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ symbol: string }> },
 ) {
   const { symbol: rawSymbol } = await context.params;
   const symbol = decodeURIComponent(rawSymbol ?? "").trim().toUpperCase();
+  const language = new URL(request.url).searchParams.get("language") === "es" ? "es" : "en";
   if (!symbol) return Response.json({ error: "Symbol is required." }, { status: 400 });
 
   try {
-    const news = await getNewsForSymbol(symbol);
+    const news = await getNewsForSymbol(symbol, 6, language);
     return Response.json({ ...news, articles: news.articles.map(sanitizeNewsArticle) }, {
       headers: {
         "Cache-Control": "s-maxage=180, stale-while-revalidate=600",

@@ -46,10 +46,10 @@ function localAlternativesFor(instrument: Instrument) {
 function technicalLayerFor(instrument: Instrument): InstrumentLayer | null {
   if (instrument.dataCapabilities.includes("technical_full")) {
     return {
-      symbol: instrument.providerSymbol ?? instrument.symbol,
+      symbol: instrument.assetClass === "crypto" ? instrument.symbol : instrument.providerSymbol ?? instrument.symbol,
       market: instrument.market === "crypto" ? "crypto" : "us",
       status: "ok",
-      description: instrument.assetClass === "crypto" ? "Binance OHLCV" : "US OHLCV",
+      description: instrument.assetClass === "crypto" ? "cripto OHLCV" : "US OHLCV",
     };
   }
   if (instrument.dataCapabilities.includes("technical_underlying") && instrument.underlyingSymbol) {

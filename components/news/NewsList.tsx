@@ -13,11 +13,6 @@ export function NewsList({ articles }: { articles: NewsArticle[] }) {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      <p className="text-xs leading-5 text-slate-500 md:col-span-2 xl:col-span-3">
-        {isSpanish
-          ? "Los titulares pueden mostrarse en el idioma original de la fuente."
-          : "Headlines may appear in the source's original language."}
-      </p>
       {cleanArticles.map((article, index) => (
         <article key={`${article.title}-${article.url}`} className="overflow-hidden rounded-lg border border-white/10 bg-slate-950/45">
           <NewsImage article={article} index={index} />

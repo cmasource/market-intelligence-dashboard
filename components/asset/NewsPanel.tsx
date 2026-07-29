@@ -18,7 +18,7 @@ export function NewsPanel({ symbol }: { symbol?: string }) {
 
     async function load() {
       try {
-        const newsResponse = await fetch(`/api/news/${encodeURIComponent(symbol ?? "")}`);
+        const newsResponse = await fetch(`/api/news/${encodeURIComponent(symbol ?? "")}?language=${language}`);
         if (!active || !newsResponse.ok) return;
         setResponse(await newsResponse.json());
       } catch {
@@ -30,7 +30,7 @@ export function NewsPanel({ symbol }: { symbol?: string }) {
     return () => {
       active = false;
     };
-  }, [symbol]);
+  }, [language, symbol]);
 
   const providerResponse = response?.articles?.length ? response : null;
 
@@ -46,11 +46,6 @@ export function NewsPanel({ symbol }: { symbol?: string }) {
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <NewsSourceBadge provider={providerResponse.provider} isFallback={providerResponse.isFallback} />
           </div>
-          <p className="mb-3 text-xs text-slate-500">
-            {isSpanish
-              ? "Los titulares pueden mostrarse en el idioma original de la fuente."
-              : "Headlines may appear in the source's original language."}
-          </p>
           <NewsList articles={providerResponse.articles} />
         </>
       ) : (

@@ -94,8 +94,16 @@ async function getArgentinaMarketNews(limit = 8): Promise<NewsResponse | null> {
   };
 }
 
-export async function getNewsForSymbol(symbol: string, limit = 6): Promise<NewsResponse> {
+export async function getNewsForSymbol(symbol: string, limit = 6, language: "en" | "es" = "en"): Promise<NewsResponse> {
   const normalized = normalize(symbol);
+
+  if (language === "es") {
+    const spanishRss = await getGoogleNewsRss(normalized, limit, "es");
+    if (spanishRss.articles.length > 0) {
+      return { ...spanishRss, articles: spanishRss.articles.map(cleanArticle) };
+    }
+  }
+
   const providers = [
     { label: "FMP provider news", load: () => getFmpNews(normalized) },
     { label: "Finnhub provider news", load: () => getFinnhubCompanyNews(normalized) },
@@ -107,7 +115,7 @@ export async function getNewsForSymbol(symbol: string, limit = 6): Promise<NewsR
     if (response) return { ...response, articles: response.articles.slice(0, limit).map(cleanArticle) };
   }
 
-  const rss = await getGoogleNewsRss(normalized, limit);
+  const rss = await getGoogleNewsRss(normalized, limit, language);
   if (rss.articles.length > 0) return { ...rss, articles: rss.articles.map(cleanArticle) };
 
   return {
@@ -123,7 +131,7 @@ export async function getMarketNews(limit = 8): Promise<NewsResponse> {
   const argentinaNews = await getArgentinaMarketNews(limit);
   if (argentinaNews) return argentinaNews;
 
-  const rss = await getGoogleNewsRss("Argentina markets MERVAL BYMA stocks bonds", limit);
+  const rss = await getGoogleNewsRss("Argentina markets MERVAL BYMA stocks bonds", limit, "es");
   if (rss.articles.length > 0) return { ...rss, articles: rss.articles.map(cleanArticle) };
   return {
     articles: [],
