@@ -1,14 +1,14 @@
 import { getCauciones } from "@/lib/argentina/cauciones";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 300;
+export const revalidate = 0;
 
 export async function GET() {
   try {
     const payload = await getCauciones();
     return Response.json(payload, {
       headers: {
-        "Cache-Control": "s-maxage=300, stale-while-revalidate=1800",
+        "Cache-Control": "no-store, max-age=0",
       },
     });
   } catch (error) {

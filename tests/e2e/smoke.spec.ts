@@ -146,7 +146,7 @@ test.describe("CMA Markets public smoke tests", () => {
   });
 
   test("Argentina exposes cauciones with a compact rate table", async ({ page }) => {
-    await page.route("**/api/research/cauciones", (route) => route.fulfill({
+    await page.route("**/api/research/cauciones**", (route) => route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
         updatedAt: "2026-07-30T12:00:00.000Z",
@@ -163,7 +163,18 @@ test.describe("CMA Markets public smoke tests", () => {
           volume: 1_000_000,
           lastQuote: "2026-07-30T12:00:00.000Z",
         }],
-        alert: null,
+        alert: {
+          severity: "spike",
+          termDays: 1,
+          rateTna: 45,
+          currentRateTna: 35,
+          baselineRateTna: 20,
+          increasePoints: 25,
+          increasePercent: 125,
+          thresholdPercent: 10,
+          basis: "intraday_high",
+          message: "La caucion a 1 dia alcanzo 45.0% TNA durante la rueda.",
+        },
       }),
     }));
     await page.goto("/argentina");
@@ -172,6 +183,31 @@ test.describe("CMA Markets public smoke tests", () => {
     await expect(page.getByRole("heading", { name: /Market repos|Cauciones bursatiles/ })).toBeVisible();
     await expect(page.getByRole("columnheader", { name: "TNA" })).toBeVisible();
     await expect(page.getByRole("cell", { name: "1D", exact: true })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("caucion-alert")).toContainText("+125%");
+  });
+
+  test("dashboard only surfaces the caucion warning when the threshold is exceeded", async ({ page }) => {
+    await page.route("**/api/research/cauciones**", (route) => route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        quotes: [],
+        alert: {
+          severity: "spike",
+          termDays: 1,
+          rateTna: 45,
+          currentRateTna: 35,
+          baselineRateTna: 20,
+          increasePoints: 25,
+          increasePercent: 125,
+          thresholdPercent: 10,
+          basis: "intraday_high",
+          message: "La caucion a 1 dia alcanzo 45.0% TNA durante la rueda.",
+        },
+      }),
+    }));
+
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-caucion-alert")).toContainText("45.0% TNA");
   });
 
   test("crypto workspace is searchable and opens supported assets", async ({ page }) => {
@@ -240,7 +276,7 @@ test.describe("CMA Markets public smoke tests", () => {
     expect(cauciones.quotes.length).toBeGreaterThan(0);
     expect(cauciones.quotes.some((item: { termDays?: unknown; rateTna?: unknown }) => item.termDays === 1 && typeof item.rateTna === "number")).toBeTruthy();
     if (cauciones.alert) {
-      expect(cauciones.alert.increasePoints).toBeGreaterThan(cauciones.alert.thresholdPoints);
+      expect(cauciones.alert.increasePercent).toBeGreaterThan(cauciones.alert.thresholdPercent);
     }
   });
 

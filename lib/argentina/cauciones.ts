@@ -19,9 +19,12 @@ export type CaucionAlert = {
   severity: "spike";
   termDays: 1;
   rateTna: number;
+  currentRateTna: number;
   baselineRateTna: number;
   increasePoints: number;
-  thresholdPoints: number;
+  increasePercent: number;
+  thresholdPercent: number;
+  basis: "intraday_high" | "last_rate";
   message: string;
 };
 
@@ -34,8 +37,8 @@ export type CaucionesPayload = {
   quotes: CaucionQuote[];
   alert: CaucionAlert | null;
   methodology: {
-    alertBasis: "previous_close_until_rolling_30d_available";
-    thresholdPoints: number;
+    alertBasis: "intraday_high_or_last_rate_vs_previous_close";
+    thresholdPercent: number;
     historicalWindowDays: number;
   };
 };
@@ -63,7 +66,7 @@ type PpiCaucionInstrument = {
 
 const PPI_CAUCIONES_URL = "https://www.portfoliopersonal.com/Cotizaciones/Cauciones";
 const ARS_CURRENCY_ID = 10000;
-const ALERT_THRESHOLD_POINTS = 10;
+const ALERT_THRESHOLD_PERCENT = 10;
 
 function toNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -121,19 +124,31 @@ function normalizeCaucion(item: PpiCaucionInstrument): CaucionQuote | null {
 
 function buildAlert(quotes: CaucionQuote[]): CaucionAlert | null {
   const oneDay = quotes.find((quote) => quote.termDays === 1);
-  if (!oneDay || oneDay.previousRateTna === null) return null;
+  if (!oneDay || oneDay.previousRateTna === null || oneDay.previousRateTna <= 0) return null;
 
-  const increasePoints = oneDay.rateTna - oneDay.previousRateTna;
-  if (increasePoints <= ALERT_THRESHOLD_POINTS) return null;
+  const intradayHigh = oneDay.maxRateTna && oneDay.maxRateTna > 0 ? oneDay.maxRateTna : oneDay.rateTna;
+  const observedRateTna = Math.max(oneDay.rateTna, intradayHigh);
+  const increasePoints = observedRateTna - oneDay.previousRateTna;
+  const increasePercent = (increasePoints / oneDay.previousRateTna) * 100;
+  if (increasePercent <= ALERT_THRESHOLD_PERCENT) return null;
+
+  const basis = observedRateTna > oneDay.rateTna ? "intraday_high" : "last_rate";
+  const peakCopy = basis === "intraday_high"
+    ? `alcanzo ${observedRateTna.toFixed(1)}% TNA durante la rueda`
+    : `subio a ${observedRateTna.toFixed(1)}% TNA`;
+  const currentCopy = basis === "intraday_high" ? ` Ultima tasa: ${oneDay.rateTna.toFixed(1)}%.` : "";
 
   return {
     severity: "spike",
     termDays: 1,
-    rateTna: oneDay.rateTna,
+    rateTna: observedRateTna,
+    currentRateTna: oneDay.rateTna,
     baselineRateTna: oneDay.previousRateTna,
     increasePoints,
-    thresholdPoints: ALERT_THRESHOLD_POINTS,
-    message: `La caucion a 1 dia subio ${increasePoints.toFixed(1)} puntos porcentuales contra el cierre previo.`,
+    increasePercent,
+    thresholdPercent: ALERT_THRESHOLD_PERCENT,
+    basis,
+    message: `La caucion a 1 dia ${peakCopy}: +${increasePercent.toFixed(1)}% contra el cierre previo de ${oneDay.previousRateTna.toFixed(1)}%.${currentCopy}`,
   };
 }
 
@@ -154,19 +169,24 @@ export function parsePpiCauciones(html: string): CaucionesPayload {
     quotes,
     alert: buildAlert(quotes),
     methodology: {
-      alertBasis: "previous_close_until_rolling_30d_available",
-      thresholdPoints: ALERT_THRESHOLD_POINTS,
+      alertBasis: "intraday_high_or_last_rate_vs_previous_close",
+      thresholdPercent: ALERT_THRESHOLD_PERCENT,
       historicalWindowDays: 30,
     },
   };
 }
 
 export async function getCauciones() {
-  const response = await fetch(PPI_CAUCIONES_URL, {
+  const sourceUrl = new URL(PPI_CAUCIONES_URL);
+  sourceUrl.searchParams.set("cma", String(Math.floor(Date.now() / 30_000)));
+
+  const response = await fetch(sourceUrl, {
     headers: {
-      "User-Agent": "CMA-Markets/1.0",
+      "User-Agent": "Mozilla/5.0 (compatible; CMA-Markets/1.0)",
+      "Cache-Control": "no-cache",
+      Pragma: "no-cache",
     },
-    next: { revalidate: 300 },
+    cache: "no-store",
   });
 
   if (!response.ok) {

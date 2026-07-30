@@ -3,6 +3,7 @@
 import { FeaturedAssets } from "@/components/dashboard/FeaturedAssets";
 import { ArgentinaMacroMonitor } from "@/components/dashboard/ArgentinaMacroMonitor";
 import { DashboardWelcome } from "@/components/dashboard/DashboardWelcome";
+import { CaucionSpikeAlert } from "@/components/dashboard/CaucionSpikeAlert";
 import { MarketNewsPreview } from "@/components/dashboard/MarketNewsPreview";
 import { AppShell } from "@/components/layout/AppShell";
 import { MarketHeatmap } from "@/components/market/MarketHeatmap";
@@ -25,6 +26,7 @@ export default function Home() {
     <AppShell>
       <div className="space-y-6 lg:space-y-7">
         <DashboardWelcome assets={mockAssets} />
+        <CaucionSpikeAlert />
 
         <MarketRankings compact />
         <MarketNewsPreview />

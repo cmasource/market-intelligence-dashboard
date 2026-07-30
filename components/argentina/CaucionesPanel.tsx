@@ -54,14 +54,24 @@ export function CaucionesPanel() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/research/cauciones", { signal: controller.signal })
-      .then((response) => response.json() as Promise<CaucionesResponse>)
-      .then(setPayload)
-      .catch(() => setPayload({ quotes: [], alert: null, error: "No se pudieron cargar las cauciones." }))
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-    return () => controller.abort();
+    const load = () => {
+      fetch(`/api/research/cauciones?t=${Date.now()}`, { cache: "no-store", signal: controller.signal })
+        .then((response) => response.json() as Promise<CaucionesResponse>)
+        .then(setPayload)
+        .catch(() => {
+          if (!controller.signal.aborted) setPayload({ quotes: [], alert: null, error: "No se pudieron cargar las cauciones." });
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
+    };
+
+    load();
+    const refreshId = window.setInterval(load, 30_000);
+    return () => {
+      window.clearInterval(refreshId);
+      controller.abort();
+    };
   }, []);
 
   const quotes = useMemo(() => payload.quotes ?? [], [payload.quotes]);
@@ -87,7 +97,7 @@ export function CaucionesPanel() {
             <h2 className="mt-2 text-2xl font-semibold text-white">{isSpanish ? "Cauciones bursatiles" : "Market repos"}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
               {isSpanish
-                ? "Tasas TNA por plazo en pesos. La caucion 1D se monitorea para detectar saltos bruscos de tasa."
+                ? "Tasas TNA por plazo en pesos, con actualizacion automatica. La caucion 1D se monitorea por ultimo valor y maximo intradiario."
                 : "ARS APR rates by term. The 1D repo is monitored for abrupt rate jumps."}
             </p>
           </div>
@@ -100,7 +110,7 @@ export function CaucionesPanel() {
       </div>
 
       {payload.alert ? (
-        <div className="border-b border-amber-300/20 bg-amber-300/[0.08] px-4 py-4 sm:px-5" role="alert">
+        <div className="border-b border-amber-300/20 bg-amber-300/[0.08] px-4 py-4 sm:px-5" role="alert" data-testid="caucion-alert">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-amber-300/15 text-amber-200">
@@ -112,7 +122,7 @@ export function CaucionesPanel() {
               </div>
             </div>
             <span className="shrink-0 rounded-md bg-slate-950/60 px-3 py-2 text-sm font-semibold tabular-nums text-amber-100">
-              {formatPoints(payload.alert.increasePoints)}
+              +{payload.alert.increasePercent.toLocaleString("es-AR", { maximumFractionDigits: 1 })}%
             </span>
           </div>
         </div>
