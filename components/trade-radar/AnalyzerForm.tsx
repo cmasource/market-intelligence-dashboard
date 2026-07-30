@@ -37,6 +37,7 @@ const intervalOptions: Array<{ value: TradeRadarInterval; label: string }> = [
 
 const providerOptions: Array<{ value: TradeRadarProviderName; label: string }> = [
   { value: "auto", label: "Fuente automatica" },
+  { value: "yahoo", label: "Datos publicos" },
   { value: "twelveData", label: "Mercado global" },
   { value: "alphaVantage", label: "Mercado global alternativo" },
   { value: "fmp", label: "Fundamentales" },

@@ -163,6 +163,8 @@ function usInstrument(seed: UsSeed): Instrument {
 
 function localEquity(symbol: string, name: string): Instrument {
   const adr = localToAdrSymbol[symbol];
+  const hasLocalHistory = symbol !== "REIT";
+  const localHistorySymbol = `${symbol}.BA`;
   return {
     id: `ar-equity:${symbol}`,
     symbol,
@@ -174,7 +176,7 @@ function localEquity(symbol: string, name: string): Instrument {
     country: "AR",
     currency: "ARS",
     bymaSymbol: symbol,
-    providerSymbol: adr ?? symbol,
+    providerSymbol: adr ?? localHistorySymbol,
     tradingViewSymbol: `BCBA:${symbol}`,
     underlyingSymbol: adr,
     underlyingExchange: adr ? "US" : undefined,
@@ -183,8 +185,16 @@ function localEquity(symbol: string, name: string): Instrument {
     settlementPeriods: ["0000", "0001", "0002"],
     aliases: adr ? [adr] : [],
     tags: ["argentina", "byma", "local", "accion"],
-    dataCapabilities: adr ? ["technical_underlying", "quote_only"] : ["quote_only"],
-    warnings: adr ? ["El tecnico usa el ADR/subyacente US; la accion local puede diferir por CCL, liquidez y plazo."] : ["Solo cotizacion local hasta contar con historico OHLCV suficiente."],
+    dataCapabilities: adr
+      ? ["technical_underlying", "quote_only"]
+      : hasLocalHistory
+        ? ["technical_full", "quote_only"]
+        : ["quote_only"],
+    warnings: adr
+      ? ["El tecnico usa el ADR/subyacente US; la accion local puede diferir por CCL, liquidez y plazo."]
+      : hasLocalHistory
+        ? ["El tecnico usa el historico diario de la especie local disponible publicamente."]
+        : ["La especie no cuenta con historico OHLCV suficiente para publicar indicadores."],
     source: "seed",
     enabled: true,
   };
@@ -192,6 +202,8 @@ function localEquity(symbol: string, name: string): Instrument {
 
 function cedear(symbol: string, name: string, assetClass: InstrumentAssetClass): Instrument {
   const mapping = cedearUnderlyingSymbols[symbol];
+  const underlyingSymbol = mapping?.underlyingSymbol ?? symbol;
+  const isInternationalUnderlying = Boolean(mapping?.exchange && mapping.exchange !== "NYSE" && mapping.exchange !== "NASDAQ");
   return {
     id: `${assetClass}:${symbol}`,
     symbol,
@@ -203,18 +215,18 @@ function cedear(symbol: string, name: string, assetClass: InstrumentAssetClass):
     country: "AR",
     currency: "ARS",
     bymaSymbol: symbol,
-    providerSymbol: mapping?.underlyingSymbol ?? symbol,
+    providerSymbol: underlyingSymbol,
     tradingViewSymbol: `BCBA:${symbol}`,
-    underlyingSymbol: mapping?.underlyingSymbol ?? symbol,
-    underlyingExchange: "US",
-    underlyingMarket: "us",
-    underlyingCurrency: "USD",
+    underlyingSymbol,
+    underlyingExchange: mapping?.exchange ?? "US",
+    underlyingMarket: isInternationalUnderlying ? "global" : "us",
+    underlyingCurrency: mapping?.currency ?? "USD",
     ratio: mapping?.ratio,
     settlementPeriods: ["0000", "0001", "0002"],
     aliases: [`${symbol} CEDEAR`],
     tags: [assetClass === "cedear_etf" ? "cedear etf" : "cedear", "argentina", "byma", "subyacente"],
     dataCapabilities: ["technical_underlying", "quote_only", "fundamentals_underlying"],
-    warnings: [cedearWarning, "El analisis tecnico corresponde al subyacente US."],
+    warnings: [cedearWarning, "El analisis tecnico corresponde al valor subyacente en su mercado de origen."],
     source: "seed",
     enabled: true,
   };

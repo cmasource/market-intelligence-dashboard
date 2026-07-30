@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 const markets: TradeRadarMarket[] = ["us", "argentina", "cedear", "crypto", "bond", "auto"];
 const intervals: TradeRadarInterval[] = ["1h", "4h", "1d"];
-const providers: TradeRadarProviderName[] = ["auto", "twelveData", "alphaVantage", "fmp", "byma", "binance"];
+const providers: TradeRadarProviderName[] = ["auto", "yahoo", "twelveData", "alphaVantage", "fmp", "byma", "binance"];
 
 type AnalyzeBody = {
   instrumentId?: unknown;

@@ -16,7 +16,7 @@ export function IndicatorCards({ analysis }: IndicatorCardsProps) {
     { label: "Precio", value: formatValue(analysis.lastPrice), detail: analysis.currency },
     { label: "EMA 20", value: formatValue(analysis.indicators.ema20), detail: "Dinamico" },
     { label: "EMA 50", value: formatValue(analysis.indicators.ema50), detail: "Dinamico" },
-    { label: "MA 200", value: formatValue(analysis.indicators.ma200), detail: "Tendencia" },
+    { label: "EMA 200", value: formatValue(analysis.indicators.ema200), detail: "Tendencia" },
     { label: "RSI 14", value: formatValue(analysis.indicators.rsi14), detail: "Momentum" },
     { label: "ATR 14", value: formatValue(analysis.indicators.atr14), detail: "Volatilidad" },
     { label: "Volumen", value: formatValue(analysis.indicators.volume), detail: "Ultima vela" },

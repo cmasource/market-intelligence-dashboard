@@ -18,7 +18,35 @@ function withoutEnv(names: string[], run: () => Promise<void>) {
   });
 }
 
-test("US auto provider returns a clear error when OHLCV keys are missing", async () => {
+const resolvedSpy: ResolvedTradeRadarSymbol = {
+  inputSymbol: "SPY",
+  resolvedSymbol: "SPY",
+  market: "us",
+  notes: [],
+};
+
+test("US auto provider uses public OHLCV when API keys are missing", async (context) => {
+  context.mock.method(globalThis, "fetch", async () => Response.json({
+    chart: {
+      result: [{
+        timestamp: [1_700_000_000],
+        indicators: {
+          quote: [{ open: [100], high: [102], low: [99], close: [101], volume: [1_000] }],
+        },
+      }],
+      error: null,
+    },
+  }));
+
+  await withoutEnv(["TWELVE_DATA_API_KEY", "ALPHA_VANTAGE_API_KEY", "FMP_API_KEY"], async () => {
+    const result = await fetchTradeRadarOhlcv(resolvedSpy, "1d", "auto");
+    assert.equal(result.response.provider, "yahoo");
+    assert.equal(result.response.ohlcv.length, 1);
+  });
+});
+
+test("US auto provider returns a clear error when every OHLCV source fails", async (context) => {
+  context.mock.method(globalThis, "fetch", async () => new Response(null, { status: 503 }));
   const resolved: ResolvedTradeRadarSymbol = {
     inputSymbol: "SPY",
     resolvedSymbol: "SPY",

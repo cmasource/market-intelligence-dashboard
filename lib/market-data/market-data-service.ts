@@ -30,6 +30,9 @@ export async function getMarketData(request: MarketDataRequest): Promise<MarketD
 
   try {
     if (getYahooSymbol(symbol)) {
+      const yahooResponse = await getYahooMarketData(normalizedRequest);
+      if (!yahooResponse.error && yahooResponse.candles.length > 0) return yahooResponse;
+
       const providerAttempts = [
         () => getFmpHistoricalPrices(normalizedRequest),
         () => getFinnhubCandles(normalizedRequest),
@@ -40,11 +43,6 @@ export async function getMarketData(request: MarketDataRequest): Promise<MarketD
         const response = await attempt();
         if (!response.error && response.candles.length > 0) return response;
       }
-    }
-
-    if (getYahooSymbol(symbol)) {
-      const response = await getYahooMarketData(normalizedRequest);
-      return response.candles.length > 0 ? response : fallback(normalizedRequest, response);
     }
 
     if (getCryptoSymbol(symbol)) {

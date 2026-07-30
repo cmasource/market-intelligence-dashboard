@@ -16,7 +16,7 @@ import {
   type TradeRadarMarket,
   type TradeRadarProviderName,
 } from "@/lib/market-data/providers/base";
-import { atrWilder, avgVolume, ema, latestNumber, rsiWilder, sma } from "./indicators";
+import { atrWilder, avgVolume, ema, latestNumber, rsiWilder } from "./indicators";
 import { calculateSupportResistance, type TechnicalLevel } from "./levels";
 import { buildSuggestedAlerts, calculateSignals, type RadarSignals } from "./signals";
 import { formatTradeRadarStatus } from "./trade-radar-labels";
@@ -41,12 +41,12 @@ export type TradeRadarAnalysis = {
   chartSeries: {
     ema20: Array<{ time: string; value: number }>;
     ema50: Array<{ time: string; value: number }>;
-    ma200: Array<{ time: string; value: number }>;
+    ema200: Array<{ time: string; value: number }>;
   };
   indicators: {
     ema20: number | null;
     ema50: number | null;
-    ma200: number | null;
+    ema200: number | null;
     rsi14: number | null;
     atr14: number | null;
     volume: number | null;
@@ -101,12 +101,12 @@ function omitted(candlesCount: number) {
   const result: string[] = [];
   if (candlesCount < 20) result.push("ema20", "avgVolume20");
   if (candlesCount < 50) result.push("ema50");
-  if (candlesCount < 200) result.push("ma200");
+  if (candlesCount < 200) result.push("ema200");
   if (candlesCount < 15) result.push("rsi14", "atr14");
   return Array.from(new Set(result));
 }
 
-const allTechnicalIndicators = ["ema20", "ema50", "ma200", "rsi14", "atr14"] as const;
+const allTechnicalIndicators = ["ema20", "ema50", "ema200", "rsi14", "atr14"] as const;
 
 function buildSummary(
   sampleStatus: TradeRadarAnalysis["sampleStatus"],
@@ -143,7 +143,7 @@ function emptyIndicators(volume: number | null = null) {
   return {
     ema20: null,
     ema50: null,
-    ma200: null,
+    ema200: null,
     rsi14: null,
     atr14: null,
     volume,
@@ -176,9 +176,7 @@ function tradeSignal(score: number | null): TradeRadarAnalysis["tradeSignal"] {
   return { label: "Esperar", tone: "wait", strength: "neutral" };
 }
 
-async function getCanonicalDailyTechnical(symbol: string, interval: TradeRadarInterval) {
-  if (interval !== "1d") return null;
-
+async function getCanonicalDailyTechnical(symbol: string) {
   try {
     const analysis = await getTechnicalAnalysis(symbol, "1Y", "es");
     if (analysis.isFallback) return null;
@@ -309,7 +307,7 @@ export async function analyzeTradeRadar(params: {
     const technicalAnalysisSymbol = instrumentResolution?.technicalLayer?.symbol ?? response.resolvedSymbol;
     const [fundamentals, canonicalTechnical] = await Promise.all([
       getFundamentals({ symbol: requestedFundamentalSymbol }),
-      getCanonicalDailyTechnical(technicalAnalysisSymbol, params.interval),
+      getCanonicalDailyTechnical(technicalAnalysisSymbol),
     ]);
     if (!response.localQuote) throw new Error("No OHLCV bars available after provider normalization.");
     const quote = response.localQuote;
@@ -332,7 +330,7 @@ export async function analyzeTradeRadar(params: {
       sourceLabel: response.sourceLabel,
       fetchedAt: response.fetchedAt,
       ohlcv: [],
-      chartSeries: { ema20: [], ema50: [], ma200: [] },
+      chartSeries: { ema20: [], ema50: [], ema200: [] },
       indicators: emptyIndicators(quote.volume),
       technicalScore: publishedTechnicalScore,
       technicalSnapshot: canonicalTechnical?.snapshot ?? null,
@@ -370,15 +368,15 @@ export async function analyzeTradeRadar(params: {
 
   const ema20Series = ema(closes, 20);
   const ema50Series = ema(closes, 50);
-  const ma200Series = sma(closes, 200);
+  const ema200Series = ema(closes, 200);
   const ema20 = latestNumber(ema20Series);
   const ema50 = latestNumber(ema50Series);
-  const ma200 = latestNumber(ma200Series);
+  const ema200 = latestNumber(ema200Series);
   const rsi14 = latestNumber(rsiWilder(closes, 14));
   const atr14 = latestNumber(atrWilder(bars, 14));
   const avgVolume20 = latestNumber(avgVolume(bars, 20));
   const volume = lastBar.volume;
-  const levels = calculateSupportResistance(bars, lastBar.close, atr14, { ema20, ema50, ma200 });
+  const levels = calculateSupportResistance(bars, lastBar.close, atr14, { ema20, ema50, ema200 });
   const technicalSnapshot = buildTechnicalSnapshot(bars, levels);
   const technicalScore = technicalSnapshot ? calculateTechnicalScore(technicalSnapshot) : null;
   const technicalInterpretation = technicalSnapshot && technicalScore !== null
@@ -388,7 +386,7 @@ export async function analyzeTradeRadar(params: {
   const technicalAnalysisSymbol = instrumentResolution?.technicalLayer?.symbol ?? response.resolvedSymbol;
   const [fundamentals, canonicalTechnical] = await Promise.all([
     getFundamentals({ symbol: requestedFundamentalSymbol }),
-    getCanonicalDailyTechnical(technicalAnalysisSymbol, params.interval),
+    getCanonicalDailyTechnical(technicalAnalysisSymbol),
   ]);
   const publishedTechnicalScore = canonicalTechnical?.technicalScore ?? technicalScore;
   const publishedTechnicalSnapshot = canonicalTechnical?.snapshot ?? technicalSnapshot;
@@ -399,7 +397,7 @@ export async function analyzeTradeRadar(params: {
         price: lastBar.close,
         ema20,
         ema50,
-        ma200,
+        ema200,
         rsi14,
         atr14,
         resistances: levels.resistances,
@@ -429,12 +427,12 @@ export async function analyzeTradeRadar(params: {
     chartSeries: {
       ema20: toChartSeries(bars, ema20Series),
       ema50: toChartSeries(bars, ema50Series),
-      ma200: toChartSeries(bars, ma200Series),
+      ema200: toChartSeries(bars, ema200Series),
     },
     indicators: {
       ema20: round(ema20),
       ema50: round(ema50),
-      ma200: round(ma200),
+      ema200: round(ema200),
       rsi14: round(rsi14, 1),
       atr14: round(atr14),
       volume,

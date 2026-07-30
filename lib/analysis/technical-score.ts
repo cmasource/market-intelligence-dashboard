@@ -40,9 +40,21 @@ export function calculateTechnicalScore(snapshot: TechnicalIndicatorSnapshot): n
   let score = 0;
 
   // Modelo MVP: suma evidencias tecnicas simples. No representa recomendacion de compra o venta.
-  if (isNumber(snapshot.lastClose) && isNumber(snapshot.sma200) && snapshot.lastClose > snapshot.sma200) score += 13;
-  if (isNumber(snapshot.sma20) && isNumber(snapshot.sma50) && snapshot.sma20 > snapshot.sma50) score += 11;
-  if (isNumber(snapshot.sma50) && isNumber(snapshot.sma200) && snapshot.sma50 > snapshot.sma200) score += 11;
+  if (isNumber(snapshot.lastClose) && isNumber(snapshot.sma200)) {
+    if (snapshot.lastClose > snapshot.sma200) score += 13;
+  } else {
+    score += 6.5;
+  }
+  if (isNumber(snapshot.sma20) && isNumber(snapshot.sma50)) {
+    if (snapshot.sma20 > snapshot.sma50) score += 11;
+  } else {
+    score += 5.5;
+  }
+  if (isNumber(snapshot.sma50) && isNumber(snapshot.sma200)) {
+    if (snapshot.sma50 > snapshot.sma200) score += 11;
+  } else {
+    score += 5.5;
+  }
 
   // Momentum: RSI y MACD se ponderan como confirmacion, no como senal aislada.
   if (isNumber(snapshot.rsi14)) {
@@ -51,10 +63,20 @@ export function calculateTechnicalScore(snapshot: TechnicalIndicatorSnapshot): n
     else if (snapshot.rsi14 >= 30 && snapshot.rsi14 < 45) score += 6;
     else if (snapshot.rsi14 < 30) score += 4;
     else score += 5;
+  } else {
+    score += 6;
   }
 
-  if (isNumber(snapshot.macd) && isNumber(snapshot.macdSignal) && snapshot.macd > snapshot.macdSignal) score += 10;
-  if (isNumber(snapshot.macdHistogram) && snapshot.macdHistogram > 0) score += 8;
+  if (isNumber(snapshot.macd) && isNumber(snapshot.macdSignal)) {
+    if (snapshot.macd > snapshot.macdSignal) score += 10;
+  } else {
+    score += 5;
+  }
+  if (isNumber(snapshot.macdHistogram)) {
+    if (snapshot.macdHistogram > 0) score += 8;
+  } else {
+    score += 4;
+  }
 
   // Ubicacion relativa: premia fuerza o zona cercana a soporte, penaliza cercania extrema a resistencia.
   if (isNumber(snapshot.lastClose) && isNumber(snapshot.support) && isNumber(snapshot.resistance) && snapshot.resistance > snapshot.support) {
@@ -64,11 +86,14 @@ export function calculateTechnicalScore(snapshot: TechnicalIndicatorSnapshot): n
     else if (position <= 0.35) score += 10;
     else if (position <= 0.75) score += 8;
     else score += 5;
+  } else {
+    score += 6;
   }
 
   if (snapshot.volumeTrend === "increasing") score += 10;
   else if (snapshot.volumeTrend === "neutral") score += 7;
   else if (snapshot.volumeTrend === "decreasing") score += 4;
+  else score += 5;
 
   const availableIndicators = [
     snapshot.lastClose,

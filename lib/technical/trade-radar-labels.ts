@@ -65,6 +65,7 @@ const marketLabels: Record<string, string> = {
 };
 
 const providerLabels: Record<string, string> = {
+  yahoo: "Datos de mercado",
   twelveData: "Datos de mercado",
   alphaVantage: "Datos de mercado",
   fmp: "Datos fundamentales",
@@ -118,6 +119,7 @@ export function formatTradeRadarProvider(provider: string) {
 }
 
 export function formatTradeRadarSource(sourceLabel: string) {
+  if (/public market history/i.test(sourceLabel) || /yahoo/i.test(sourceLabel)) return "Fuente publica de mercado";
   if (/twelve\s*data/i.test(sourceLabel) || /twelveData/i.test(sourceLabel)) return "Fuente publica de mercado";
   if (/alpha\s*vantage/i.test(sourceLabel)) return "Fuente publica de mercado";
   if (/financial\s*modeling\s*prep/i.test(sourceLabel) || /\bfmp\b/i.test(sourceLabel)) return "Fuente fundamental";

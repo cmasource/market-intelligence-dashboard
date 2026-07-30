@@ -47,17 +47,22 @@ function technicalLayerFor(instrument: Instrument): InstrumentLayer | null {
   if (instrument.dataCapabilities.includes("technical_full")) {
     return {
       symbol: instrument.assetClass === "crypto" ? instrument.symbol : instrument.providerSymbol ?? instrument.symbol,
-      market: instrument.market === "crypto" ? "crypto" : "us",
+      market: instrument.market === "crypto" ? "crypto" : instrument.market === "argentina" ? "argentina" : "us",
       status: "ok",
-      description: instrument.assetClass === "crypto" ? "cripto OHLCV" : "US OHLCV",
+      description: instrument.assetClass === "crypto"
+        ? "cripto OHLCV"
+        : instrument.market === "argentina"
+          ? "historico local OHLCV"
+          : "US OHLCV",
     };
   }
   if (instrument.dataCapabilities.includes("technical_underlying") && instrument.underlyingSymbol) {
+    const isInternational = instrument.underlyingMarket === "global";
     return {
       symbol: instrument.underlyingSymbol,
       market: instrument.underlyingMarket === "crypto" ? "crypto" : "us",
       status: "ok",
-      description: "subyacente US",
+      description: isInternational ? "subyacente internacional" : "subyacente US",
     };
   }
   return null;

@@ -5,7 +5,9 @@ import {
   calculateSMA,
 } from "@/lib/finance/technical";
 import { getMarketData } from "@/lib/market-data";
+import { normalizeSymbol } from "@/lib/market-data/symbol-map";
 import type { MarketDataResponse } from "@/lib/market-data/types";
+import { resolveInstrument } from "@/lib/instruments/resolveInstrument";
 import type { Timeframe } from "@/types/chart";
 import { calculateRecentResistance, calculateRecentSupport, calculateVolumeTrend } from "./support-resistance";
 import {
@@ -25,14 +27,15 @@ function latestValue(values: Array<number | null>) {
   return null;
 }
 
-function buildWarnings(candlesCount: number, snapshot: TechnicalIndicatorSnapshot) {
+function buildWarnings(candlesCount: number, snapshot: TechnicalIndicatorSnapshot, language: "en" | "es") {
   const warnings: string[] = [];
+  const warning = (english: string, spanish: string) => language === "es" ? spanish : english;
 
-  if (candlesCount < 20) warnings.push("Not enough candles for SMA 20.");
-  if (candlesCount < 50) warnings.push("Not enough candles for SMA 50.");
-  if (candlesCount < 200) warnings.push("Not enough candles for SMA 200.");
-  if (snapshot.rsi14 === null) warnings.push("RSI 14 is unavailable with the current candle history.");
-  if (snapshot.macd === null || snapshot.macdSignal === null) warnings.push("MACD is unavailable with the current candle history.");
+  if (candlesCount < 20) warnings.push(warning("Not enough candles for SMA 20.", "Historial insuficiente para calcular la SMA 20."));
+  if (candlesCount < 50) warnings.push(warning("Not enough candles for SMA 50.", "Historial insuficiente para calcular la SMA 50."));
+  if (candlesCount < 200) warnings.push(warning("Not enough candles for SMA 200.", "Historial insuficiente para calcular la SMA 200."));
+  if (snapshot.rsi14 === null) warnings.push(warning("RSI 14 is unavailable with the current candle history.", "El historial actual no permite calcular el RSI 14."));
+  if (snapshot.macd === null || snapshot.macdSignal === null) warnings.push(warning("MACD is unavailable with the current candle history.", "El historial actual no permite calcular el MACD."));
 
   return warnings;
 }
@@ -70,7 +73,7 @@ function analyzeMarketData(
     volatilityLabel: marketData.isFallback ? "Fallback data volatility" : "Provider data volatility",
   };
   const technicalScore = calculateTechnicalScore(snapshot);
-  const warnings = [...extraWarnings, ...buildWarnings(marketData.candles.length, snapshot)];
+  const warnings = [...extraWarnings, ...buildWarnings(marketData.candles.length, snapshot, language)];
 
   return {
     symbol: marketData.symbol,
@@ -137,19 +140,28 @@ export function getFallbackTechnicalAnalysis(symbol: string, timeframe: Timefram
   };
 }
 
+export function resolveTechnicalAnalysisSymbol(symbol: string) {
+  const normalized = normalizeSymbol(symbol);
+  return resolveInstrument({ symbol: normalized })?.technicalLayer?.symbol ?? normalized;
+}
+
 export async function getTechnicalAnalysis(symbol: string, timeframe: Timeframe, language: "en" | "es" = "en"): Promise<TechnicalAnalysisResponse> {
+  const requestedSymbol = normalizeSymbol(symbol);
+  const technicalSymbol = resolveTechnicalAnalysisSymbol(requestedSymbol);
+
   try {
-    const marketData = await getMarketData({ symbol, timeframe });
+    const marketData = await getMarketData({ symbol: technicalSymbol, timeframe });
 
     if (!marketData.candles.length) {
-      return getFallbackTechnicalAnalysis(symbol, timeframe, [
+      return getFallbackTechnicalAnalysis(requestedSymbol, timeframe, [
         marketData.error ?? `${marketData.provider} returned no candles for technical analysis.`,
       ], language);
     }
 
-    return analyzeMarketData(marketData, timeframe, marketData.error ? [marketData.error] : [], language);
+    const analysis = analyzeMarketData(marketData, timeframe, marketData.error ? [marketData.error] : [], language);
+    return { ...analysis, symbol: requestedSymbol };
   } catch (error) {
-    return getFallbackTechnicalAnalysis(symbol, timeframe, [
+    return getFallbackTechnicalAnalysis(requestedSymbol, timeframe, [
       error instanceof Error ? error.message : "Technical analysis failed.",
     ], language);
   }

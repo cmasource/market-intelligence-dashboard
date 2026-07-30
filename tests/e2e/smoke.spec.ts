@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const publicRoutes = [
-  { route: "/", heading: /Market overview|Resumen de mercado/ },
+  { route: "/", heading: /CMA Markets/ },
   { route: "/markets", heading: /Markets|Mercados/ },
   { route: "/usa", heading: /USA market|Mercado USA/ },
   { route: "/argentina", heading: /Argentina market|Mercado argentino/i },
@@ -12,6 +12,13 @@ const publicRoutes = [
 
 async function assertNoHorizontalOverflow(page: Page) {
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBeTruthy();
+}
+
+async function expectExpandedUniverse(page: Page) {
+  const countLabel = page.locator("main p").filter({ hasText: /^\d+ (instruments|instrumentos)/ });
+  await expect(countLabel).toBeVisible();
+  const count = Number.parseInt((await countLabel.textContent())?.match(/\d+/)?.[0] ?? "0", 10);
+  expect(count).toBeGreaterThanOrEqual(300);
 }
 
 test.describe("CMA Markets public smoke tests", () => {
@@ -42,7 +49,7 @@ test.describe("CMA Markets public smoke tests", () => {
     await expect(page.getByRole("link", { name: /Contact|Contacto/, exact: true }).first()).toBeVisible();
     await expect(page.locator('footer a[aria-label="CMA Consulting"]')).toHaveAttribute("href", "https://cma-consulting.vercel.app/");
     await page.getByRole("button", { name: "ES", exact: true }).click();
-    await expect(page.getByRole("heading", { name: /Resumen de mercado/ })).toBeVisible();
+    await expect(page.getByText("Inteligencia financiera para entender el mercado antes de tomar una decisión.", { exact: true })).toBeVisible();
   });
 
   test("authentication foundation exposes public entry points and protects account", async ({ page }) => {
@@ -114,9 +121,9 @@ test.describe("CMA Markets public smoke tests", () => {
   test("USA lists the complete CEDEAR underlying universe with search", async ({ page }) => {
     await page.goto("/usa");
     await page.getByRole("button", { name: /^(Stocks|Acciones)$/ }).click();
-    await expect(page.locator("body")).toContainText(/405/);
+    await expectExpandedUniverse(page);
     await page.getByRole("button", { name: /CEDEAR underlyings|Subyacentes CEDEAR/ }).click();
-    await expect(page.locator("body")).toContainText(/405/);
+    await expectExpandedUniverse(page);
     await page.getByLabel(/Search instrument|Buscar instrumento/).fill("AAPL");
     await expect(page.getByRole("row").filter({ hasText: "AAPL" })).toHaveCount(1);
     await expect(page.getByRole("row").filter({ hasText: "AAPL" })).toContainText(/Apple/);
@@ -139,6 +146,26 @@ test.describe("CMA Markets public smoke tests", () => {
   });
 
   test("Argentina exposes cauciones with a compact rate table", async ({ page }) => {
+    await page.route("**/api/research/cauciones", (route) => route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        updatedAt: "2026-07-30T12:00:00.000Z",
+        quotes: [{
+          label: "1D",
+          termDays: 1,
+          rateTna: 21,
+          variationPoints: 0.5,
+          previousRateTna: 20.5,
+          bidRateTna: 20.8,
+          askRateTna: 21.2,
+          minRateTna: 20.5,
+          maxRateTna: 21.5,
+          volume: 1_000_000,
+          lastQuote: "2026-07-30T12:00:00.000Z",
+        }],
+        alert: null,
+      }),
+    }));
     await page.goto("/argentina");
     await page.getByRole("button", { name: /Repos|Cauciones/, exact: true }).click();
     await expect(page.getByTestId("cauciones-panel")).toBeVisible();

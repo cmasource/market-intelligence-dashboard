@@ -3,6 +3,7 @@ import { binanceProvider } from "./providers/binance";
 import { bymaProvider, getBymaLocalQuote } from "./providers/byma";
 import { fmpRadarProvider } from "./providers/fmp";
 import { twelveDataProvider } from "./providers/twelveData";
+import { yahooRadarProvider } from "./providers/yahoo";
 import { getTradeRadarProviderStatus } from "./trade-radar-provider-status";
 import {
   ProviderError,
@@ -14,6 +15,7 @@ import {
 import type { ResolvedTradeRadarSymbol } from "./resolveSymbol";
 
 const providers = {
+  yahoo: yahooRadarProvider,
   twelveData: twelveDataProvider,
   alphaVantage: alphaVantageProvider,
   fmp: fmpRadarProvider,
@@ -52,9 +54,10 @@ function isForbidden(failure: ProviderFailure) {
 function priorityFor(requestedProvider: TradeRadarProviderName, market: ProviderRequest["market"]) {
   if (requestedProvider !== "auto") return [requestedProvider];
   if (market === "crypto") return ["binance"] satisfies TradeRadarProviderName[];
-  if (market === "argentina" || market === "bond") return ["byma"] satisfies TradeRadarProviderName[];
-  if (market === "cedear") return ["twelveData", "alphaVantage", "fmp", "byma"] satisfies TradeRadarProviderName[];
-  return ["twelveData", "alphaVantage", "fmp"] satisfies TradeRadarProviderName[];
+  if (market === "bond") return ["byma"] satisfies TradeRadarProviderName[];
+  if (market === "argentina") return ["yahoo", "byma"] satisfies TradeRadarProviderName[];
+  if (market === "cedear") return ["yahoo", "twelveData", "alphaVantage", "fmp", "byma"] satisfies TradeRadarProviderName[];
+  return ["yahoo", "twelveData", "alphaVantage", "fmp"] satisfies TradeRadarProviderName[];
 }
 
 function autoProviderPlan(market: ProviderRequest["market"], failures: ProviderFailure[]) {
@@ -163,7 +166,7 @@ export async function fetchTradeRadarOhlcv(
 
   const details = formatProviderUnavailableMessage(request.market, failures, requestedProvider);
   throw new ProviderError(
-    requestedProvider === "auto" ? failures[0]?.provider ?? "twelveData" : requestedProvider,
+    requestedProvider === "auto" ? failures[0]?.provider ?? "yahoo" : requestedProvider,
     details || "No provider returned usable OHLCV data.",
   );
 }

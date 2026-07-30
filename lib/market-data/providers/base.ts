@@ -2,7 +2,7 @@ export type TradeRadarMarket = "us" | "argentina" | "cedear" | "crypto" | "bond"
 
 export type TradeRadarInterval = "1h" | "4h" | "1d";
 
-export type TradeRadarProviderName = "auto" | "twelveData" | "alphaVantage" | "fmp" | "byma" | "binance";
+export type TradeRadarProviderName = "auto" | "yahoo" | "twelveData" | "alphaVantage" | "fmp" | "byma" | "binance";
 
 export type DataDelay = "realtime" | "delayed" | "eod" | "unknown";
 

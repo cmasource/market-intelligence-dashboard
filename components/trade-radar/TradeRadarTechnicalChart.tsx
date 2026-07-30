@@ -61,7 +61,7 @@ export function TradeRadarTechnicalChart({ analysis }: TradeRadarTechnicalChartP
   const volumeData = useMemo(() => toVolumeData(analysis), [analysis]);
   const ema20Data = useMemo(() => toLineData(analysis.chartSeries.ema20), [analysis.chartSeries.ema20]);
   const ema50Data = useMemo(() => toLineData(analysis.chartSeries.ema50), [analysis.chartSeries.ema50]);
-  const ma200Data = useMemo(() => toLineData(analysis.chartSeries.ma200), [analysis.chartSeries.ma200]);
+  const ema200Data = useMemo(() => toLineData(analysis.chartSeries.ema200), [analysis.chartSeries.ema200]);
   const latestClose = analysis.ohlcv.at(-1)?.close;
 
   useEffect(() => {
@@ -125,10 +125,10 @@ export function TradeRadarTechnicalChart({ analysis }: TradeRadarTechnicalChartP
       priceLineVisible: false,
       lastValueVisible: false,
     });
-    const ma200Series = chart.addSeries(LineSeries, {
+    const ema200Series = chart.addSeries(LineSeries, {
       color: "#a78bfa",
       lineWidth: 2,
-      title: "MA200",
+      title: "EMA200",
       priceLineVisible: false,
       lastValueVisible: false,
     });
@@ -142,7 +142,7 @@ export function TradeRadarTechnicalChart({ analysis }: TradeRadarTechnicalChartP
     candleSeries.setData(candleData);
     ema20Series.setData(ema20Data);
     ema50Series.setData(ema50Data);
-    ma200Series.setData(ma200Data);
+    ema200Series.setData(ema200Data);
     volumeSeries.setData(volumeData);
     chart.priceScale("").applyOptions({ scaleMargins: { top: 0.78, bottom: 0 } });
 
@@ -181,10 +181,10 @@ export function TradeRadarTechnicalChart({ analysis }: TradeRadarTechnicalChartP
     analysis.levels.resistances,
     analysis.levels.supports,
     candleData,
+    ema200Data,
     ema20Data,
     ema50Data,
     latestClose,
-    ma200Data,
     volumeData,
   ]);
 
@@ -203,7 +203,7 @@ export function TradeRadarTechnicalChart({ analysis }: TradeRadarTechnicalChartP
         <div className="flex flex-wrap gap-2 text-xs">
           <span className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-cyan-100">EMA20</span>
           <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-amber-100">EMA50</span>
-          <span className="rounded-full border border-violet-300/25 bg-violet-300/10 px-3 py-1 text-violet-100">MA200</span>
+          <span className="rounded-full border border-violet-300/25 bg-violet-300/10 px-3 py-1 text-violet-100">EMA200</span>
         </div>
       </div>
 

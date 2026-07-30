@@ -9,7 +9,7 @@ const rows = [
 ];
 
 test("sortable tables order text alphabetically", () => {
-  const sorted = sortTableRows(rows, { key: "symbol", direction: "asc" }, {
+  const sorted = sortTableRows<(typeof rows)[number], "symbol" | "price">(rows, { key: "symbol", direction: "asc" }, {
     symbol: (row) => row.symbol,
     price: (row) => row.price,
   });

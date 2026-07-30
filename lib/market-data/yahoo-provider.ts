@@ -84,6 +84,52 @@ function normalizeCandles(result: YahooChartResult): MarketDataCandle[] {
   });
 }
 
+export async function getYahooChartCandles(
+  yahooSymbol: string,
+  options: { range: string; interval: string; revalidate: number },
+) {
+  const errors: string[] = [];
+
+  for (const host of ["query1.finance.yahoo.com", "query2.finance.yahoo.com"]) {
+    const url = new URL(`https://${host}/v8/finance/chart/${encodeURIComponent(yahooSymbol)}`);
+    url.searchParams.set("range", options.range);
+    url.searchParams.set("interval", options.interval);
+    url.searchParams.set("includePrePost", "false");
+
+    try {
+      const response = await fetch(url, {
+        headers: { "User-Agent": "CMA Markets" },
+        next: { revalidate: options.revalidate },
+        signal: AbortSignal.timeout(12_000),
+      });
+      if (!response.ok) {
+        errors.push(`${host} HTTP ${response.status}`);
+        continue;
+      }
+
+      const data = (await response.json()) as YahooChartResponse;
+      const providerError = data.chart?.error?.description;
+      const result = data.chart?.result?.[0];
+      if (providerError) {
+        errors.push(providerError);
+        continue;
+      }
+      if (!result) {
+        errors.push(`${host} returned no chart result`);
+        continue;
+      }
+
+      const candles = normalizeCandles(result);
+      if (candles.length) return candles;
+      errors.push(`${host} returned no usable candles`);
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : `${host} request failed`);
+    }
+  }
+
+  throw new Error(errors.join(" | ") || "Market history is unavailable.");
+}
+
 export async function getYahooMarketData(request: MarketDataRequest): Promise<MarketDataResponse> {
   const symbol = normalizeSymbol(request.symbol);
   const yahooSymbol = getYahooSymbol(symbol);
@@ -91,33 +137,19 @@ export async function getYahooMarketData(request: MarketDataRequest): Promise<Ma
   if (!yahooSymbol) return failureResponse(request, "Yahoo provider does not support this symbol in Sprint 5.");
 
   const timeframe = yahooTimeframes[request.timeframe];
-  const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}`);
-  url.searchParams.set("range", timeframe.range);
-  url.searchParams.set("interval", timeframe.interval);
-  url.searchParams.set("includePrePost", "false");
-
   try {
-    // Adaptador MVP sin credenciales. Puede reemplazarse por un proveedor licenciado en una etapa posterior.
-    const response = await fetch(url, {
-      headers: { "User-Agent": "CMA Market Intelligence market-data MVP" },
-      next: { revalidate: 60 },
+    const candles = await getYahooChartCandles(yahooSymbol, {
+      range: timeframe.range,
+      interval: timeframe.interval,
+      revalidate: 60,
     });
-
-    if (!response.ok) return failureResponse(request, `Yahoo provider returned HTTP ${response.status}.`);
-
-    const data = (await response.json()) as YahooChartResponse;
-    const providerError = data.chart?.error?.description;
-    const result = data.chart?.result?.[0];
-
-    if (providerError) return failureResponse(request, providerError);
-    if (!result) return failureResponse(request, "Yahoo provider returned no chart result.");
 
     return {
       symbol,
       provider: "yahoo",
       assetClass: request.assetClass ?? getAssetClassForMarketData(symbol),
       timeframe: request.timeframe,
-      candles: normalizeCandles(result),
+      candles,
       isFallback: false,
       sourceLabel: "Yahoo Finance compatible data",
       fetchedAt: new Date().toISOString(),

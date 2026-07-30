@@ -5,6 +5,7 @@ import { resolveInstrument } from "@/lib/instruments/resolveInstrument";
 import { searchInstruments } from "@/lib/instruments/searchInstruments";
 import { isProviderQuoteSupported } from "@/lib/market-data/provider-symbols";
 import { getYahooSymbol } from "@/lib/market-data/symbol-map";
+import { resolveTechnicalAnalysisSymbol } from "@/lib/analysis/technical-analysis-service";
 
 test("instrument search prioritizes exact US symbols and includes CEDEAR alternatives", () => {
   const results = searchInstruments({ query: "MSFT", limit: 5 });
@@ -53,12 +54,46 @@ test("fixed income instruments are quote only", () => {
   assert.deepEqual(resolution?.dataCoverage, ["quote_only"]);
 });
 
-test("crypto instruments resolve to Binance technical layer", () => {
+test("crypto instruments resolve to the canonical crypto technical layer", () => {
   const resolution = resolveInstrument({ symbol: "BTCUSDT" });
 
   assert.equal(resolution?.instrument.market, "crypto");
   assert.equal(resolution?.technicalLayer?.market, "crypto");
-  assert.equal(resolution?.technicalLayer?.description, "Binance OHLCV");
+  assert.equal(resolution?.technicalLayer?.symbol, "BTC-USD");
+  assert.equal(resolution?.technicalLayer?.description, "cripto OHLCV");
+});
+
+test("local equities without ADR resolve to their local public history", () => {
+  const resolution = resolveInstrument({ symbol: "BHIP" });
+
+  assert.equal(resolution?.technicalLayer?.symbol, "BHIP.BA");
+  assert.equal(resolution?.technicalLayer?.market, "argentina");
+  assert.equal(getYahooSymbol("BHIP.BA"), "BHIP.BA");
+  assert.equal(resolveTechnicalAnalysisSymbol("BHIP"), "BHIP.BA");
+});
+
+test("symbols with provider aliases share the canonical technical symbol", () => {
+  assert.equal(resolveTechnicalAnalysisSymbol("YPFD"), "YPF");
+  assert.equal(resolveTechnicalAnalysisSymbol("BTCUSDT"), "BTC-USD");
+  assert.equal(resolveTechnicalAnalysisSymbol("BRKB"), "BRK-B");
+  assert.equal(resolveTechnicalAnalysisSymbol("GOGLD"), "GOOGL");
+  assert.equal(resolveTechnicalAnalysisSymbol("ALAD"), "ALAB");
+  assert.equal(resolveTechnicalAnalysisSymbol("AKOBD"), "AKO-B");
+  assert.equal(resolveTechnicalAnalysisSymbol("BBAS3"), "BBAS3.SA");
+  assert.equal(resolveTechnicalAnalysisSymbol("BPA11"), "BPAC11.SA");
+  assert.equal(resolveTechnicalAnalysisSymbol("ADS"), "ADS.DE");
+  assert.equal(resolveTechnicalAnalysisSymbol("SMSN"), "SMSN.IL");
+});
+
+test("international CEDEARs retain their origin-market metadata", () => {
+  const brazil = resolveInstrument({ instrumentId: "cedear:BBAS3" });
+  const germany = resolveInstrument({ instrumentId: "cedear:ADS" });
+
+  assert.equal(brazil?.instrument.underlyingExchange, "B3");
+  assert.equal(brazil?.instrument.underlyingCurrency, "BRL");
+  assert.equal(brazil?.technicalLayer?.description, "subyacente internacional");
+  assert.equal(germany?.instrument.underlyingExchange, "XETRA");
+  assert.equal(germany?.instrument.underlyingCurrency, "EUR");
 });
 
 test("instrument status endpoint does not expose environment secrets", async () => {

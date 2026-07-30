@@ -2,14 +2,14 @@ import type { OhlcvBar } from "@/lib/market-data/providers/base";
 
 export type TechnicalLevel = {
   level: number;
-  type: "horizontal" | "ema20" | "ema50" | "ma200";
+  type: "horizontal" | "ema20" | "ema50" | "ema200";
   strength: number;
 };
 
 type DynamicLevelInput = {
   ema20: number | null;
   ema50: number | null;
-  ma200: number | null;
+  ema200: number | null;
 };
 
 type Cluster = {
@@ -67,7 +67,7 @@ function clusterLevels(points: Array<{ level: number; index: number }>, toleranc
 function dynamicLevel(level: number | null, type: TechnicalLevel["type"], price: number): TechnicalLevel | null {
   if (level === null || !Number.isFinite(level)) return null;
   const proximity = Math.max(0, 1 - Math.abs(price - level) / Math.max(price * 0.08, 1));
-  const base = type === "ma200" ? 68 : type === "ema50" ? 62 : 56;
+  const base = type === "ema200" ? 68 : type === "ema50" ? 62 : 56;
   return { level: roundLevel(level), type, strength: Math.min(90, Math.round(base + proximity * 20)) };
 }
 
@@ -92,7 +92,7 @@ export function calculateSupportResistance(
   const dynamicLevels = [
     dynamicLevel(dynamic.ema20, "ema20", price),
     dynamicLevel(dynamic.ema50, "ema50", price),
-    dynamicLevel(dynamic.ma200, "ma200", price),
+    dynamicLevel(dynamic.ema200, "ema200", price),
   ].filter((level): level is TechnicalLevel => level !== null);
 
   const allLevels = uniqueByLevel([...horizontal, ...dynamicLevels], tolerance);

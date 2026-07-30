@@ -6,7 +6,8 @@ test.describe("CMA Trade Radar", () => {
     await page.goto("/trade-radar", { waitUntil: "domcontentloaded" });
 
     await expect(page.getByRole("heading", { name: /CMA Trade Radar/ })).toBeVisible();
-    await expect(page.locator("body")).toContainText(/Datos US/);
+    await expect(page.locator("body")).toContainText(/Mercado global/);
+    await expect(page.locator("body")).toContainText(/Historial OHLCV público/);
 
     const tickerInput = page.getByPlaceholder("SPY, AAPL, BTCUSDT, AL30");
     await expect(tickerInput).toHaveValue("SPY");
@@ -20,7 +21,7 @@ test.describe("CMA Trade Radar", () => {
     await expect(page.locator("body")).toContainText(/Compra|Venta|Esperar/);
     await expect(page.locator("body")).toContainText(/EMA20/);
     await expect(page.locator("body")).toContainText(/EMA50/);
-    await expect(page.locator("body")).toContainText(/MA200/);
+    await expect(page.locator("body")).toContainText(/EMA200/);
     await expect(page.locator("body")).toContainText(/US Technical|Technical underlying|subyacente|CEDEAR/);
     await expect(page.locator("body")).not.toContainText(/Unhandled Runtime Error|Hydration failed|This page could not be found/i);
 

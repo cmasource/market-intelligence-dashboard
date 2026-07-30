@@ -24,7 +24,7 @@ curl "http://localhost:3000/api/trade-radar/analyze?symbol=BTC-USD&market=crypto
 
 Cada respuesta incluye proveedor, timestamp de ultima vela, delay (`realtime`, `delayed`, `eod`, `unknown`), moneda, mercado, cantidad de velas usadas, fuente, fallos de proveedores previos y lista de indicadores omitidos.
 
-El endpoint no usa IA para calcular indicadores. EMA 20, EMA 50, MA 200, RSI 14, ATR 14, volumen promedio, soportes, resistencias, senales y alertas se calculan en `lib/technical`.
+El endpoint no usa IA para calcular indicadores. EMA 20, EMA 50, EMA 200, RSI 14, ATR 14, volumen promedio, soportes, resistencias, senales y alertas se calculan en `lib/technical`.
 
 ## Proveedores
 
@@ -53,7 +53,7 @@ BINANCE_BASE_URL=https://api.binance.com
 ## Validaciones
 
 - No emite senales operativas si hay menos de 220 velas.
-- No calcula MA 200 si no hay al menos 200 cierres.
+- No calcula EMA 200 si no hay al menos 200 cierres.
 - No convierte un snapshot BYMA en OHLCV historico.
 - BYMA local muestra cotizacion, bid/ask, volumen y monto cuando el feed lo entrega.
 - No usa mock data para el radar.

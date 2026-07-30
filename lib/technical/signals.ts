@@ -12,7 +12,7 @@ type SignalInput = {
   price: number;
   ema20: number | null;
   ema50: number | null;
-  ma200: number | null;
+  ema200: number | null;
   rsi14: number | null;
   atr14: number | null;
   resistances: TechnicalLevel[];
@@ -23,15 +23,15 @@ function between(value: number, a: number, b: number) {
 }
 
 export function calculateSignals(input: SignalInput): RadarSignals {
-  const { price, ema20, ema50, ma200, rsi14, atr14, resistances } = input;
+  const { price, ema20, ema50, ema200, rsi14, atr14, resistances } = input;
   const hasCore = ema20 !== null && ema50 !== null && rsi14 !== null;
   let trendStatus = "sin_senal";
 
-  if (hasCore && ma200 !== null && price > ema20 && ema20 > ema50 && ema50 > ma200 && rsi14 > 55) {
+  if (hasCore && ema200 !== null && price > ema20 && ema20 > ema50 && ema50 > ema200 && rsi14 > 55) {
     trendStatus = "bullish_strong";
   } else if (hasCore && price < ema20 && ema20 < ema50 && rsi14 < 45) {
     trendStatus = "bearish";
-  } else if (hasCore && price > ema20 && (price < ema50 || (ma200 !== null && price < ma200))) {
+  } else if (hasCore && price > ema20 && (price < ema50 || (ema200 !== null && price < ema200))) {
     trendStatus = "rebote_alcista_corto_plazo";
   } else if (hasCore && price > ema20 && rsi14 > 50) {
     trendStatus = "bullish_short_term";
