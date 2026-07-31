@@ -15,7 +15,7 @@ import { nextSortState, sortTableRows, type SortState, type SortValue } from "@/
 
 type ReportView = "news" | "earnings" | "bonds" | "calculators";
 type EarningsEvent = { date?: string; epsEstimate?: number | null; quarter?: number; revenueEstimate?: number | null; symbol?: string; year?: number };
-type ListResponse<T> = { events?: T[]; articles?: NewsArticle[] };
+type ListResponse<T> = { events?: T[]; articles?: NewsArticle[]; error?: string };
 type EventRow = { cells: string[]; sortValues: SortValue[] };
 
 const views: Array<{ key: ReportView; es: string; en: string }> = [
@@ -44,17 +44,28 @@ export default function ReportsPage() {
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [earnings, setEarnings] = useState<EarningsEvent[]>([]);
   const [earningsQuery, setEarningsQuery] = useState("");
+  const [earningsError, setEarningsError] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
     Promise.allSettled([
       fetch("/api/news/market", { signal: controller.signal }).then((response) => response.json() as Promise<ListResponse<never>>),
-      fetch("/api/research/earnings", { signal: controller.signal }).then((response) => response.json() as Promise<ListResponse<EarningsEvent>>),
+      fetch("/api/research/earnings", { signal: controller.signal }).then(async (response) => {
+        const payload = await response.json() as ListResponse<EarningsEvent>;
+        if (!response.ok) throw new Error(payload.error ?? "No se pudo cargar el calendario de balances.");
+        return payload;
+      }),
     ]).then(([newsResult, earningsResult]) => {
       if (controller.signal.aborted) return;
       if (newsResult.status === "fulfilled") setNews((newsResult.value.articles ?? []).filter((article) => article.provider !== "mock"));
-      if (earningsResult.status === "fulfilled") setEarnings(earningsResult.value.events ?? []);
+      if (earningsResult.status === "fulfilled") {
+        setEarnings(earningsResult.value.events ?? []);
+        setEarningsError(undefined);
+      } else {
+        setEarnings([]);
+        setEarningsError(earningsResult.reason instanceof Error ? earningsResult.reason.message : "No se pudo cargar el calendario de balances.");
+      }
       setLoading(false);
     });
     return () => controller.abort();
@@ -127,6 +138,10 @@ export default function ReportsPage() {
             }))}
             empty={isSpanish ? "No hay balances para el rango consultado." : "No earnings events for the selected range."}
             search={{ value: earningsQuery, onChange: setEarningsQuery, placeholder: isSpanish ? "Buscar simbolo o empresa" : "Search symbol or company" }}
+            loading={loading}
+            error={earningsError}
+            key={earningsQuery}
+            loadingText={isSpanish ? "Cargando próximos balances..." : "Loading upcoming earnings..."}
           />
         ) : null}
 
@@ -142,15 +157,31 @@ function LoadingText({ isSpanish }: { isSpanish: boolean }) {
   return <p className="rounded-lg border border-white/10 bg-white/[0.035] p-4 text-sm text-slate-400">{isSpanish ? "Cargando..." : "Loading..."}</p>;
 }
 
-function EventTable({ title, columns, rows, empty, search }: { title: string; columns: string[]; rows: EventRow[]; empty: string; search?: { value: string; onChange: (value: string) => void; placeholder: string } }) {
+function EventTable({ title, columns, rows, empty, search, loading = false, error, loadingText }: { title: string; columns: string[]; rows: EventRow[]; empty: string; search?: { value: string; onChange: (value: string) => void; placeholder: string }; loading?: boolean; error?: string; loadingText?: string }) {
   const [sort, setSort] = useState<SortState<string>>({ key: "1", direction: "asc" });
+  const [page, setPage] = useState(0);
+  const pageSize = 30;
   const accessors = useMemo(() => Object.fromEntries(columns.map((_, index) => [String(index), (row: EventRow) => row.sortValues[index]])) as Record<string, (row: EventRow) => SortValue>, [columns]);
   const sortedRows = useMemo(() => sortTableRows(rows, sort, accessors), [accessors, rows, sort]);
+  const pageCount = Math.max(1, Math.ceil(sortedRows.length / pageSize));
+  const activePage = Math.min(page, pageCount - 1);
+  const visibleRows = sortedRows.slice(activePage * pageSize, (activePage + 1) * pageSize);
+
   return (
     <section className="cma-panel overflow-hidden">
       <div className="flex flex-col gap-3 border-b border-white/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-semibold text-white">{title}</h2><p className="mt-1 text-xs text-slate-500">{rows.length} resultados</p></div>{search ? <label className="relative w-full sm:max-w-xs"><Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" /><span className="sr-only">{search.placeholder}</span><input type="search" value={search.value} onChange={(event) => search.onChange(event.target.value)} placeholder={search.placeholder} className="h-10 w-full rounded-md border border-white/10 bg-slate-950/70 pl-9 pr-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-300/40" /></label> : null}</div>
-      {rows.length ? (
-        <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-white/[0.035] text-xs uppercase text-slate-500"><tr>{columns.map((column, index) => <SortableTableHeader key={column} columnKey={String(index)} label={column} activeKey={sort.key} direction={sort.direction} onSort={(key) => setSort((current) => nextSortState(current, key, index === 0 ? "asc" : "desc"))} />)}</tr></thead><tbody>{sortedRows.slice(0, 30).map((row, index) => <tr key={`${row.cells[0]}-${index}`} className="border-t border-white/10 hover:bg-cyan-300/[0.04]">{row.cells.map((cell, cellIndex) => <td key={`${cell}-${cellIndex}`} className={`px-4 py-3 ${cellIndex === 0 ? "font-semibold text-white" : "text-slate-300"}`}>{cell}</td>)}</tr>)}</tbody></table></div>
+      {loading ? <p className="p-6 text-sm text-slate-400">{loadingText ?? "Loading..."}</p> : error ? <p role="alert" className="p-6 text-sm text-rose-300">{error}</p> : rows.length ? (
+        <>
+          <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-white/[0.035] text-xs uppercase text-slate-500"><tr>{columns.map((column, index) => <SortableTableHeader key={column} columnKey={String(index)} label={column} activeKey={sort.key} direction={sort.direction} onSort={(key) => { setPage(0); setSort((current) => nextSortState(current, key, index === 0 ? "asc" : "desc")); }} />)}</tr></thead><tbody>{visibleRows.map((row, index) => <tr key={`${row.cells[0]}-${activePage * pageSize + index}`} className="border-t border-white/10 hover:bg-cyan-300/[0.04]">{row.cells.map((cell, cellIndex) => <td key={`${cell}-${cellIndex}`} className={`px-4 py-3 ${cellIndex === 0 ? "font-semibold text-white" : "text-slate-300"}`}>{cell}</td>)}</tr>)}</tbody></table></div>
+          <div className="flex flex-col gap-3 border-t border-white/10 px-5 py-4 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+            <span>Mostrando {activePage * pageSize + 1}-{Math.min((activePage + 1) * pageSize, sortedRows.length)} de {sortedRows.length}</span>
+            <div className="flex items-center gap-3">
+              <span>Página {activePage + 1} de {pageCount}</span>
+              <button type="button" disabled={activePage === 0} onClick={() => setPage((current) => Math.max(0, current - 1))} className="rounded-md border border-white/10 px-3 py-2 font-semibold text-slate-200 transition hover:border-cyan-300/40 disabled:cursor-not-allowed disabled:opacity-40">Anterior</button>
+              <button type="button" disabled={activePage >= pageCount - 1} onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))} className="rounded-md border border-white/10 px-3 py-2 font-semibold text-slate-200 transition hover:border-cyan-300/40 disabled:cursor-not-allowed disabled:opacity-40">Siguiente</button>
+            </div>
+          </div>
+        </>
       ) : <p className="p-6 text-sm text-slate-400">{empty}</p>}
     </section>
   );

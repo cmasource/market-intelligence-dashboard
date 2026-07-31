@@ -36,15 +36,30 @@ export async function GET(request: Request) {
     );
   }
 
+  const seen = new Set<string>();
+  const events = (result.data.earningsCalendar ?? [])
+    .filter((event) => event.symbol && event.date)
+    .filter((event) => {
+      const key = `${event.symbol}|${event.date}|${event.quarter ?? ""}|${event.year ?? ""}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((left, right) => {
+      const dateOrder = (left.date ?? "").localeCompare(right.date ?? "");
+      return dateOrder || (left.symbol ?? "").localeCompare(right.symbol ?? "");
+    });
+
   return Response.json(
     {
-      events: result.data.earningsCalendar ?? [],
+      events,
+      total: events.length,
       provider: "finnhub",
       sourceLabel: "Finnhub earnings calendar",
       isFallback: false,
       from,
       to,
     },
-    { headers: { "Cache-Control": "s-maxage=900, stale-while-revalidate=3600" } },
+    { headers: { "Cache-Control": "no-store" } },
   );
 }
