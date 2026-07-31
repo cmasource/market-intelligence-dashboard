@@ -102,9 +102,12 @@ export function CaucionesPanel() {
             </p>
           </div>
           {payload.source ? (
-            <a href={payload.source.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-200 hover:text-white">
-              {isSpanish ? "Ver fuente" : "View source"} <ExternalLink size={13} aria-hidden="true" />
-            </a>
+            <div className="flex flex-col items-start gap-1.5 lg:items-end">
+              <a href={payload.source.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-200 hover:text-white">
+                {isSpanish ? "Ver fuente" : "View source"} <ExternalLink size={13} aria-hidden="true" />
+              </a>
+              {payload.updatedAt ? <span className="text-xs text-slate-500">{isSpanish ? "Última operación" : "Last trade"}: {formatDateTime(payload.updatedAt)}</span> : null}
+            </div>
           ) : null}
         </div>
       </div>

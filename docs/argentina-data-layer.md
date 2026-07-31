@@ -4,14 +4,15 @@ CMA Market Intelligence now has a first Argentina data layer under `lib/argentin
 
 ## Purpose
 
-The layer prepares the platform for real local market coverage while keeping the public demo safe and deployable on Vercel. It does not scrape brokers and does not connect live BYMA, IOL, PPI or CNV APIs yet.
+The layer prepares the platform for real local market coverage while keeping the public demo safe and deployable on Vercel. The cauciones module has a dedicated public market-table adapter; the broader Argentina quote layer still does not depend on live BYMA, PPI or CNV APIs.
 
 ## Provider Order
 
-1. Validated manual JSON quotes.
-2. Structured mock fallback for known Argentina instruments.
-3. Future BYMA, CNV, broker or licensed-provider placeholders.
-4. Unavailable result.
+1. Current public invertirOnline cauciones table.
+2. Current-session PPI public cauciones page, when available.
+3. Validated manual JSON quotes for other Argentina instruments.
+4. Structured mock fallback for known Argentina instruments.
+5. Unavailable result.
 
 Manual data is marked as real but not real-time. Mock data is clearly labeled as structured simulation.
 
@@ -45,5 +46,5 @@ CNV remains separate from quote data:
 
 - BYMA integration is future-scoped and may require access, licensing or homologation.
 - CNV is planned for filings, relevant facts and fundamentals, not live intraday quotes.
-- IOL/PPI or other broker/API integrations require authorization.
-- No unauthorized scraping is part of this architecture.
+- Authorized IOL/PPI or other broker/API integrations remain separate from the public cauciones adapter.
+- The cauciones adapter reads the public table only and rejects stale sessions; it does not access private accounts or trading endpoints.
