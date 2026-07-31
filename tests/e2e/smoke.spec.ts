@@ -70,7 +70,7 @@ test.describe("CMA Markets public smoke tests", () => {
 
   test("dashboard exposes rankings, news, macro monitor and wallet rates", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByTestId("ranking-row")).toHaveCount(15);
+    await expect(page.getByTestId("ranking-row")).toHaveCount(15, { timeout: 30_000 });
     await expect(page.getByRole("heading", { name: /Argentina and global pulse|Pulso argentino y global/ })).toBeVisible();
     await expect(page.getByRole("heading", { name: /Macro data and peso yields|Datos macro y rendimientos en pesos/ })).toBeVisible();
     await expect(page.locator("body")).toContainText(/IPC mensual/);
@@ -81,7 +81,7 @@ test.describe("CMA Markets public smoke tests", () => {
     test.setTimeout(120_000);
     await page.goto("/");
     const ranking = page.getByTestId("ranking-row").first();
-    await expect(ranking).toHaveAttribute("href", /^\/asset\//);
+    await expect(ranking).toHaveAttribute("href", /^\/asset\//, { timeout: 30_000 });
 
     await page.getByLabel(/Asset search|Busqueda de activos/).fill("Microsoft");
     const result = page.locator('#markets a[href="/asset/MSFT"]').first();

@@ -13,7 +13,7 @@ CMA Market Intelligence uses a provider chain and fallback-safe demo data strate
 
 ## Sprint 25 rankings
 
-The rankings module uses the existing internal universe, available scores, fallback OHLCV history and coverage metadata. It does not expose API keys and does not require authentication or a database.
+The rankings module uses a liquid subset of the internal universe and recalculates scores with the shared provider-backed technical and fundamental services. Results refresh every two minutes, exclude unavailable instruments, do not expose API keys and do not require authentication or a database.
 
 ## External references
 

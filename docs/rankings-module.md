@@ -11,17 +11,16 @@ Sprint 25 adds market ranking modules to the homepage and API layer.
 
 ## Universe
 
-Rankings start from the existing CMA Market Intelligence universe:
+Rankings evaluate a liquid cross-market subset of the existing CMA Market Intelligence universe:
 
-- `mockAssets`
-- USA stocks and ETFs already covered by provider/fallback flows
+- USA stocks and ETFs already covered by provider flows
 - crypto instruments
 - Argentine equities
 - CEDEAR-related instruments
 - sovereign bond species and CER-linked examples
 - instrument-universe metadata for coverage accounting
 
-The module does not hardcode only AAPL/TSLA and does not introduce a database.
+The candidate set is explicit to protect free provider quotas, while every score and return is recalculated with the shared live technical and fundamental services. The result is cached for two minutes and does not introduce a database.
 
 ## Compliance language
 
@@ -39,9 +38,9 @@ The module avoids direct investment recommendation wording.
 
 ## Sources and limitations
 
-Rankings combine available local data structures, provider/fallback market data, mock OHLCV series, technical indicators and fallback fundamentals. The source chip on each row distinguishes provider/fallback, local structured coverage, crypto fallback, or fixed income structured data.
+Rankings combine provider market history, technical indicators and available provider/manual fundamentals. Instruments without usable current coverage are excluded instead of receiving a simulated score.
 
-Performance rankings use the same fallback-safe OHLCV engine already used elsewhere in the app when historical provider data is unavailable. The UI labels this as estimated/fallback rather than pretending precision.
+Performance rankings calculate 30D, 180D and YTD returns from the same verified one-year OHLCV series used by the technical engine.
 
 ## Finviz note
 

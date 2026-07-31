@@ -43,6 +43,12 @@ export type TechnicalAnalysisResponse = {
   candlesCount: number;
   snapshot: TechnicalIndicatorSnapshot;
   technicalScore: number;
+  dailyChangePercent: number | null;
+  periodReturns: {
+    "30D": number | null;
+    "180D": number | null;
+    YTD: number | null;
+  };
   interpretation: TechnicalInterpretation;
   warnings?: string[];
   analysisWarnings?: string[];

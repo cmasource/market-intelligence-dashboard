@@ -6,7 +6,7 @@ import {
 } from "@/lib/finance/technical";
 import { getMarketData } from "@/lib/market-data";
 import { normalizeSymbol } from "@/lib/market-data/symbol-map";
-import type { MarketDataResponse } from "@/lib/market-data/types";
+import type { MarketDataCandle, MarketDataResponse } from "@/lib/market-data/types";
 import { resolveInstrument } from "@/lib/instruments/resolveInstrument";
 import type { Timeframe } from "@/types/chart";
 import { calculateRecentResistance, calculateRecentSupport, calculateVolumeTrend } from "./support-resistance";
@@ -25,6 +25,34 @@ function latestValue(values: Array<number | null>) {
   }
 
   return null;
+}
+
+function percentageChange(first: number | undefined, last: number | undefined) {
+  if (!Number.isFinite(first) || !Number.isFinite(last) || !first) return null;
+  return Number(((((last as number) - (first as number)) / (first as number)) * 100).toFixed(4));
+}
+
+function closeAtOrAfter(candles: MarketDataCandle[], timestamp: number) {
+  return candles.find((candle) => candle.time >= timestamp)?.close;
+}
+
+export function calculatePeriodReturns(candles: MarketDataCandle[]) {
+  const sorted = candles
+    .filter((candle) => Number.isFinite(candle.time) && Number.isFinite(candle.close) && candle.close > 0)
+    .sort((left, right) => left.time - right.time);
+  const latest = sorted.at(-1);
+
+  if (!latest) return { "30D": null, "180D": null, YTD: null };
+
+  const secondsPerDay = 86_400;
+  const latestDate = new Date(latest.time * 1000);
+  const startOfYear = Date.UTC(latestDate.getUTCFullYear(), 0, 1) / 1000;
+
+  return {
+    "30D": percentageChange(closeAtOrAfter(sorted, latest.time - 30 * secondsPerDay), latest.close),
+    "180D": percentageChange(closeAtOrAfter(sorted, latest.time - 180 * secondsPerDay), latest.close),
+    YTD: percentageChange(closeAtOrAfter(sorted, startOfYear), latest.close),
+  };
 }
 
 function buildWarnings(candlesCount: number, snapshot: TechnicalIndicatorSnapshot, language: "en" | "es") {
@@ -73,6 +101,7 @@ function analyzeMarketData(
     volatilityLabel: marketData.isFallback ? "Fallback data volatility" : "Provider data volatility",
   };
   const technicalScore = calculateTechnicalScore(snapshot);
+  const dailyChangePercent = percentageChange(closes.at(-2), closes.at(-1));
   const warnings = [...extraWarnings, ...buildWarnings(marketData.candles.length, snapshot, language)];
 
   return {
@@ -84,6 +113,8 @@ function analyzeMarketData(
     candlesCount: marketData.candles.length,
     snapshot,
     technicalScore,
+    dailyChangePercent,
+    periodReturns: calculatePeriodReturns(marketData.candles),
     interpretation: buildTechnicalInterpretation(snapshot, technicalScore, language),
     warnings,
     analysisWarnings: warnings,
@@ -127,6 +158,8 @@ export function getFallbackTechnicalAnalysis(symbol: string, timeframe: Timefram
     candlesCount: 0,
     snapshot,
     technicalScore: 0,
+    dailyChangePercent: null,
+    periodReturns: { "30D": null, "180D": null, YTD: null },
     interpretation: buildTechnicalInterpretation(snapshot, 0, language),
     warnings,
     analysisWarnings: warnings,

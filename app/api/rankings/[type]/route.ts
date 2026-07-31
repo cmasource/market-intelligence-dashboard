@@ -8,7 +8,7 @@ export async function GET(
   try {
     const { type } = await params;
     const url = new URL(request.url);
-    const ranking = getRankingByType(type, url.searchParams.get("period") ?? undefined);
+    const ranking = await getRankingByType(type, url.searchParams.get("period") ?? undefined);
 
     if (!ranking) {
       return NextResponse.json(
@@ -20,7 +20,9 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(ranking);
+    return NextResponse.json(ranking, {
+      headers: { "Cache-Control": "public, max-age=0, s-maxage=120, stale-while-revalidate=600" },
+    });
   } catch {
     return NextResponse.json(
       {

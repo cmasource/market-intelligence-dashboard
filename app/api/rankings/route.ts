@@ -3,7 +3,9 @@ import { getRankingsBundle } from "@/lib/rankings";
 
 export async function GET() {
   try {
-    return NextResponse.json(getRankingsBundle());
+    return NextResponse.json(await getRankingsBundle(), {
+      headers: { "Cache-Control": "public, max-age=0, s-maxage=120, stale-while-revalidate=600" },
+    });
   } catch {
     return NextResponse.json(
       {
