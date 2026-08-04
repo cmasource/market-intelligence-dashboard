@@ -12,14 +12,14 @@ export default function WatchlistPage() {
     <AppShell>
       <div className="space-y-6 py-6">
         <section className="cma-panel-elevated p-6">
-          <p className="cma-kicker">{language === "es" ? "Seguimiento local" : "Local tracking"}</p>
+          <p className="cma-kicker">{language === "es" ? "Seguimiento de mercado" : "Market tracking"}</p>
           <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1 className="text-4xl font-semibold tracking-tight text-white">{language === "es" ? "Mis listas" : "My watchlists"}</h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
                 {language === "es"
-                  ? "Organizá activos en múltiples listas locales. Son listas de seguimiento: no representan posiciones, operaciones ni rendimiento."
-                  : "Organize assets in multiple local watchlists. They do not represent positions, trades, or performance."}
+                  ? "Organizá activos en múltiples listas. Si iniciás sesión, tus listas quedan asociadas a tu cuenta; sin sesión, permanecen sólo en este navegador. No representan posiciones, operaciones ni rendimiento."
+                  : "Organize assets in multiple lists. When signed in, your lists belong to your account; without a session, they remain only in this browser. They do not represent positions, trades, or performance."}
               </p>
             </div>
             <div className="flex flex-wrap gap-3">

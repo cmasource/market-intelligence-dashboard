@@ -4,7 +4,7 @@
 
 This phase adds email/password registration and sign-in, email confirmation, password recovery and update, Google OAuth with PKCE, sign-out, cookie-backed session refresh, basic Auth metadata, and the private `/account` route.
 
-Watchlists remain browser-local. Authentication does not read, write, import, delete, or synchronize watchlist `localStorage` data. No portfolio, position, alert, role, advisor, admin, or cross-device schema is included.
+Anonymous watchlists remain browser-local. Authenticated users use account-owned Supabase watchlists with RLS; signing in does not import or delete the anonymous `localStorage` lists. No portfolio, position, alert, role, advisor, admin, or cross-device schema is included.
 
 ## Project configuration
 
@@ -45,7 +45,7 @@ The app sends Google back to `/auth/callback`, where `exchangeCodeForSession` co
 - `/account` is optimistically redirected by Proxy and independently validates the current user with `auth.getUser()` in its Server Component.
 - Auth callbacks and login return paths accept only same-origin relative destinations to prevent open redirects.
 
-No database table or SQL migration is required for this phase. The display name is stored in Supabase Auth user metadata and is not used for authorization.
+Account watchlists are stored in `public.watchlists` and `public.watchlist_items`, protected by ownership-based RLS. The display name is stored in Supabase Auth user metadata and is not used for authorization. Anonymous lists remain local and intentionally separate from account lists.
 
 ## Verification
 

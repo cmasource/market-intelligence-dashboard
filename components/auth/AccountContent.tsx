@@ -60,10 +60,9 @@ export function AccountContent({ email, displayName, provider, createdAt, passwo
         </section>
 
         <section className="rounded-lg border border-amber-300/20 bg-amber-300/[0.05] p-5 text-sm leading-6 text-[var(--cma-text-secondary)]">
-          <strong className="text-[var(--cma-text-primary)]">{isSpanish ? "Watchlists locales:" : "Local watchlists:"}</strong>{" "}{isSpanish ? "iniciar sesión no modifica, importa ni sincroniza tus listas. Permanecen en el almacenamiento de este navegador." : "signing in does not change, import, or sync your lists. They remain in this browser's storage."}
+          <strong className="text-[var(--cma-text-primary)]">{isSpanish ? "Listas de cuenta:" : "Account watchlists:"}</strong>{" "}{isSpanish ? "las listas que crees mientras estás autenticado quedan asociadas a tu cuenta. Las listas anónimas siguen separadas y permanecen sólo en este navegador." : "lists created while signed in belong to your account. Anonymous lists remain separate and stay only in this browser."}
         </section>
       </div>
     </AppShell>
   );
 }
-

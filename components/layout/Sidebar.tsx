@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { AuthNavigation } from "@/components/auth/AuthNavigation";
 import { useLanguage } from "@/lib/i18n/useLanguage";
-import { getWatchlistCount, WATCHLIST_UPDATED_EVENT } from "@/lib/watchlist";
+import { getWatchlistCountAsync, WATCHLIST_UPDATED_EVENT } from "@/lib/watchlist";
 import { AppearanceToggle } from "./AppearanceToggle";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
@@ -66,7 +66,7 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
   }, []);
 
   useEffect(() => {
-    const sync = () => setWatchlistCount(getWatchlistCount());
+    const sync = () => { void getWatchlistCountAsync().then(setWatchlistCount); };
     sync();
     window.addEventListener(WATCHLIST_UPDATED_EVENT, sync);
     window.addEventListener("storage", sync);

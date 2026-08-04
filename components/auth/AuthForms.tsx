@@ -65,11 +65,14 @@ function StateMessage({ state }: { state: AuthActionState }) {
 function GoogleButton({ next, configured }: { next: string; configured: boolean }) {
   const { language } = useLanguage();
   const [error, setError] = useState(false);
+  const [pending, setPending] = useState(false);
 
   async function signInWithGoogle() {
     setError(false);
+    setPending(true);
     if (!configured) {
       setError(true);
+      setPending(false);
       return;
     }
     const callback = new URL("/auth/callback", window.location.origin);
@@ -79,7 +82,10 @@ function GoogleButton({ next, configured }: { next: string; configured: boolean 
       provider: "google",
       options: { redirectTo: callback.toString() },
     });
-    if (oauthError) setError(true);
+    if (oauthError) {
+      setError(true);
+      setPending(false);
+    }
   }
 
   return (
@@ -87,10 +93,12 @@ function GoogleButton({ next, configured }: { next: string; configured: boolean 
       <button
         type="button"
         onClick={signInWithGoogle}
-        className="inline-flex min-h-11 w-full items-center justify-center gap-3 rounded-md border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] px-4 text-sm font-semibold text-[var(--cma-text-primary)] transition hover:border-[var(--cma-border-strong)]"
+        disabled={pending}
+        aria-busy={pending}
+        className="group inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-md border border-[var(--cma-border-strong)] bg-white px-4 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-px hover:border-slate-400 hover:bg-slate-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/80 disabled:cursor-wait disabled:opacity-70"
       >
-        <span aria-hidden="true" className="grid h-5 w-5 place-items-center rounded-full bg-white text-xs font-bold text-blue-600">G</span>
-        {language === "es" ? "Continuar con Google" : "Continue with Google"}
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" role="img"><path fill="#4285F4" d="M21.6 12.23c0-.78-.07-1.53-.2-2.25H12v4.26h5.38a4.6 4.6 0 0 1-1.99 3.02v2.51h3.22c1.89-1.74 2.99-4.3 2.99-7.54Z"/><path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.61-2.43l-3.22-2.51c-.9.6-2.05.96-3.39.96-2.61 0-4.82-1.76-5.61-4.13H3.06v2.59A9.98 9.98 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.39 13.89A6 6 0 0 1 6.07 12c0-.66.11-1.3.32-1.89V7.52H3.06A10 10 0 0 0 2 12c0 1.61.39 3.13 1.06 4.48l3.33-2.59Z"/><path fill="#EA4335" d="M12 5.98c1.47 0 2.79.5 3.83 1.49l2.87-2.87C16.95 2.9 14.7 2 12 2a9.98 9.98 0 0 0-8.94 5.52l3.33 2.59C7.18 7.74 9.39 5.98 12 5.98Z"/></svg>
+        {pending ? (language === "es" ? "Conectando..." : "Connecting...") : language === "es" ? "Continuar con Google" : "Continue with Google"}
       </button>
       {error ? <p role="alert" className="mt-2 text-sm text-rose-200">{language === "es" ? "No pudimos iniciar el acceso con Google." : "Google sign-in could not be started."}</p> : null}
     </div>
