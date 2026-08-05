@@ -60,7 +60,8 @@ export type ArbitrageIssueCode =
   | "observed_at_unavailable"
   | "verify_final_price"
   | "provider_partial_data"
-  | "settlement_delay";
+  | "settlement_delay"
+  | "volume_specific_quote";
 
 export type FxProvider = {
   id: string;
@@ -109,6 +110,7 @@ export type FxQuote = {
   originalBuyLabel?: string;
   originalSellLabel?: string;
   quoteCurrency: "ARS";
+  quotedAmountUsd?: number;
   observedAt?: string;
   fetchedAt: string;
   sourceUrl?: string;
@@ -190,7 +192,7 @@ export type ArbitrageQuotesResponse = {
   cache: {
     plusTtlSeconds: number;
     bnaTtlSeconds: number;
-    dolarApiTtlSeconds: number;
+    criptoYaTtlSeconds: number;
   };
   disclaimer: "informational_only";
 };

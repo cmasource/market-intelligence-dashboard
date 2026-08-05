@@ -9,6 +9,7 @@ const POLICIES: Record<string, FreshnessPolicy> = {
   belo: DEFAULT_POLICY,
   dolarapp: DEFAULT_POLICY,
   satoshitango: DEFAULT_POLICY,
+  fiwind: DEFAULT_POLICY,
 };
 
 export function quoteAgeSeconds(quote: FxQuote, now = new Date()) {

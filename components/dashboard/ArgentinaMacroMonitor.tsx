@@ -12,6 +12,8 @@ type MacroMetric = {
   date: string;
   change: number | null;
   series: Array<{ fecha: string; valor: number }>;
+  source?: string;
+  sourceUrl?: string;
 };
 
 type WalletRate = { name: string; tna: number; tea: number; cap: number | null; date: string; conditions: string | null };
@@ -45,7 +47,7 @@ export function ArgentinaMacroMonitor() {
     return () => controller.abort();
   }, []);
 
-  const macro = useMemo(() => metrics.filter((metric) => [1, 27, 28, 30, 12, 29].includes(metric.id)), [metrics]);
+  const macro = useMemo(() => metrics.filter((metric) => [1, 27, 28, 30, 31, 12, 29].includes(metric.id)), [metrics]);
 
   return (
     <section className="cma-panel overflow-hidden">
@@ -68,7 +70,10 @@ export function ArgentinaMacroMonitor() {
                 <article key={metric.id} className="rounded-md border border-white/8 bg-white/[0.025] px-3.5 py-3 transition hover:border-cyan-300/15 hover:bg-cyan-300/[0.025]">
                   <div className="flex min-h-10 items-start justify-between gap-3"><p className="text-[11px] font-semibold uppercase leading-4 text-slate-400">{metric.label}</p>{typeof metric.change === "number" ? <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold tabular-nums ${positive ? "text-emerald-300" : "text-rose-300"}`}><ChangeIcon size={12} />{Math.abs(metric.change).toLocaleString("es-AR", { maximumFractionDigits: 2 })}</span> : null}</div>
                   <div className="mt-2 flex items-baseline gap-2"><p className="text-xl font-semibold tabular-nums text-white">{formatMetric(metric)}</p><span className="text-[11px] text-slate-500">{metric.unit}</span></div>
-                  <p className="mt-2 text-[10px] text-slate-600">{isSpanish ? "Actualizado" : "Updated"} {date}</p>
+                  <p className="mt-2 text-[10px] text-slate-600">
+                    {isSpanish ? "Actualizado" : "Updated"} {date}
+                    {metric.source ? <> · {metric.sourceUrl ? <a href={metric.sourceUrl} target="_blank" rel="noopener noreferrer" className="hover:text-cyan-200">{metric.source}</a> : metric.source}</> : null}
+                  </p>
                 </article>
               );
             })}

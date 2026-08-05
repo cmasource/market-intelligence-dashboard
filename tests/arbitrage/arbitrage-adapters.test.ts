@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parseBnaBilleteHtml } from "../../lib/arbitrage/adapters/bna";
-import { normalizeDolarApiExchangePayload } from "../../lib/arbitrage/adapters/dolar-api";
+import { normalizeCriptoYaPayloads } from "../../lib/arbitrage/adapters/criptoya";
 import { errorResult } from "../../lib/arbitrage/adapters/shared";
 import { normalizePlusPayload } from "../../lib/arbitrage/adapters/plus";
 import { getFreshnessStatus } from "../../lib/arbitrage/freshness";
@@ -44,29 +44,46 @@ test("normalizes BNA entity Compra/Venta labels to the user perspective", () => 
   assert.equal(quote?.originalSellLabel, "Compra");
 });
 
-test("DolarApi keeps stablecoin assets separate and preserves partial data", () => {
-  const result = normalizeDolarApiExchangePayload([
-    { exchange: "belo", compra: 1581, venta: 1561, criptomonedaBase: "USDT" },
-    { exchange: "dolarapp", compra: 1563.35, venta: 1560.93, criptomonedaBase: "USDC" },
-    { exchange: "satoshitango", compra: 1554.4, venta: null, criptomonedaBase: "USDT" },
-    { exchange: "belo", compra: 1500, venta: 1490, criptomonedaBase: "USD_AR" },
-  ], fetchedAt);
-  assert.equal(result.status, "partial");
+test("CriptoYa normalizes effective stablecoin prices, assets, timestamps and reference volume", () => {
+  const result = normalizeCriptoYaPayloads({
+    USDT: {
+      fiwind: { ask: 1578, totalAsk: 1580, bid: 1565, totalBid: 1563, time: 1785959274 },
+      belo: { ask: 1584, totalAsk: 1584, bid: 1564, totalBid: 1564, time: 1785959272 },
+      unsupported: { ask: 1, bid: 1, time: 1785959272 },
+    },
+    USDC: {
+      dolarapp: { ask: 1570.68, totalAsk: 1570.68, bid: 1567.411, totalBid: 1567.411, time: 1785959355 },
+    },
+  }, "2026-08-05T20:00:00.000Z");
+  assert.equal(result.status, "success");
   assert.equal(result.quotes.length, 3);
-  assert.deepEqual(result.quotes.map((quote) => quote.transferAsset), ["USDT", "USDC", "USDT"]);
-  assert.equal(result.quotes[2]?.userSellsUsdAt, undefined);
-  assert.ok(result.quotes.every((quote) => quote.warnings.includes("observed_at_unavailable")));
-  assert.ok(result.quotes.every((quote) => quote.observedAt === undefined));
-  assert.ok(result.quotes.every((quote) => getFreshnessStatus(quote) === "unverifiable"));
+  assert.deepEqual(result.quotes.map((quote) => quote.transferAsset), ["USDT", "USDT", "USDC"]);
+  assert.equal(result.quotes[0]?.userBuysUsdAt, 1580);
+  assert.equal(result.quotes[0]?.userSellsUsdAt, 1563);
+  assert.equal(result.quotes[0]?.observedAt, "2026-08-05T19:47:54.000Z");
+  assert.equal(result.quotes[0]?.quotedAmountUsd, 1000);
+  assert.ok(result.quotes.every((quote) => quote.warnings.includes("volume_specific_quote")));
   assert.ok(result.quotes.every((quote) => quote.verification.quote === "reference_only"));
 });
 
-test("Fiwind remains unavailable while documented USD transfer capabilities are modeled independently", () => {
+test("CriptoYa invalid or future timestamps are never treated as fresh observations", () => {
+  const result = normalizeCriptoYaPayloads({
+    USDT: { fiwind: { ask: 1578, bid: 1565, time: 4_000_000_000 } },
+  }, "2026-08-05T18:30:00.000Z");
+  const quote = result.quotes[0];
+  assert.equal(result.status, "partial");
+  assert.equal(quote?.observedAt, undefined);
+  assert.equal(quote?.status, "stale");
+  assert.equal(getFreshnessStatus(quote!), "stale");
+  assert.ok(quote?.warnings.includes("observed_at_unavailable"));
+});
+
+test("Fiwind is integrated as an aggregator reference without upgrading route capabilities", () => {
   const fiwind = getArbitrageProvider("fiwind");
-  assert.equal(fiwind?.status, "temporarily_unavailable");
-  assert.equal(fiwind?.sourceType, "unavailable");
-  assert.equal(fiwind?.verification.deposit, "verified");
-  assert.equal(fiwind?.verification.withdrawal, "verified");
+  assert.equal(fiwind?.status, "active");
+  assert.equal(fiwind?.sourceType, "aggregator");
+  assert.equal(fiwind?.verification.deposit, "partially_verified");
+  assert.equal(fiwind?.verification.withdrawal, "partially_verified");
   assert.equal(fiwind?.verification.sameHolder, "verified");
 });
 

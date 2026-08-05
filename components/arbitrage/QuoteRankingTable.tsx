@@ -3,7 +3,7 @@ import { getInstrumentLabel, getQuoteStatusLabel, getVerificationLabel, type Arb
 import { getFreshnessStatus } from "@/lib/arbitrage/freshness";
 import type { FxProvider, FxQuote } from "@/lib/arbitrage/types";
 import type { Language } from "@/lib/i18n/types";
-import { formatAge, formatArs, formatTimestamp } from "./format";
+import { formatAge, formatArs, formatTimestamp, formatUsd } from "./format";
 
 type QuoteRankingTableProps = {
   mode: "buy" | "sell";
@@ -70,7 +70,7 @@ export function QuoteRankingTable({ mode, quotes, providers, language, t }: Quot
                 <tr key={quote.id} className="border-t border-[var(--cma-border-soft)]">
                   <td className="px-4 py-3 font-semibold text-[var(--cma-text-primary)]">{provider?.name ?? quote.providerId}</td>
                   <td className="px-4 py-3 text-[var(--cma-text-secondary)]">{getInstrumentLabel(quote.instrument, t)}</td>
-                  <td className="px-4 py-3 font-semibold text-[var(--cma-text-primary)]">{rate ? formatArs(rate, language) : "-"}</td>
+                  <td className="px-4 py-3 font-semibold text-[var(--cma-text-primary)]">{rate ? formatArs(rate, language) : "-"}{quote.quotedAmountUsd ? <span className="mt-1 block text-[10px] font-normal text-[var(--cma-text-muted)]">{t("arbitrageReferenceVolume", { value: formatUsd(quote.quotedAmountUsd, language) })}</span> : null}</td>
                   <td className="px-4 py-3 text-[var(--cma-text-secondary)]">{quote.transferAsset}</td>
                   <td className="px-4 py-3 text-[var(--cma-text-secondary)]">{capabilityLabel(capability, t)}</td>
                   <td className="px-4 py-3 text-xs text-[var(--cma-text-secondary)]">{limitsLabel(quote, t)}</td>

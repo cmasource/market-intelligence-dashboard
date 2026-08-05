@@ -11,6 +11,7 @@ type TickerItem = {
   source: string;
   updatedAt: string | null;
   status: "ok" | "unavailable";
+  quality?: "primary" | "fallback";
 };
 
 type TickerResponse = {
@@ -32,6 +33,18 @@ function formatChange(value: number | null) {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
   const sign = value > 0 ? "+" : "";
   return `${sign}${value.toFixed(2)}%`;
+}
+
+function formatUpdatedAt(value: string) {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "America/Argentina/Buenos_Aires",
+  }).format(new Date(value));
 }
 
 export function MarketTicker() {
@@ -85,7 +98,7 @@ export function MarketTicker() {
           const isPositive = typeof item.changePercent === "number" && item.changePercent >= 0;
 
           return (
-            <span className="cma-market-tape-item" key={`${item.id}-${index}`}>
+            <span className="cma-market-tape-item" key={`${item.id}-${index}`} title={`${item.source}${item.updatedAt ? ` · ${formatUpdatedAt(item.updatedAt)}` : ""}`}>
               <span className="font-semibold text-slate-100">{item.label}</span>
               <span className="font-semibold tabular-nums text-white">{formatValue(item)}</span>
               <span className="text-[var(--cma-text-muted)]">{item.currency}</span>

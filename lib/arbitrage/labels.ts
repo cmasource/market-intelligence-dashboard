@@ -25,6 +25,7 @@ const issueKeys: Record<ArbitrageIssueCode, string> = {
   verify_final_price: "arbitrageIssueVerifyPrice",
   provider_partial_data: "arbitrageIssuePartial",
   settlement_delay: "arbitrageIssueSettlement",
+  volume_specific_quote: "arbitrageIssueReferenceVolume",
 };
 
 const instrumentKeys: Record<FxInstrument, string> = {

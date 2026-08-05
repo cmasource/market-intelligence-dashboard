@@ -62,7 +62,7 @@ La validación real del 5 de agosto de 2026 encontró en Plus el campo `date: "2
 
 ## 13. Caché
 
-La caché server-side es efímera y diferenciada: Plus 60 segundos, Banco Nación 300 segundos y DolarApi 60 segundos. Se deduplican solicitudes concurrentes. Ante un fallo se reutiliza el último valor válido únicamente como `stale_fallback`, marcado desactualizado. No hay polling por segundo; la actualización manual usa `refresh=1`.
+La caché server-side es efímera y diferenciada: Plus 60 segundos, Banco Nación 300 segundos y CriptoYa 60 segundos. El adapter de CriptoYa consulta USDT y USDC en paralelo y respeta ampliamente su límite público de 120 solicitudes por minuto. Se deduplican solicitudes concurrentes. Ante un fallo se reutiliza el último valor válido únicamente como `stale_fallback`, marcado desactualizado. No hay polling por segundo; la actualización manual usa `refresh=1`.
 
 ## 14. Endpoint
 
@@ -82,7 +82,7 @@ Todas las consultas externas se hacen en servidor a fuentes públicas verificada
 
 ## 18. Limitaciones
 
-Las fuentes públicas pueden cambiar estructura o disponibilidad. La cotización publicada puede diferir del precio final. Los costos, límites, horarios, titularidad y acreditación no siempre están publicados. DolarApi es un agregador y sus filas observadas no incluyeron timestamp original; por eso sus rutas no se presentan como operativamente verificadas. No se modelaron conversiones intermedias ni liquidación MEP en esta fase.
+Las fuentes públicas pueden cambiar estructura o disponibilidad. La cotización publicada puede diferir del precio final. Los costos, límites, horarios, titularidad y acreditación no siempre están publicados. CriptoYa es un agregador: aunque aporta epoch de observación y precios `totalAsk`/`totalBid` para el volumen consultado, no confirma capacidades operativas, red de retiro ni todos los costos. Las cotizaciones continúan como referencias y no se modelaron conversiones intermedias ni liquidación MEP.
 
 ## 19. Archivos del módulo
 

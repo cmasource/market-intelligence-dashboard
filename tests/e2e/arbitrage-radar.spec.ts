@@ -6,7 +6,7 @@ const providers = [
   { id: "plus", name: "Plus", providerType: "exchange_agency", operates24x7: true, supportsArsDeposit: true, supportsArsWithdrawal: true, supportsUsdDeposit: true, supportsUsdWithdrawal: true, requiresSameHolderAccount: true, sourceType: "public_endpoint", status: "active", verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "verified" } },
   { id: "bna", name: "Banco Nación", providerType: "bank", operates24x7: false, supportsArsDeposit: true, supportsArsWithdrawal: true, supportsUsdDeposit: true, supportsUsdWithdrawal: true, requiresSameHolderAccount: true, sourceType: "public_page", status: "active", verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "verified" } },
   { id: "satoshitango", name: "Satoshi Tango", providerType: "exchange", operates24x7: true, sourceType: "aggregator", status: "active", verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "unverified", availability24x7: "reference_only" } },
-  { id: "fiwind", name: "Fiwind", providerType: "wallet", operates24x7: true, sourceType: "unavailable", status: "temporarily_unavailable", verification: { deposit: "verified", withdrawal: "verified", sameHolder: "verified", transferAsset: "verified", availability24x7: "partially_verified" } },
+  { id: "fiwind", name: "Fiwind", providerType: "wallet", operates24x7: true, sourceType: "aggregator", status: "active", verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "verified", transferAsset: "partially_verified", availability24x7: "partially_verified" } },
   { id: "galicia", name: "Banco Galicia", providerType: "bank", sourceType: "unavailable", status: "unsupported", verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "unverified", availability24x7: "unverified" } },
 ] as const;
 
@@ -38,6 +38,7 @@ function response({ negative = false } = {}) {
     quote({ id: "plus-usd", providerId: "plus", instrument: "usd_24_7", userBuysUsdAt: negative ? 1519 : 1500, userSellsUsdAt: 1490 }),
     quote({ id: "bna-usd", providerId: "bna", userBuysUsdAt: negative ? 1530 : 1510, userSellsUsdAt: negative ? 1501.92 : 1505, sourceType: "public_page", fees: { confidence: "unknown" }, warnings: ["costs_unverified"] }),
     quote({ id: "satoshi-usdt", providerId: "satoshitango", instrument: "usdt", transferAsset: "USDT", userBuysUsdAt: 1495, userSellsUsdAt: 1494, observedAt: "2020-01-01T00:00:00.000Z", status: "stale", sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["stale_quote", "observed_at_unavailable"] }),
+    quote({ id: "fiwind-usdt", providerId: "fiwind", instrument: "usdt", transferAsset: "USDT", userBuysUsdAt: 1578, userSellsUsdAt: 1565, quotedAmountUsd: 1000, status: "delayed", sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["costs_unverified", "verify_final_price", "volume_specific_quote"], verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" } }),
   ];
   return {
     generatedAt: now,
@@ -47,9 +48,9 @@ function response({ negative = false } = {}) {
       { providerId: "plus", quotes: [quotes[0]], status: "success", fetchedAt: now, cacheStatus: "fresh" },
       { providerId: "bna", quotes: [quotes[1]], status: "success", fetchedAt: now, cacheStatus: "fresh" },
       { providerId: "satoshitango", quotes: [quotes[2]], status: "partial", fetchedAt: now, cacheStatus: "fresh" },
-      { providerId: "fiwind", quotes: [], status: "error", fetchedAt: now, errorCode: "upstream_unavailable" },
+      { providerId: "criptoya-stablecoins", quotes: [quotes[3]], status: "success", fetchedAt: now, cacheStatus: "fresh" },
     ],
-    cache: { plusTtlSeconds: 60, bnaTtlSeconds: 300, dolarApiTtlSeconds: 60 },
+    cache: { plusTtlSeconds: 60, bnaTtlSeconds: 300, criptoYaTtlSeconds: 60 },
     disclaimer: "informational_only",
   };
 }
@@ -77,13 +78,17 @@ test("loads rankings, opportunity, matrix, calculator and source failures", asyn
   await expect(page.getByTestId("arbitrage-calculator")).toContainText(/Route calculator|Calculadora de ruta/);
   await expect(page.getByTestId("arbitrage-source-status")).toContainText("Fiwind");
   await expect(page.getByTestId("arbitrage-source-status")).toContainText(/Provider unavailable|Proveedor no disponible/);
+  await expect(page.getByTestId("arbitrage-buy-ranking")).toContainText(/Reference volume|Volumen de referencia/);
+  await expect(page.getByTestId("arbitrage-buy-ranking")).toContainText(/Informational reference|Referencia informativa/);
   if (process.env.ARBITRAGE_SCREENSHOT_PATH) {
     await page.screenshot({ path: process.env.ARBITRAGE_SCREENSHOT_PATH, fullPage: true });
   }
 
   const calculator = page.getByTestId("arbitrage-calculator");
+  await calculator.getByLabel(/Origin provider|Proveedor de origen/).selectOption("plus-usd");
+  await calculator.getByLabel(/Destination provider|Proveedor de destino/).selectOption("bna-usd");
   await calculator.getByLabel(/Amount in USD|Monto en USD/).fill("2000");
-  await expect(calculator).toContainText(/20[,.]000/);
+  await expect(calculator).toContainText(/10[,.]000/);
 
   await page.getByLabel(/Fresh quotes only|Sólo cotizaciones frescas/).check();
   await expect(page.getByTestId("arbitrage-buy-ranking")).not.toContainText("Satoshi Tango");
@@ -91,11 +96,15 @@ test("loads rankings, opportunity, matrix, calculator and source failures", asyn
   expect(consoleErrors).toEqual([]);
 });
 
-test("shows the mandatory negative case as no profitable arbitrage", async ({ page }) => {
+test("keeps the mandatory negative comparison unprofitable in the calculator", async ({ page }) => {
   await mockQuotes(page, response({ negative: true }));
   await page.goto("/radar-arbitraje");
   await expect(page.getByTestId("best-arbitrage-opportunity")).toContainText(/No verified opportunities|Sin oportunidades verificadas/);
-  await expect(page.getByTestId("best-arbitrage-opportunity")).toContainText(/-.*17[,.]08/);
+  const calculator = page.getByTestId("arbitrage-calculator");
+  await calculator.getByLabel(/Origin provider|Proveedor de origen/).selectOption("plus-usd");
+  await calculator.getByLabel(/Destination provider|Proveedor de destino/).selectOption("bna-usd");
+  await calculator.getByLabel(/Amount in USD|Monto en USD/).fill("1");
+  await expect(calculator).toContainText(/-.*17[,.]08/);
 });
 
 test("is responsive without page overflow and supports dark and light modes", async ({ page }) => {

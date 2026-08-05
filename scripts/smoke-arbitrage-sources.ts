@@ -1,9 +1,9 @@
 import { BnaQuoteAdapter } from "../lib/arbitrage/adapters/bna";
-import { DolarApiExchangeAdapter } from "../lib/arbitrage/adapters/dolar-api";
+import { CriptoYaStablecoinAdapter } from "../lib/arbitrage/adapters/criptoya";
 import { PlusQuoteAdapter } from "../lib/arbitrage/adapters/plus";
 import { getFreshnessStatus } from "../lib/arbitrage/freshness";
 
-const adapters = [new PlusQuoteAdapter(), new BnaQuoteAdapter(), new DolarApiExchangeAdapter()];
+const adapters = [new PlusQuoteAdapter(), new BnaQuoteAdapter(), new CriptoYaStablecoinAdapter()];
 
 async function main() {
   const results = await Promise.all(adapters.map(async (adapter) => {

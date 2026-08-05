@@ -107,6 +107,8 @@ test.describe("CMA Markets public smoke tests", () => {
     await expect(page.getByRole("heading", { name: /Argentina and global pulse|Pulso argentino y global/ })).toBeVisible();
     await expect(page.getByRole("heading", { name: /Macro data and peso yields|Datos macro y rendimientos en pesos/ })).toBeVisible();
     await expect(page.locator("body")).toContainText(/IPC mensual/);
+    await expect(page.locator("body")).toContainText(/UVA/);
+    await expect(page.locator("body")).toContainText(/BCRA|CriptoYa \(fallback\)/);
     await expect(page.locator("body")).toContainText(/Interest-bearing accounts|Cuentas remuneradas/);
   });
 
@@ -291,7 +293,9 @@ test.describe("CMA Markets public smoke tests", () => {
     const macro = await macroResponse.json();
     expect(Array.isArray(macro.metrics)).toBeTruthy();
     expect(macro.metrics.length).toBeGreaterThanOrEqual(6);
-    expect(macro.metrics.every((item: { id?: unknown; value?: unknown; series?: unknown }) => typeof item.id === "number" && typeof item.value === "number" && Array.isArray(item.series))).toBeTruthy();
+    expect(macro.metrics.every((item: { id?: unknown; value?: unknown; series?: unknown; source?: unknown }) => typeof item.id === "number" && typeof item.value === "number" && Array.isArray(item.series) && typeof item.source === "string")).toBeTruthy();
+    expect(macro.metrics.map((item: { id: number }) => item.id)).toEqual(expect.arrayContaining([30, 31]));
+    expect(Array.isArray(macro.reconciliation)).toBeTruthy();
     expect(Array.isArray(macro.exchangeRates)).toBeTruthy();
     expect(macro.exchangeRates.map((item: { code: string }) => item.code)).toEqual(expect.arrayContaining(["USD", "EUR", "BRL"]));
 

@@ -44,6 +44,7 @@ export const translations: Record<Language, Record<string, string>> = {
     arbitrageCostsAndCapabilitiesPending: "Costs, limits or capabilities remain unverified",
     arbitragePotentialRoute: "Potential route · gross difference only",
     arbitrageObservedUnknown: "Quote time not reported",
+    arbitrageReferenceVolume: "Reference volume: {value}",
     arbitrageBuyAt: "You buy USD at",
     arbitrageSellAt: "You sell USD at",
     arbitrageTransferTo: "Transfer to",
@@ -161,6 +162,7 @@ export const translations: Record<Language, Record<string, string>> = {
     arbitrageIssueVerifyPrice: "Verify the final price before operating.",
     arbitrageIssuePartial: "The source returned partial or fallback data.",
     arbitrageIssueSettlement: "Settlement or accreditation may be delayed.",
+    arbitrageIssueReferenceVolume: "The quote is specific to the reference volume; verify it again for the simulated amount.",
     heroEyebrow: "Market Intelligence Terminal",
     heroTitle: "Financial intelligence for market decisions",
     heroSubtitle:
@@ -450,6 +452,7 @@ export const translations: Record<Language, Record<string, string>> = {
     arbitrageCostsAndCapabilitiesPending: "Costos, límites o capacidades sin verificar",
     arbitragePotentialRoute: "Ruta potencial · sólo diferencia bruta",
     arbitrageObservedUnknown: "Hora de cotización no informada",
+    arbitrageReferenceVolume: "Volumen de referencia: {value}",
     arbitrageBuyAt: "Comprás USD a",
     arbitrageSellAt: "Vendés USD a",
     arbitrageTransferTo: "Transferir a",
@@ -567,6 +570,7 @@ export const translations: Record<Language, Record<string, string>> = {
     arbitrageIssueVerifyPrice: "Verificá el precio final antes de operar.",
     arbitrageIssuePartial: "La fuente devolvió datos parciales o de respaldo.",
     arbitrageIssueSettlement: "La liquidación o acreditación puede tener demora.",
+    arbitrageIssueReferenceVolume: "La cotización corresponde al volumen de referencia; volvé a verificarla para el monto simulado.",
     heroEyebrow: "Market Intelligence Terminal",
     heroTitle: "Inteligencia financiera para decisiones de mercado",
     heroSubtitle:

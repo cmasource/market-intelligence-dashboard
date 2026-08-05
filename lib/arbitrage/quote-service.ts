@@ -1,12 +1,12 @@
 import "server-only";
 import { BnaQuoteAdapter } from "./adapters/bna";
-import { DolarApiExchangeAdapter } from "./adapters/dolar-api";
+import { CriptoYaStablecoinAdapter } from "./adapters/criptoya";
 import { errorResult } from "./adapters/shared";
 import { PlusQuoteAdapter } from "./adapters/plus";
 import { ARBITRAGE_PROVIDERS } from "./provider-registry";
 import type { ArbitrageQuoteProvider, ArbitrageQuotesResponse, ProviderQuoteResult } from "./types";
 
-const adapters: ArbitrageQuoteProvider[] = [new PlusQuoteAdapter(), new BnaQuoteAdapter(), new DolarApiExchangeAdapter()];
+const adapters: ArbitrageQuoteProvider[] = [new PlusQuoteAdapter(), new BnaQuoteAdapter(), new CriptoYaStablecoinAdapter()];
 const cache = new Map<string, { result: ProviderQuoteResult; expiresAt: number }>();
 const inFlight = new Map<string, Promise<ProviderQuoteResult>>();
 
@@ -52,7 +52,7 @@ export async function getArbitrageQuotes(forceRefresh = false): Promise<Arbitrag
     providers: ARBITRAGE_PROVIDERS,
     quotes: providerResults.flatMap((result) => result.quotes),
     providerResults,
-    cache: { plusTtlSeconds: 60, bnaTtlSeconds: 300, dolarApiTtlSeconds: 60 },
+    cache: { plusTtlSeconds: 60, bnaTtlSeconds: 300, criptoYaTtlSeconds: 60 },
     disclaimer: "informational_only",
   };
 }
