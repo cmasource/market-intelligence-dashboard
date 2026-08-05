@@ -20,6 +20,7 @@ import {
   Landmark,
   Newspaper,
   Radar,
+  Repeat2,
   ScanSearch,
 } from "lucide-react";
 import { AuthNavigation } from "@/components/auth/AuthNavigation";
@@ -33,6 +34,7 @@ export const navItems = [
   { labelKey: "navMarkets", href: "/markets", icon: LineChart },
   { labelKey: "navUSA", href: "/usa", icon: BarChart3 },
   { labelKey: "navTradeRadar", href: "/trade-radar", icon: Radar },
+  { labelKey: "navArbitrageRadar", href: "/radar-arbitraje", icon: Repeat2 },
   { labelKey: "navArgentina", href: "/argentina", icon: CircleDollarSign },
   { labelKey: "navCrypto", href: "/crypto", icon: Bitcoin },
   { labelKey: "navWatchlist", href: "/watchlist", icon: ListChecks },
