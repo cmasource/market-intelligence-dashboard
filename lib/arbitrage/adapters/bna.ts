@@ -1,6 +1,6 @@
 import { deriveQuoteStatus } from "../freshness";
 import type { ArbitrageQuoteProvider, ProviderQuoteResult } from "../types";
-import { parseArgentinaDateTime, parseNumber } from "./shared";
+import { parseArgentinaDateTime, parseNumber, readTextResponse } from "./shared";
 
 const BNA_QUOTES_URL = "https://www.bna.com.ar/Empresas";
 
@@ -41,6 +41,7 @@ export function parseBnaBilleteHtml(html: string, fetchedAt: string): ProviderQu
       status: deriveQuoteStatus("bna", observedAt, new Date(fetchedAt)),
       fees: { description: "Costos de la ruta no verificados.", confidence: "unknown" },
       warnings: ["same_holder_required", "costs_unverified", "verify_final_price"],
+      verification: { quote: "verified", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" },
     }],
   };
 }
@@ -57,6 +58,6 @@ export class BnaQuoteAdapter implements ArbitrageQuoteProvider {
       signal: AbortSignal.timeout(8_000),
     });
     if (!response.ok) throw new Error(`BNA upstream returned ${response.status}`);
-    return parseBnaBilleteHtml(await response.text(), fetchedAt);
+    return parseBnaBilleteHtml(await readTextResponse(response), fetchedAt);
   }
 }

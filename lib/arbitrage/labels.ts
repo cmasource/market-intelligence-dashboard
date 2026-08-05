@@ -1,4 +1,4 @@
-import type { ArbitrageIssueCode, CostConfidence, FxInstrument, ProviderStatus, ProviderType, QuoteStatus } from "./types";
+import type { ArbitrageIssueCode, CostConfidence, FxInstrument, ProviderStatus, ProviderType, QuoteStatus, VerificationLevel } from "./types";
 
 export type ArbitrageTranslate = (key: string, params?: Record<string, string | number>) => string;
 
@@ -73,3 +73,12 @@ export const getProviderTypeLabel = (type: ProviderType, t: ArbitrageTranslate) 
 export const getQuoteStatusLabel = (status: QuoteStatus, t: ArbitrageTranslate) => t(quoteStatusKeys[status]);
 export const getProviderStatusLabel = (status: ProviderStatus, t: ArbitrageTranslate) => t(providerStatusKeys[status]);
 export const getCostLabel = (status: CostConfidence | "verified", t: ArbitrageTranslate) => t(costKeys[status]);
+
+const verificationKeys: Record<VerificationLevel, string> = {
+  verified: "arbitrageVerifiedQuote",
+  partially_verified: "arbitragePartiallyVerified",
+  reference_only: "arbitrageInformationalReference",
+  unverified: "arbitrageUnverifiedCapability",
+};
+
+export const getVerificationLabel = (level: VerificationLevel, t: ArbitrageTranslate) => t(verificationKeys[level]);

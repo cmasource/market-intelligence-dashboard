@@ -1,5 +1,19 @@
 import type { ProviderQuoteResult } from "../types";
 
+const DEFAULT_MAX_RESPONSE_BYTES = 512_000;
+
+export async function readTextResponse(response: Response, maxBytes = DEFAULT_MAX_RESPONSE_BYTES) {
+  const declaredLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > maxBytes) throw new Error("Upstream payload exceeds size limit");
+  const text = await response.text();
+  if (new TextEncoder().encode(text).byteLength > maxBytes) throw new Error("Upstream payload exceeds size limit");
+  return text;
+}
+
+export async function readJsonResponse(response: Response, maxBytes = DEFAULT_MAX_RESPONSE_BYTES) {
+  return JSON.parse(await readTextResponse(response, maxBytes)) as unknown;
+}
+
 export function parseNumber(value: unknown) {
   let parsed: number;
   if (typeof value === "number") {

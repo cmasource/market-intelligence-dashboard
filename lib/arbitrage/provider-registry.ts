@@ -15,6 +15,7 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     requiresSameHolderAccount: true,
     sourceType: "public_endpoint",
     status: "active",
+    verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "verified" },
   },
   {
     id: "bna",
@@ -30,6 +31,7 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     requiresSameHolderAccount: true,
     sourceType: "public_page",
     status: "active",
+    verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "verified" },
   },
   {
     id: "belo",
@@ -39,6 +41,7 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     operates24x7: true,
     sourceType: "aggregator",
     status: "active",
+    verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "unverified", availability24x7: "reference_only" },
   },
   {
     id: "dolarapp",
@@ -48,6 +51,7 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     operates24x7: true,
     sourceType: "aggregator",
     status: "active",
+    verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "unverified", availability24x7: "reference_only" },
   },
   {
     id: "satoshitango",
@@ -57,6 +61,7 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     operates24x7: true,
     sourceType: "aggregator",
     status: "active",
+    verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "unverified", availability24x7: "reference_only" },
   },
   {
     id: "fiwind",
@@ -66,6 +71,10 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     operates24x7: true,
     sourceType: "unavailable",
     status: "temporarily_unavailable",
+    supportsUsdDeposit: true,
+    supportsUsdWithdrawal: true,
+    requiresSameHolderAccount: true,
+    verification: { deposit: "verified", withdrawal: "verified", sameHolder: "verified", transferAsset: "verified", availability24x7: "partially_verified" },
   },
   {
     id: "galicia",
@@ -74,6 +83,7 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     websiteUrl: "https://www.galicia.ar/personas",
     sourceType: "unavailable",
     status: "unsupported",
+    verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "unverified", availability24x7: "unverified" },
   },
   {
     id: "santander",
@@ -82,6 +92,7 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     websiteUrl: "https://www.santander.com.ar/",
     sourceType: "unavailable",
     status: "unsupported",
+    verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "unverified", availability24x7: "unverified" },
   },
   {
     id: "bbva",
@@ -90,6 +101,7 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     websiteUrl: "https://www.bbva.com.ar/",
     sourceType: "unavailable",
     status: "unsupported",
+    verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "unverified", availability24x7: "unverified" },
   },
 ];
 

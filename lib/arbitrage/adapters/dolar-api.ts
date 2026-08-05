@@ -1,5 +1,5 @@
 import type { ArbitrageIssueCode, ArbitrageQuoteProvider, FxInstrument, ProviderQuoteResult, TransferAsset } from "../types";
-import { parseNumber } from "./shared";
+import { parseNumber, readJsonResponse } from "./shared";
 
 const DOLAR_API_URL = "https://dolarapi.com/v1/exchanges/monedas/usd/ars";
 const SUPPORTED_EXCHANGES = new Set(["belo", "dolarapp", "satoshitango"]);
@@ -31,7 +31,7 @@ export function normalizeDolarApiExchangePayload(payload: unknown, fetchedAt: st
     const userSellsUsdAt = parseNumber(row.venta);
     if (!userBuysUsdAt && !userSellsUsdAt) return [];
     const sourceObservedAt = typeof row.fechaActualizacion === "string" ? new Date(row.fechaActualizacion) : undefined;
-    const observedAt = sourceObservedAt && Number.isFinite(sourceObservedAt.getTime()) ? sourceObservedAt.toISOString() : fetchedAt;
+    const observedAt = sourceObservedAt && Number.isFinite(sourceObservedAt.getTime()) ? sourceObservedAt.toISOString() : undefined;
     const warnings: ArbitrageIssueCode[] = sourceObservedAt
       ? ["costs_unverified", "verify_final_price"]
       : ["observed_at_unavailable", "costs_unverified", "verify_final_price"];
@@ -52,6 +52,7 @@ export function normalizeDolarApiExchangePayload(payload: unknown, fetchedAt: st
       status: "delayed" as const,
       fees: { description: "El agregador no informa todos los costos de transferencia y conversión.", confidence: "unknown" as const },
       warnings,
+      verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "unverified" } as const,
     }];
   });
   return {
@@ -75,6 +76,6 @@ export class DolarApiExchangeAdapter implements ArbitrageQuoteProvider {
       signal: AbortSignal.timeout(7_000),
     });
     if (!response.ok) throw new Error(`DolarApi upstream returned ${response.status}`);
-    return normalizeDolarApiExchangePayload(await response.json(), fetchedAt);
+    return normalizeDolarApiExchangePayload(await readJsonResponse(response, 128_000), fetchedAt);
   }
 }

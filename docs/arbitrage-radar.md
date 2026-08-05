@@ -44,7 +44,7 @@ resultado neto = resultado bruto - costos de origen - costos de destino - transf
 retorno neto = resultado neto / capital requerido × 100
 ```
 
-Una combinación sólo se considera oportunidad si la ruta es compatible, está vigente y el resultado comparable es positivo.
+Una combinación sólo se considera **oportunidad verificada** si ambas cotizaciones son frescas y verificadas, la ruta y el activo transferido están verificados, depósito y retiro están confirmados, los costos permiten calcular un resultado neto, los límites informados admiten el monto y el resultado neto es positivo. Una diferencia bruta positiva con datos incompletos se clasifica como **ruta potencial**, no como ganancia neta ni arbitraje confirmado.
 
 ## 10. Costos
 
@@ -56,7 +56,9 @@ Se admiten mínimo, máximo por operación, máximo diario y máximo mensual. Lo
 
 ## 12. Frescura
 
-Cada quote contiene `observedAt`, `fetchedAt`, estado y fuente. Los umbrales son configurables por proveedor: Plus usa 120 segundos como fresco y 600 como vencido; Banco Nación, por la naturaleza de su pizarra, 4 y 12 horas; los agregados usan 120 y 300 segundos. Una cotización vencida puede verse, pero no genera oportunidades activas. Cuando el agregador no entrega hora original, se marca como dato demorado/no verificable.
+Cada quote separa `observedAt` (hora publicada por la fuente, si existe) de `fetchedAt` (hora de consulta de CMA). Los umbrales son configurables por proveedor: Plus usa 120 segundos como fresco y 600 como vencido; Banco Nación, por la naturaleza de su pizarra, 4 y 12 horas. Una cotización vencida puede verse, pero no genera oportunidades activas. Cuando un agregador no entrega hora original, `observedAt` queda ausente: `fetchedAt` nunca se usa para simular frescura.
+
+La validación real del 5 de agosto de 2026 encontró en Plus el campo `date: "2026-08-05 13:54:02"` mientras la consulta se realizó a las `14:39:41` de Argentina. El parser interpreta correctamente la fecha local con `-03:00`; la fuente estaba realmente atrasada unos 46 minutos. Se conserva `stale` y la cotización queda sólo como referencia.
 
 ## 13. Caché
 
@@ -68,7 +70,7 @@ La caché server-side es efímera y diferenciada: Plus 60 segundos, Banco Nació
 
 ## 15. Interfaz
 
-La pantalla conserva AppShell, navegación e internacionalización existentes. Incluye mejor combinación, rankings, matriz accesible, calculadora, filtros y estado de fuentes. En mobile la matriz pasa a tarjetas y las tablas de detalle mantienen scroll horizontal contenido. La simulación inicial es USD 1.000 y no se persiste.
+La pantalla conserva AppShell, navegación e internacionalización existentes. Separa cotizaciones informativas, rutas potenciales y oportunidades verificadas. Los estados principales son “Oportunidad verificada”, “Posible diferencia bruta”, “Sin oportunidades verificadas” y “Datos insuficientes”. En mobile la matriz pasa a tarjetas y las tablas de detalle mantienen scroll horizontal contenido. La simulación inicial es USD 1.000 y no se persiste.
 
 ## 16. Seguridad
 
@@ -76,7 +78,7 @@ Todas las consultas externas se hacen en servidor a fuentes públicas verificada
 
 ## 17. Pruebas
 
-`tests/arbitrage` cubre adapters, perspectiva de compra/venta, ranking, spreads, costos fijos y porcentuales, transferencia, retorno, montos inválidos, límites, datos parciales, activos incompatibles, mismo proveedor, frescura y el caso negativo 1519/1501,92. `tests/e2e/arbitrage-radar.spec.ts` usa fixtures aisladas de producción para pantalla, sidebar, estados, filtros, calculadora, temas, responsive, consola y overflow.
+`tests/arbitrage` cubre adapters, payload real sanitizado de Plus, zona horaria Argentina, separación `observedAt`/`fetchedAt`, fuente sin timestamp, stale real, niveles de verificación, costos y límites desconocidos, perspectiva de compra/venta, ranking, spreads, transferencia, montos inválidos y activos incompatibles. `tests/e2e/arbitrage-radar.spec.ts` usa fixtures aisladas de producción para pantalla, sidebar, estados, filtros, calculadora, temas, responsive, consola y overflow. `scripts/smoke-arbitrage-sources.ts` consulta fuentes reales por separado y nunca bloquea la suite determinística.
 
 ## 18. Limitaciones
 
@@ -93,5 +95,4 @@ Las fuentes públicas pueden cambiar estructura o disponibilidad. La cotización
 
 ## 20. Próximas fases
 
-Confirmar mediante documentación contractual las capacidades, comisiones y límites de más proveedores; agregar adapters sólo cuando exista una fuente pública legítima y estable; modelar rutas con conversiones intermedias; sumar un smoke test externo separado; y, en otra tarea, diseñar preferencias o alertas `arbitrage_opportunity` sin ejecutar operaciones.
-
+Confirmar mediante documentación contractual las comisiones y límites de Plus, Banco Nación y Fiwind; agregar adapters sólo cuando exista una fuente pública legítima y estable; modelar rutas con conversiones intermedias; y, en otra tarea independiente, diseñar preferencias o alertas sin ejecutar operaciones.

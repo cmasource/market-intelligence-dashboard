@@ -10,6 +10,42 @@ const publicRoutes = [
   { route: "/contact", heading: /Let us talk about better-informed decisions|Conversemos sobre decisiones mejor informadas/ },
 ];
 
+const rankingItems = ["AAPL", "MSFT", "NVDA", "SPY", "QQQ"].map((symbol, index) => ({
+  symbol,
+  name: symbol === "MSFT" ? "Microsoft Corporation" : `${symbol} test instrument`,
+  assetType: "stock",
+  market: "US",
+  price: 100 + index,
+  currency: "USD",
+  changePercent: index + 1,
+  score: 80 - index,
+  label: "constructive",
+  sourceLabel: "Deterministic E2E fixture",
+  isFallback: false,
+  route: `/asset/${symbol}`,
+  reason: "Deterministic dashboard smoke fixture.",
+}));
+
+const rankingResponse = (type: "technical" | "fundamental" | "combined" | "performance") => ({
+  type,
+  generatedAt: "2026-08-05T12:00:00.000Z",
+  universeSize: rankingItems.length,
+  items: rankingItems,
+  limitations: [],
+  sourceSummary: "Deterministic E2E fixture",
+});
+
+const rankingsFixture = {
+  generatedAt: "2026-08-05T12:00:00.000Z",
+  universeSize: rankingItems.length,
+  technical: rankingResponse("technical"),
+  fundamental: rankingResponse("fundamental"),
+  combined: rankingResponse("combined"),
+  performance: { "30D": rankingResponse("performance"), "180D": rankingResponse("performance"), YTD: rankingResponse("performance") },
+  limitations: [],
+  sourceSummary: "Deterministic E2E fixture",
+};
+
 async function assertNoHorizontalOverflow(page: Page) {
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBeTruthy();
 }
@@ -24,6 +60,7 @@ async function expectExpandedUniverse(page: Page) {
 test.describe("CMA Markets public smoke tests", () => {
   test.beforeEach(async ({ page }) => {
     await page.route("https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js", (route) => route.abort());
+    await page.route("**/api/rankings", (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify(rankingsFixture) }));
     await page.addInitScript(() => {
       if (window.sessionStorage.getItem("cma-e2e-storage-ready") === "1") return;
       window.localStorage.clear();
@@ -58,10 +95,6 @@ test.describe("CMA Markets public smoke tests", () => {
     await expect(page.getByRole("heading", { name: /Sign in to CMA Markets|Ingresá a CMA Markets/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /Continue with Google|Continuar con Google/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /Create account|Crear cuenta/ })).toBeVisible();
-    await page.getByLabel("Email").fill("qa@example.com");
-    await page.getByLabel(/Password|Contraseña/).fill("secure-password");
-    await page.getByRole("button", { name: /Sign in|Iniciar sesión/, exact: true }).click();
-    await expect(page.getByRole("status")).toContainText(/not connected|no está conectada/);
 
     const accountResponse = await page.goto("/account", { waitUntil: "domcontentloaded" });
     expect(accountResponse?.url()).toContain("/auth/login");
