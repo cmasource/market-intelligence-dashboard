@@ -33,6 +33,7 @@ The app is transparent about mixed coverage: selected USA and crypto instruments
 - Sprint 22 asset page IA: compact executive strip, distinct market signal, technical factor panel, secondary coverage disclosure and first market heatmap.
 - Browser-local multiple watchlists with legacy migration, Instrument Master search and no account or portfolio semantics.
 - Supabase Auth foundation for email/password, email confirmation, recovery, Google OAuth (PKCE), secure cookie sessions and a private account page. Provider configuration is required before live use.
+- Account-scoped intelligent alerts with explicit local-watchlist import consent, deterministic versioned rules, persisted in-app delivery, unread history, preferences, RLS and a protected Vercel Cron evaluator. Supabase migrations and server-only scheduler variables are required before live use.
 - Sprint 25 rankings and brand polish: refined CMA lockup/favicon/footer plus technical, fundamental, combined and performance rankings.
 - Sprint 26 brand/deployment polish: theme-aware logo contrast, padded favicons, hybrid asset logos and local/production parity diagnostics.
 - Dashboard overview
@@ -116,6 +117,8 @@ Alternative workflow:
 See `docs/vercel-deployment.md` for the full deployment checklist.
 
 See `docs/supabase-auth.md` for Supabase Auth setup, redirect URLs, Google OAuth and verification.
+
+See `docs/intelligent-alerts.md` and `docs/alert-rules-catalog.md` for the alert architecture, rules, scheduler, security model, configuration and verified limitations.
 
 ## Disclaimer
 

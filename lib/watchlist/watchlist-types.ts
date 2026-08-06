@@ -1,6 +1,7 @@
 export const LEGACY_WATCHLIST_STORAGE_KEY = "cma-market-intelligence-watchlist";
 export const WATCHLIST_STORAGE_KEY = "cma-market-intelligence-watchlists-v2";
 export const WATCHLIST_UPDATED_EVENT = "cma-watchlists-updated";
+export const WATCHLIST_IMPORT_DECISION_KEY = "cma-watchlist-import-decision-v1";
 export const DEFAULT_WATCHLIST_NAME = "Mi lista";
 export const WATCHLIST_SCHEMA_VERSION = 2;
 
@@ -67,3 +68,10 @@ export interface LocalWatchlistRepository extends WatchlistRepository {
   setActiveWatchlistId(id: string): Promise<void>;
   getMemberships(assetKey: string): Promise<Watchlist[]>;
 }
+
+export type WatchlistImportResult = {
+  listsCreated: number;
+  itemsImported: number;
+  itemsSkipped: number;
+  errors: string[];
+};

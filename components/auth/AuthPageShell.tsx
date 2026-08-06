@@ -29,8 +29,8 @@ export function AuthPageShell({ eyebrow, title, description, children }: AuthPag
             <ShieldCheck className="mt-0.5 shrink-0 text-emerald-300" size={20} aria-hidden="true" />
             <p className="text-sm leading-6 text-[var(--cma-text-secondary)]">
               {copy === "es"
-                ? "La sesión se mantiene mediante cookies seguras. Tus listas actuales siguen guardadas sólo en este navegador y no se sincronizan con la cuenta."
-                : "Your session is maintained with secure cookies. Existing watchlists remain only in this browser and are not synced with your account."}
+                ? "La sesión se mantiene mediante cookies seguras. Si este dispositivo tiene listas locales, te pediremos permiso antes de importarlas a tu cuenta."
+                : "Your session is maintained with secure cookies. If this device has local watchlists, you will be asked before importing them into your account."}
             </p>
           </div>
           <Link href="/" className="mt-6 inline-flex text-sm font-semibold text-[var(--cma-accent-cyan)] hover:underline">
