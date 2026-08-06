@@ -89,8 +89,9 @@ export function shouldEvaluateOnThisRun(assetType: string, market: string, now: 
 }
 
 async function releaseScheduledDeliveries(supabase: SupabaseClient, now: Date) {
-  await supabase.from("alert_deliveries").update({ status: "sent", sent_at: now.toISOString(), attempt_count: 1, updated_at: now.toISOString() })
+  const { error } = await supabase.from("alert_deliveries").update({ status: "sent", sent_at: now.toISOString(), attempt_count: 1, updated_at: now.toISOString() })
     .eq("channel", "in_app").eq("status", "pending").lte("scheduled_at", now.toISOString());
+  if (error) throw error;
 }
 
 async function syncRuleVersions(supabase: SupabaseClient) {
@@ -121,6 +122,7 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
   if (lock.error) throw lock.error;
 
   const summary: AlertJobSummary = { status: "completed", processedUsers: 0, processedInstruments: 0, createdEvents: 0, updatedEvents: 0, resolvedEvents: 0, errors: 0 };
+  let fatalError = false;
   try {
     await Promise.all([syncRuleVersions(supabase), releaseScheduledDeliveries(supabase, now)]);
     const [watchlistsResult, preferencesResult, activeEventsResult, recentEventsResult] = await Promise.all([
@@ -261,9 +263,13 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
     }
     summary.status = summary.errors ? "partial" : "completed";
     return summary;
+  } catch (error) {
+    fatalError = true;
+    summary.errors += 1;
+    throw error;
   } finally {
     await supabase.from("alert_job_runs").update({
-      status: summary.errors ? "partial" : "completed",
+      status: fatalError ? "failed" : summary.errors ? "partial" : "completed",
       finished_at: new Date().toISOString(),
       processed_users: summary.processedUsers,
       processed_instruments: summary.processedInstruments,

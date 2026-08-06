@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 function authorized(request: Request) {
-  const expected = process.env.ALERTS_CRON_SECRET?.trim();
+  const expected = process.env.CRON_SECRET?.trim();
   const supplied = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
   if (!expected || !supplied) return false;
   const left = Buffer.from(expected);

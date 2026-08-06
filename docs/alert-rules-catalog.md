@@ -2,6 +2,8 @@
 
 The code source of truth is `lib/alerts/rules.ts`; evaluation logic is in `lib/alerts/engine.ts`. All thresholds compare an instrument with its own history. These rules are implemented but have not been historically validated or calibrated for investment outcomes.
 
+The integration with the current `main` branch did not change thresholds, enable new categories, or connect Radar de Arbitraje. Rule evaluation becomes operational only after the Supabase migration, server credentials, one scheduler strategy, and the documented live validations are completed.
+
 | Rule | Version | Status | Supported instruments | Trigger | Cooldown | Main limitation |
 | --- | ---: | --- | --- | --- | ---: | --- |
 | `unusual_price_move` | 1 | Enabled | Stock, ETF, ADR, CEDEAR, CEDEAR ETF, crypto | Absolute latest return exceeds both 2.5 times recent return deviation and 1.5 ATR-equivalent threshold | 360 min | No market/sector context yet |

@@ -59,7 +59,7 @@ Import matches list names case-insensitively, preserves item timestamps, skips s
 - `alert_deliveries`;
 - `alert_job_runs` for execution locks and safe operational counts.
 
-RLS is enabled on every exposed table. Authenticated clients may manage their own preferences, read their own delivered events/deliveries, and update only the `read_at` column on their own events. They receive no insert privilege on events/deliveries and no access to internal rule versions or job runs. Rules and events are written through a server-only Supabase client using `SUPABASE_SERVICE_ROLE_KEY`; this value must never be exposed to client code or prefixed with `NEXT_PUBLIC_`.
+RLS is enabled on every exposed table. Authenticated clients may manage their own preferences, read their own delivered events/deliveries, and update only the `read_at` column on their own events. They receive no insert privilege on events/deliveries and no access to internal rule versions or job runs. Rules and events are written through a server-only Supabase client using `SUPABASE_SECRET_KEY` (preferred) or the legacy `SUPABASE_SERVICE_ROLE_KEY` fallback; neither value may be exposed to client code or prefixed with `NEXT_PUBLIC_`.
 
 No `profiles` table is required. Authorization uses the validated Auth identity and row ownership, never user-editable metadata.
 
@@ -100,7 +100,12 @@ Deleting a watchlist sets historical event `watchlist_id` to null instead of del
 
 ## Scheduler
 
-`vercel.json` registers an hourly production Cron GET request to `/api/alerts/evaluate`. Vercel supplies `Authorization: Bearer <CRON_SECRET>`; the handler validates it with a constant-time comparison. The same endpoint accepts an authorized POST for controlled manual validation.
+The repository deliberately ships without an active scheduler until the deployment plan and secrets are known. Choose exactly one strategy; enabling both would duplicate requests even though the database execution lock prevents duplicate processing.
+
+- **Vercel Pro or a plan supporting hourly Cron:** copy `docs/vercel-cron.pro.example.json` to the repository root as `vercel.json`. Configure `CRON_SECRET` in Vercel and keep Supabase Cron disabled.
+- **Vercel Hobby or no suitable Vercel Cron:** keep `vercel.json` absent. Store `cma_alerts_endpoint_url` and `cma_alerts_cron_secret` in Supabase Vault, then run `supabase/snippets/enable_intelligent_alerts_cron.sql`. The secret must equal the application's `CRON_SECRET`. Use the paired disable snippet for rollback.
+
+Both strategies invoke `/api/alerts/evaluate` with `Authorization: Bearer <CRON_SECRET>`; the handler validates it with a constant-time comparison. The same endpoint accepts an authorized POST for controlled manual validation. Never write the endpoint or secret value into a versioned SQL file.
 
 The hourly invocation does not evaluate every asset indiscriminately:
 
@@ -108,7 +113,7 @@ The hourly invocation does not evaluate every asset indiscriminately:
 - Argentina instruments: once on weekdays at 21:00 UTC;
 - US/other supported instruments: once on weekdays at 22:00 UTC.
 
-The job uses a database unique lock per execution window, bounded batches, per-instrument error isolation, safe aggregate counters, provider failure isolation, deduplicated user/instrument work, and a 60-second function limit. Vercel does not retry failed Cron invocations; later runs safely resume from persisted state. An hourly expression requires a Vercel plan that supports sub-daily Cron schedules; otherwise change to compatible infrastructure before deployment rather than claiming immediate coverage.
+The job uses a database unique lock per execution window, bounded batches, per-instrument error isolation, safe aggregate counters, provider failure isolation, deduplicated user/instrument work, and a 60-second function limit. Fatal setup/query failures mark the job run as failed; isolated instrument failures mark it partial. Later runs safely resume from persisted state.
 
 ## Preferences, quiet hours, and channels
 
@@ -134,16 +139,18 @@ Required server configuration:
 ```text
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-SUPABASE_SERVICE_ROLE_KEY       server only
+SUPABASE_SECRET_KEY             server only, preferred
+SUPABASE_SERVICE_ROLE_KEY       server only, legacy fallback
 CRON_SECRET                    server only, random 16+ characters
 ```
 
-1. Review and apply migrations in timestamp order to the intended Supabase project.
-2. Confirm the Data API exposes `public` and the migration grants are present.
-3. Run Supabase security/performance advisors and test two real users for isolation.
-4. Add the server-only variables to the production environment. Do not put them in browser code or logs.
-5. Confirm the Vercel plan supports hourly Cron, deploy through the normal reviewed workflow, and inspect the Cron registration and function logs.
-6. Run one authorized controlled evaluation, then verify `alert_job_runs`, rule versions, events, deliveries, and the account UI.
+1. Review and apply migrations in timestamp order to the intended Supabase project. With a linked CLI use `supabase db push`; otherwise paste the reviewed migration into the project's SQL Editor.
+2. Confirm the Data API exposes `public`, the migration grants are present, and the Supabase security/performance advisors show no new alert-table issue.
+3. Add the server-only variables to the application environment. Do not put them in browser code, SQL, screenshots, or logs.
+4. Determine the Vercel plan and activate exactly one scheduler strategy described above. The Supabase strategy requires the `pg_cron`, `pg_net`, and Vault capabilities used by the supplied snippet.
+5. Run one authorized controlled evaluation, then verify `alert_job_runs`, rule versions, events, deliveries, and the account UI.
+6. Test two real users: each can see only their own watchlists, preferences, events, and deliveries; neither can insert events/deliveries nor read rule/job internals.
+7. Test the explicit browser-local watchlist import, repeat it to verify idempotency, and confirm the local backup remains intact.
 
 Safe rollback is to disable the Cron job and remove the navigation exposure while retaining tables/history for investigation. Do not drop alert tables or watchlist columns without a reviewed backup and a separate destructive migration.
 
@@ -151,7 +158,8 @@ Safe rollback is to disable the Cron job and remove the navigation exposure whil
 
 Unit tests cover classification, compatible/incompatible rules, all active categories, opportunity confirmation, freshness, incomplete data, provider health, preferences, quiet hours, deduplication, cooldown, cadence, idempotent import, and static RLS/grant invariants. Playwright covers discoverability, authentication boundaries, configuration messaging, and mobile overflow without requiring real market movements.
 
-Live Supabase RLS isolation, Google OAuth, production Cron, real provider freshness, authenticated import UI, and authenticated center/preferences flows require configured external services and must be verified after migration. No such flow is operational merely because this code compiles.
+At integration time, this worktree had public Supabase browser configuration in the primary worktree but no server secret, `CRON_SECRET`, Supabase CLI project link, or detectable Vercel plan. Therefore no migration, live two-user RLS test, scheduler activation, or real alert insertion was performed. These external checks remain explicitly pending; no such flow is operational merely because this code compiles.
+
+The alert branch was integrated with the then-current `main` changes for Radar de Arbitraje and Argentina reference sources. Shared navigation and translations expose both modules; alert rules remain independent from arbitrage providers and calculations.
 
 Future work: licensed news/email providers, verified fixed-income inputs, calibrated thresholds from historical replay, batched/queued execution for larger user counts, alert utility metrics, retry policies, and production browser/RLS evidence.
-
