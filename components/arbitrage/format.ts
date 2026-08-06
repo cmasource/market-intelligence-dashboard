@@ -18,7 +18,8 @@ export function formatUsd(value: number, language: Language) {
   }).format(value);
 }
 
-export function formatTimestamp(value: string, language: Language) {
+export function formatTimestamp(value: string | undefined, language: Language) {
+  if (!value) return language === "es" ? "No informada" : "Not reported";
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return "-";
   return new Intl.DateTimeFormat(language === "es" ? "es-AR" : "en-US", {
@@ -28,7 +29,8 @@ export function formatTimestamp(value: string, language: Language) {
   }).format(date);
 }
 
-export function formatAge(value: string, language: Language) {
+export function formatAge(value: string | undefined, language: Language) {
+  if (!value) return language === "es" ? "No verificable" : "Unverifiable";
   const elapsedSeconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
   if (!Number.isFinite(elapsedSeconds)) return "-";
   if (elapsedSeconds < 60) return language === "es" ? "<1 min" : "<1 min";

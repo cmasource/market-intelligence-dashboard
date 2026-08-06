@@ -1,6 +1,6 @@
 import { getFreshnessStatus } from "./freshness";
 import { getArbitrageProvider, supportsDeposit, supportsWithdrawal } from "./provider-registry";
-import type { ArbitrageIssueCode, FxQuote, TransferRoute } from "./types";
+import type { ArbitrageIssueCode, FxQuote, TransferRoute, VerificationLevel } from "./types";
 
 function unique(items: ArbitrageIssueCode[]) {
   return [...new Set(items)];
@@ -52,6 +52,22 @@ export function buildTransferRoute(source: FxQuote, destination: FxQuote, amount
   if (requiresSameHolder) warnings.push("same_holder_required");
   warnings.push(...source.warnings, ...destination.warnings);
 
+  const routeChecks: VerificationLevel[] = [
+    source.verification.transferAsset,
+    destination.verification.transferAsset,
+    sourceProvider?.verification.withdrawal ?? "unverified",
+    destinationProvider?.verification.deposit ?? "unverified",
+    sourceProvider?.verification.sameHolder ?? "unverified",
+    destinationProvider?.verification.sameHolder ?? "unverified",
+  ];
+  const verificationLevel: VerificationLevel = routeChecks.every((level) => level === "verified")
+    ? "verified"
+    : routeChecks.some((level) => level === "reference_only")
+      ? "reference_only"
+      : routeChecks.some((level) => level === "partially_verified")
+        ? "partially_verified"
+        : "unverified";
+
   return {
     id: `${source.id}--${destination.id}`,
     sourceProviderId: source.providerId,
@@ -65,5 +81,6 @@ export function buildTransferRoute(source: FxQuote, destination: FxQuote, amount
     warnings: unique(warnings),
     requiresSameHolderAccount: requiresSameHolder || undefined,
     costConfidence: "unknown",
+    verificationLevel,
   };
 }

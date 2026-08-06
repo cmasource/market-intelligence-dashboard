@@ -1,9 +1,9 @@
 import { ExternalLink } from "lucide-react";
-import { getInstrumentLabel, getQuoteStatusLabel, type ArbitrageTranslate } from "@/lib/arbitrage/labels";
+import { getInstrumentLabel, getQuoteStatusLabel, getVerificationLabel, type ArbitrageTranslate } from "@/lib/arbitrage/labels";
 import { getFreshnessStatus } from "@/lib/arbitrage/freshness";
 import type { FxProvider, FxQuote } from "@/lib/arbitrage/types";
 import type { Language } from "@/lib/i18n/types";
-import { formatAge, formatArs, formatTimestamp } from "./format";
+import { formatAge, formatArs, formatTimestamp, formatUsd } from "./format";
 
 type QuoteRankingTableProps = {
   mode: "buy" | "sell";
@@ -40,7 +40,7 @@ export function QuoteRankingTable({ mode, quotes, providers, language, t }: Quot
         </h2>
       </div>
       <div className="overflow-x-auto" tabIndex={0} aria-label={mode === "buy" ? t("arbitrageCheapestBuy") : t("arbitrageBestSell")}>
-        <table className="w-full min-w-[1120px] text-left text-sm">
+        <table className="w-full min-w-[1260px] text-left text-sm">
           <thead className="bg-[var(--cma-bg-elevated)] text-xs uppercase text-[var(--cma-text-muted)]">
             <tr>
               <th scope="col" className="px-4 py-3">{t("arbitrageProvider")}</th>
@@ -51,6 +51,7 @@ export function QuoteRankingTable({ mode, quotes, providers, language, t }: Quot
               <th scope="col" className="px-4 py-3">{t("arbitrageLimits")}</th>
               <th scope="col" className="px-4 py-3">{t("arbitrageAvailability")}</th>
               <th scope="col" className="px-4 py-3">{t("arbitrageStatus")}</th>
+              <th scope="col" className="px-4 py-3">{t("arbitrageVerification")}</th>
               <th scope="col" className="px-4 py-3">{t("arbitrageLastUpdate")}</th>
               <th scope="col" className="px-4 py-3">{t("arbitrageSource")}</th>
             </tr>
@@ -69,7 +70,7 @@ export function QuoteRankingTable({ mode, quotes, providers, language, t }: Quot
                 <tr key={quote.id} className="border-t border-[var(--cma-border-soft)]">
                   <td className="px-4 py-3 font-semibold text-[var(--cma-text-primary)]">{provider?.name ?? quote.providerId}</td>
                   <td className="px-4 py-3 text-[var(--cma-text-secondary)]">{getInstrumentLabel(quote.instrument, t)}</td>
-                  <td className="px-4 py-3 font-semibold text-[var(--cma-text-primary)]">{rate ? formatArs(rate, language) : "-"}</td>
+                  <td className="px-4 py-3 font-semibold text-[var(--cma-text-primary)]">{rate ? formatArs(rate, language) : "-"}{quote.quotedAmountUsd ? <span className="mt-1 block text-[10px] font-normal text-[var(--cma-text-muted)]">{t("arbitrageReferenceVolume", { value: formatUsd(quote.quotedAmountUsd, language) })}</span> : null}</td>
                   <td className="px-4 py-3 text-[var(--cma-text-secondary)]">{quote.transferAsset}</td>
                   <td className="px-4 py-3 text-[var(--cma-text-secondary)]">{capabilityLabel(capability, t)}</td>
                   <td className="px-4 py-3 text-xs text-[var(--cma-text-secondary)]">{limitsLabel(quote, t)}</td>
@@ -79,6 +80,7 @@ export function QuoteRankingTable({ mode, quotes, providers, language, t }: Quot
                       {getQuoteStatusLabel(quote.status, t)}
                     </span>
                   </td>
+                  <td className="px-4 py-3"><span className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${quote.verification.quote === "verified" ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : quote.verification.quote === "reference_only" ? "border-sky-400/30 bg-sky-400/10 text-sky-300" : "border-amber-400/30 bg-amber-400/10 text-amber-300"}`}>{getVerificationLabel(quote.verification.quote, t)}</span></td>
                   <td className="px-4 py-3 text-xs text-[var(--cma-text-muted)]">
                     <span className="block">{t("arbitrageObservedAt")}: {formatTimestamp(quote.observedAt, language)}</span>
                     <span className="mt-1 block">{t("arbitrageFetchedAt")}: {formatTimestamp(quote.fetchedAt, language)}</span>

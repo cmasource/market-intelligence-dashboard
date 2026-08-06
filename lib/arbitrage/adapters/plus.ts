@@ -1,6 +1,6 @@
 import { deriveQuoteStatus } from "../freshness";
 import type { ArbitrageQuoteProvider, ProviderQuoteResult } from "../types";
-import { parseArgentinaTimestamp, parseNumber } from "./shared";
+import { parseArgentinaTimestamp, parseNumber, readJsonResponse } from "./shared";
 
 const PLUS_QUOTES_URL = "https://api.plus.com.ar/currencies?front-web=true";
 
@@ -42,6 +42,7 @@ export function normalizePlusPayload(payload: unknown, fetchedAt: string): Provi
       status: deriveQuoteStatus("plus", observedAt, new Date(fetchedAt)),
       fees: { fixedArs: 0, percentage: 0, fixedUsd: 0, description: "Sin comisión adicional publicada para Plus Cambio.", confidence: "confirmed" },
       warnings: ["same_holder_required", "verify_final_price"],
+      verification: { quote: "verified", costs: "verified", limits: "unverified", transferAsset: "partially_verified" },
     }],
   };
 }
@@ -63,6 +64,6 @@ export class PlusQuoteAdapter implements ArbitrageQuoteProvider {
       signal: AbortSignal.timeout(7_000),
     });
     if (!response.ok) throw new Error(`Plus upstream returned ${response.status}`);
-    return normalizePlusPayload(await response.json(), fetchedAt);
+    return normalizePlusPayload(await readJsonResponse(response, 64_000), fetchedAt);
   }
 }

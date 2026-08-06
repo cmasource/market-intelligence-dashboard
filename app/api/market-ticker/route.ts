@@ -1,3 +1,5 @@
+import { getArgentinaDollarReferences } from "@/lib/market-data/argentina-references";
+
 type TickerItem = {
   id: string;
   label: string;
@@ -7,13 +9,6 @@ type TickerItem = {
   source: string;
   updatedAt: string | null;
   status: "ok" | "unavailable";
-};
-
-type DolarApiQuote = {
-  casa: string;
-  nombre: string;
-  venta: number;
-  fechaActualizacion: string;
 };
 
 type YahooChartResponse = {
@@ -36,38 +31,8 @@ const yahooIndices = [
   { id: "merval", label: "S&P Merval", symbol: "^MERV" },
 ];
 
-const dolarPriority = new Map([
-  ["oficial", "USD oficial"],
-  ["blue", "USD blue"],
-  ["bolsa", "USD MEP"],
-  ["contadoconliqui", "USD CCL"],
-  ["cripto", "USD cripto"],
-]);
-
 function okItem(item: Omit<TickerItem, "status">): TickerItem {
   return { ...item, status: typeof item.value === "number" && Number.isFinite(item.value) ? "ok" : "unavailable" };
-}
-
-async function getDolarApiItems(): Promise<TickerItem[]> {
-  const response = await fetch("https://dolarapi.com/v1/dolares", {
-    next: { revalidate: 300 },
-  });
-  if (!response.ok) throw new Error(`DolarAPI returned HTTP ${response.status}.`);
-
-  const quotes = (await response.json()) as DolarApiQuote[];
-  return quotes
-    .filter((quote) => dolarPriority.has(quote.casa))
-    .map((quote) =>
-      okItem({
-        id: `usd-${quote.casa}`,
-        label: dolarPriority.get(quote.casa) ?? quote.nombre,
-        value: quote.venta,
-        changePercent: null,
-        currency: "ARS",
-        source: "DolarAPI",
-        updatedAt: quote.fechaActualizacion,
-      }),
-    );
 }
 
 async function getYahooIndexItem(input: { id: string; label: string; symbol: string }): Promise<TickerItem> {
@@ -100,8 +65,8 @@ async function getYahooIndexItem(input: { id: string; label: string; symbol: str
 }
 
 export async function GET() {
-  const [dolarResult, indexResults] = await Promise.all([
-    getDolarApiItems().catch(() => []),
+  const [dollarResult, indexResults] = await Promise.all([
+    getArgentinaDollarReferences().catch(() => ({ references: [], sources: { criptoYa: "unavailable" as const, dolarApi: "unavailable" as const } })),
     Promise.allSettled(yahooIndices.map(getYahooIndexItem)),
   ]);
 
@@ -121,13 +86,16 @@ export async function GET() {
         ],
   );
 
-  const items = [...dolarResult, ...indices].filter((item) => item.status === "ok");
+  const dollarItems = dollarResult.references.map((reference) => okItem(reference));
+  const items = [...dollarItems, ...indices].filter((item) => item.status === "ok");
+  const dollarSources = [...new Set(dollarItems.map((item) => item.source))];
 
   return Response.json(
     {
       items,
       fetchedAt: new Date().toISOString(),
-      sources: ["DolarAPI", "Yahoo compatible"],
+      sources: [...dollarSources, "Yahoo compatible"],
+      sourceStatus: dollarResult.sources,
     },
     {
       headers: {

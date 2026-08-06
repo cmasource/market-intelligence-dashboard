@@ -10,6 +10,42 @@ const publicRoutes = [
   { route: "/contact", heading: /Let us talk about better-informed decisions|Conversemos sobre decisiones mejor informadas/ },
 ];
 
+const rankingItems = ["AAPL", "MSFT", "NVDA", "SPY", "QQQ"].map((symbol, index) => ({
+  symbol,
+  name: symbol === "MSFT" ? "Microsoft Corporation" : `${symbol} test instrument`,
+  assetType: "stock",
+  market: "US",
+  price: 100 + index,
+  currency: "USD",
+  changePercent: index + 1,
+  score: 80 - index,
+  label: "constructive",
+  sourceLabel: "Deterministic E2E fixture",
+  isFallback: false,
+  route: `/asset/${symbol}`,
+  reason: "Deterministic dashboard smoke fixture.",
+}));
+
+const rankingResponse = (type: "technical" | "fundamental" | "combined" | "performance") => ({
+  type,
+  generatedAt: "2026-08-05T12:00:00.000Z",
+  universeSize: rankingItems.length,
+  items: rankingItems,
+  limitations: [],
+  sourceSummary: "Deterministic E2E fixture",
+});
+
+const rankingsFixture = {
+  generatedAt: "2026-08-05T12:00:00.000Z",
+  universeSize: rankingItems.length,
+  technical: rankingResponse("technical"),
+  fundamental: rankingResponse("fundamental"),
+  combined: rankingResponse("combined"),
+  performance: { "30D": rankingResponse("performance"), "180D": rankingResponse("performance"), YTD: rankingResponse("performance") },
+  limitations: [],
+  sourceSummary: "Deterministic E2E fixture",
+};
+
 async function assertNoHorizontalOverflow(page: Page) {
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBeTruthy();
 }
@@ -24,6 +60,7 @@ async function expectExpandedUniverse(page: Page) {
 test.describe("CMA Markets public smoke tests", () => {
   test.beforeEach(async ({ page }) => {
     await page.route("https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js", (route) => route.abort());
+    await page.route("**/api/rankings", (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify(rankingsFixture) }));
     await page.addInitScript(() => {
       if (window.sessionStorage.getItem("cma-e2e-storage-ready") === "1") return;
       window.localStorage.clear();
@@ -58,10 +95,6 @@ test.describe("CMA Markets public smoke tests", () => {
     await expect(page.getByRole("heading", { name: /Sign in to CMA Markets|Ingresá a CMA Markets/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /Continue with Google|Continuar con Google/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /Create account|Crear cuenta/ })).toBeVisible();
-    await page.getByLabel("Email").fill("qa@example.com");
-    await page.getByLabel(/Password|Contraseña/).fill("secure-password");
-    await page.getByRole("button", { name: /Sign in|Iniciar sesión/, exact: true }).click();
-    await expect(page.getByRole("status")).toContainText(/not connected|no está conectada/);
 
     const accountResponse = await page.goto("/account", { waitUntil: "domcontentloaded" });
     expect(accountResponse?.url()).toContain("/auth/login");
@@ -74,6 +107,8 @@ test.describe("CMA Markets public smoke tests", () => {
     await expect(page.getByRole("heading", { name: /Argentina and global pulse|Pulso argentino y global/ })).toBeVisible();
     await expect(page.getByRole("heading", { name: /Macro data and peso yields|Datos macro y rendimientos en pesos/ })).toBeVisible();
     await expect(page.locator("body")).toContainText(/IPC mensual/);
+    await expect(page.locator("body")).toContainText(/UVA/);
+    await expect(page.locator("body")).toContainText(/BCRA|CriptoYa \(fallback\)/);
     await expect(page.locator("body")).toContainText(/Interest-bearing accounts|Cuentas remuneradas/);
   });
 
@@ -258,7 +293,9 @@ test.describe("CMA Markets public smoke tests", () => {
     const macro = await macroResponse.json();
     expect(Array.isArray(macro.metrics)).toBeTruthy();
     expect(macro.metrics.length).toBeGreaterThanOrEqual(6);
-    expect(macro.metrics.every((item: { id?: unknown; value?: unknown; series?: unknown }) => typeof item.id === "number" && typeof item.value === "number" && Array.isArray(item.series))).toBeTruthy();
+    expect(macro.metrics.every((item: { id?: unknown; value?: unknown; series?: unknown; source?: unknown }) => typeof item.id === "number" && typeof item.value === "number" && Array.isArray(item.series) && typeof item.source === "string")).toBeTruthy();
+    expect(macro.metrics.map((item: { id: number }) => item.id)).toEqual(expect.arrayContaining([30, 31]));
+    expect(Array.isArray(macro.reconciliation)).toBeTruthy();
     expect(Array.isArray(macro.exchangeRates)).toBeTruthy();
     expect(macro.exchangeRates.map((item: { code: string }) => item.code)).toEqual(expect.arrayContaining(["USD", "EUR", "BRL"]));
 

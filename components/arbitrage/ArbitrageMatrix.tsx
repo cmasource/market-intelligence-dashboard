@@ -16,8 +16,10 @@ type ArbitrageMatrixProps = {
 function cellContent(opportunity: ArbitrageOpportunity, language: Language, t: ArbitrageTranslate) {
   if (opportunity.blockers.includes("same_provider")) return { icon: Ban, label: t("arbitrageSameProvider"), tone: "text-[var(--cma-text-muted)]" };
   if (opportunity.freshnessStatus === "stale") return { icon: Clock3, label: t("arbitrageStaleQuote"), tone: "text-amber-300" };
+  if (opportunity.freshnessStatus === "unverifiable") return { icon: Clock3, label: t("arbitrageInformationalReference"), detail: t("arbitrageObservedUnknown"), tone: "text-sky-300" };
   if (!opportunity.buyRate || !opportunity.sellRate) return { icon: AlertTriangle, label: t("arbitrageIncompleteData"), tone: "text-amber-300" };
   if (!opportunity.isCompatible) return { icon: Ban, label: t("arbitrageIncompatibleRoute"), tone: "text-[var(--cma-text-muted)]" };
+  if (opportunity.classification === "potential_gross_difference") return { icon: AlertTriangle, label: formatArs(opportunity.grossSpreadPerUsd, language, true), detail: t("arbitragePotentialRoute"), tone: "text-amber-300" };
   const value = opportunity.netProfitArs ?? opportunity.grossProfitArs;
   return {
     icon: value > 0 ? CheckCircle2 : AlertTriangle,

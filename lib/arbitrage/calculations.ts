@@ -41,7 +41,9 @@ export function calculateArbitrageOpportunity(
   const destinationFreshness = getFreshnessStatus(destination, now);
   const freshnessStatus = sourceFreshness === "stale" || destinationFreshness === "stale"
     ? "stale"
-    : sourceFreshness === "warning" || destinationFreshness === "warning" ? "warning" : "fresh";
+    : sourceFreshness === "unverifiable" || destinationFreshness === "unverifiable"
+      ? "unverifiable"
+      : sourceFreshness === "warning" || destinationFreshness === "warning" ? "warning" : "fresh";
   const blockers = [...route.blockers];
   if (!Number.isFinite(amountUsd) || amountUsd <= 0) blockers.push("invalid_amount");
   if (!buyRate) blockers.push("missing_buy_price");
@@ -49,8 +51,27 @@ export function calculateArbitrageOpportunity(
   const warnings = [...route.warnings];
   if (costStatus === "unknown") warnings.push("costs_unverified");
 
-  const comparableProfit = netProfitArs ?? grossProfitArs;
   const isCompatible = route.isCompatible && freshnessStatus !== "stale" && blockers.length === 0;
+  const limitsVerified = source.verification.limits === "verified" && destination.verification.limits === "verified";
+  const quotesVerified = source.verification.quote === "verified" && destination.verification.quote === "verified";
+  const verificationLevel = quotesVerified && route.verificationLevel === "verified" && costStatus === "verified" && limitsVerified
+    ? "verified"
+    : source.verification.quote === "reference_only" || destination.verification.quote === "reference_only"
+      ? "reference_only"
+      : "partially_verified";
+  const isProfitable = isCompatible
+    && freshnessStatus === "fresh"
+    && verificationLevel === "verified"
+    && netProfitArs !== undefined
+    && netProfitArs > 0;
+  const isPotentiallyProfitable = isCompatible && grossProfitArs > 0 && !isProfitable;
+  const classification = isProfitable
+    ? "verified_opportunity"
+    : isPotentiallyProfitable
+      ? "potential_gross_difference"
+      : verificationLevel === "reference_only"
+        ? "informational_reference"
+        : "unavailable";
 
   return {
     id: `${route.id}--${amountUsd}`,
@@ -69,7 +90,10 @@ export function calculateArbitrageOpportunity(
     netReturnPercentage,
     capitalRequiredArs,
     isCompatible,
-    isProfitable: isCompatible && comparableProfit > 0,
+    isProfitable,
+    isPotentiallyProfitable,
+    classification,
+    verificationLevel,
     costStatus,
     freshnessStatus,
     blockers: unique(blockers),
@@ -98,6 +122,12 @@ export function rankSellQuotes(quotes: FxQuote[]) {
 
 export function findBestOpportunity(opportunities: ArbitrageOpportunity[]) {
   return opportunities
-    .filter((opportunity) => opportunity.isCompatible)
-    .toSorted((left, right) => (right.netProfitArs ?? right.grossProfitArs) - (left.netProfitArs ?? left.grossProfitArs))[0];
+    .filter((opportunity) => opportunity.classification === "verified_opportunity")
+    .toSorted((left, right) => (right.netProfitArs ?? Number.NEGATIVE_INFINITY) - (left.netProfitArs ?? Number.NEGATIVE_INFINITY))[0];
+}
+
+export function findBestPotentialDifference(opportunities: ArbitrageOpportunity[]) {
+  return opportunities
+    .filter((opportunity) => opportunity.classification === "potential_gross_difference")
+    .toSorted((left, right) => right.grossProfitArs - left.grossProfitArs)[0];
 }

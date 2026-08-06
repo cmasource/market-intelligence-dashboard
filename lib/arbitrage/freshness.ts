@@ -9,9 +9,11 @@ const POLICIES: Record<string, FreshnessPolicy> = {
   belo: DEFAULT_POLICY,
   dolarapp: DEFAULT_POLICY,
   satoshitango: DEFAULT_POLICY,
+  fiwind: DEFAULT_POLICY,
 };
 
 export function quoteAgeSeconds(quote: FxQuote, now = new Date()) {
+  if (!quote.observedAt) return Number.POSITIVE_INFINITY;
   const observed = new Date(quote.observedAt).getTime();
   if (!Number.isFinite(observed)) return Number.POSITIVE_INFINITY;
   return Math.max(0, Math.floor((now.getTime() - observed) / 1000));
@@ -19,6 +21,7 @@ export function quoteAgeSeconds(quote: FxQuote, now = new Date()) {
 
 export function getFreshnessStatus(quote: FxQuote, now = new Date()): FreshnessStatus {
   if (["stale", "unavailable", "error"].includes(quote.status)) return "stale";
+  if (!quote.observedAt) return "unverifiable";
   const policy = POLICIES[quote.providerId] ?? DEFAULT_POLICY;
   const age = quoteAgeSeconds(quote, now);
   if (age > policy.warningSeconds) return "stale";

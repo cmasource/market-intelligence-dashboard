@@ -3,7 +3,7 @@
 import { AlertTriangle, ArrowRight, CheckCircle2, Clock3, RefreshCw, ShieldAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
-import { buildOpportunityMatrix, calculateArbitrageOpportunity, findBestOpportunity, getFreshnessStatus, rankBuyQuotes, rankSellQuotes } from "@/lib/arbitrage";
+import { buildOpportunityMatrix, calculateArbitrageOpportunity, findBestOpportunity, findBestPotentialDifference, getFreshnessStatus, rankBuyQuotes, rankSellQuotes } from "@/lib/arbitrage";
 import { getInstrumentLabel, getProviderStatusLabel, getProviderTypeLabel, type ArbitrageTranslate } from "@/lib/arbitrage/labels";
 import type { ArbitrageOpportunity, ArbitrageQuotesResponse, FxInstrument, ProviderType } from "@/lib/arbitrage/types";
 import { useLanguage } from "@/lib/i18n/useLanguage";
@@ -100,7 +100,7 @@ export function ArbitrageRadarPage() {
   const baseMatrix = useMemo(() => validAmount ? buildOpportunityMatrix(baseQuotes, validAmount) : [], [baseQuotes, validAmount]);
   const visibleQuoteIds = useMemo(() => {
     if (!onlyCompatible && !onlyPositive) return null;
-    const matches = baseMatrix.filter((item) => (!onlyCompatible || item.isCompatible) && (!onlyPositive || item.isProfitable));
+    const matches = baseMatrix.filter((item) => (!onlyCompatible || item.isCompatible) && (!onlyPositive || item.isProfitable || item.isPotentiallyProfitable));
     return new Set(matches.flatMap((item) => [item.sourceQuoteId, item.destinationQuoteId]));
   }, [baseMatrix, onlyCompatible, onlyPositive]);
   const quotes = useMemo(() => visibleQuoteIds ? baseQuotes.filter((quote) => visibleQuoteIds.has(quote.id)) : baseQuotes, [baseQuotes, visibleQuoteIds]);
@@ -108,6 +108,7 @@ export function ArbitrageRadarPage() {
   const sellQuotes = useMemo(() => rankSellQuotes(quotes), [quotes]);
   const matrix = useMemo(() => validAmount ? buildOpportunityMatrix(quotes, validAmount) : [], [quotes, validAmount]);
   const best = useMemo(() => findBestOpportunity(matrix), [matrix]);
+  const bestPotential = useMemo(() => findBestPotentialDifference(matrix), [matrix]);
   const bestComparable = useMemo(() => matrix.filter((item) => !item.blockers.includes("same_provider") && !item.blockers.includes("asset_mismatch") && item.buyRate > 0 && item.sellRate > 0).toSorted((a, b) => b.grossSpreadPerUsd - a.grossSpreadPerUsd)[0], [matrix]);
   const selectedSource = buyQuotes.find((quote) => quote.id === sourceId) ?? buyQuotes[0];
   const selectedDestination = sellQuotes.find((quote) => quote.id === destinationId) ?? sellQuotes[0];
@@ -145,7 +146,7 @@ export function ArbitrageRadarPage() {
         </section>
 
         <section className="cma-panel-elevated p-5" data-testid="best-arbitrage-opportunity">
-          {best?.isProfitable ? <BestOpportunity opportunity={best} providers={providers} language={language} t={translate} /> : <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-300">{t("arbitrageNoNetOpportunity")}</p>{bestComparable ? <p className="mt-3 text-lg font-semibold text-[var(--cma-text-primary)]">{t("arbitrageBestAvailableDifference", { value: formatArs(bestComparable.grossSpreadPerUsd, language, true) })}</p> : <p className="mt-3 text-sm text-[var(--cma-text-muted)]">{t("arbitrageNoQuotes")}</p>}</div>}
+          {best ? <BestOpportunity opportunity={best} providers={providers} language={language} t={translate} /> : bestPotential ? <PotentialDifference opportunity={bestPotential} providers={providers} language={language} t={translate} /> : <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-300">{bestComparable ? t("arbitrageNoVerifiedOpportunities") : t("arbitrageInsufficientData")}</p>{bestComparable ? <p className="mt-3 text-sm text-[var(--cma-text-secondary)]">{t("arbitrageBestReferenceDifference", { value: formatArs(bestComparable.grossSpreadPerUsd, language, true) })}</p> : <p className="mt-3 text-sm text-[var(--cma-text-muted)]">{t("arbitrageNoQuotes")}</p>}</div>}
         </section>
 
         <div className="grid gap-6 xl:grid-cols-2">
@@ -163,13 +164,20 @@ export function ArbitrageRadarPage() {
               const providerQuotes = payload?.quotes.filter((quote) => quote.providerId === provider.id) ?? [];
               const available = providerQuotes.length > 0;
               const partial = providerQuotes.some((quote) => quote.warnings.includes("observed_at_unavailable") || quote.warnings.includes("provider_partial_data"));
-              return <article key={provider.id} className="rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-[var(--cma-text-primary)]">{provider.name}</p><p className="mt-1 text-xs text-[var(--cma-text-muted)]">{getProviderTypeLabel(provider.providerType, translate)} · {getProviderStatusLabel(provider.status, translate)}</p></div>{available ? <CheckCircle2 size={18} aria-label={partial ? t("arbitragePartialSource") : t("arbitrageActive")} className={partial ? "text-amber-300" : "text-emerald-300"} /> : <Clock3 size={18} aria-label={t("arbitrageUnavailable")} className="text-amber-300" />}</div><p className="mt-3 text-xs text-[var(--cma-text-secondary)]">{available ? t("arbitrageQuoteCount", { count: providerQuotes.length }) : t("arbitrageUnavailable")}{partial ? ` · ${t("arbitragePartialSource")}` : ""}</p></article>;
+              const capabilityVerified = provider.verification.deposit === "verified" && provider.verification.withdrawal === "verified";
+              return <article key={provider.id} className="rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-[var(--cma-text-primary)]">{provider.name}</p><p className="mt-1 text-xs text-[var(--cma-text-muted)]">{getProviderTypeLabel(provider.providerType, translate)} · {getProviderStatusLabel(provider.status, translate)}</p></div>{available ? <CheckCircle2 size={18} aria-label={partial ? t("arbitragePartialSource") : t("arbitrageActive")} className={partial ? "text-amber-300" : "text-emerald-300"} /> : <Clock3 size={18} aria-label={t("arbitrageProviderUnavailable")} className="text-amber-300" />}</div><p className="mt-3 text-xs text-[var(--cma-text-secondary)]">{available ? t("arbitrageQuoteCount", { count: providerQuotes.length }) : t("arbitrageProviderUnavailable")}{partial ? ` · ${t("arbitragePartialSource")}` : ""}</p><p className="mt-2 text-xs text-[var(--cma-text-muted)]">{capabilityVerified ? t("arbitrageVerifiedCapabilities") : t("arbitrageUnverifiedCapability")}</p></article>;
             })}
           </div>
         </section>
       </div>
     </AppShell>
   );
+}
+
+function PotentialDifference({ opportunity, providers, language, t }: { opportunity: ArbitrageOpportunity; providers: Map<string, { name: string }>; language: "es" | "en"; t: ArbitrageTranslate }) {
+  const source = providers.get(opportunity.sourceProviderId)?.name ?? opportunity.sourceProviderId;
+  const destination = providers.get(opportunity.destinationProviderId)?.name ?? opportunity.destinationProviderId;
+  return <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-300">{t("arbitragePossibleGross")}</p><p className="mt-2 text-sm text-amber-200">{t("arbitragePossibleGrossWarning")}</p><p className="mt-4 text-lg font-semibold text-[var(--cma-text-primary)]">{source} → {destination}</p><dl className="mt-4 grid gap-3 sm:grid-cols-3"><div><dt className="text-xs text-[var(--cma-text-muted)]">{t("arbitrageGrossSpread")}</dt><dd className="mt-1 font-semibold text-amber-300">{formatArs(opportunity.grossSpreadPerUsd, language, true)}</dd></div><div><dt className="text-xs text-[var(--cma-text-muted)]">{t("arbitrageGrossProfit")}</dt><dd className="mt-1 font-semibold text-amber-300">{formatArs(opportunity.grossProfitArs, language, true)}</dd></div><div><dt className="text-xs text-[var(--cma-text-muted)]">{t("arbitrageVerification")}</dt><dd className="mt-1 text-sm font-semibold text-[var(--cma-text-primary)]">{t("arbitrageCostsAndCapabilitiesPending")}</dd></div></dl></div>;
 }
 
 function BestOpportunity({ opportunity, providers, language, t }: { opportunity: ArbitrageOpportunity; providers: Map<string, { name: string }>; language: "es" | "en"; t: ArbitrageTranslate }) {

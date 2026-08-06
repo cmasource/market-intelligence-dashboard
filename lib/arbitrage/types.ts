@@ -15,7 +15,28 @@ export type QuoteSourceType = Exclude<ProviderSourceType, "unavailable">;
 export type ProviderStatus = "active" | "temporarily_unavailable" | "unsupported";
 export type QuoteStatus = "live" | "delayed" | "stale" | "unavailable" | "error";
 export type CostConfidence = "confirmed" | "estimated" | "unknown";
-export type FreshnessStatus = "fresh" | "warning" | "stale";
+export type FreshnessStatus = "fresh" | "warning" | "stale" | "unverifiable";
+export type VerificationLevel = "verified" | "partially_verified" | "reference_only" | "unverified";
+export type OpportunityClassification =
+  | "verified_opportunity"
+  | "potential_gross_difference"
+  | "informational_reference"
+  | "unavailable";
+
+export type ProviderVerification = {
+  deposit: VerificationLevel;
+  withdrawal: VerificationLevel;
+  sameHolder: VerificationLevel;
+  transferAsset: VerificationLevel;
+  availability24x7: VerificationLevel;
+};
+
+export type QuoteVerification = {
+  quote: VerificationLevel;
+  costs: VerificationLevel;
+  limits: VerificationLevel;
+  transferAsset: VerificationLevel;
+};
 
 export type ArbitrageIssueCode =
   | "same_provider"
@@ -39,7 +60,8 @@ export type ArbitrageIssueCode =
   | "observed_at_unavailable"
   | "verify_final_price"
   | "provider_partial_data"
-  | "settlement_delay";
+  | "settlement_delay"
+  | "volume_specific_quote";
 
 export type FxProvider = {
   id: string;
@@ -60,6 +82,7 @@ export type FxProvider = {
   requiresSameHolderAccount?: boolean;
   sourceType: ProviderSourceType;
   status: ProviderStatus;
+  verification: ProviderVerification;
 };
 
 export type QuoteFees = {
@@ -87,7 +110,8 @@ export type FxQuote = {
   originalBuyLabel?: string;
   originalSellLabel?: string;
   quoteCurrency: "ARS";
-  observedAt: string;
+  quotedAmountUsd?: number;
+  observedAt?: string;
   fetchedAt: string;
   sourceUrl?: string;
   sourceType: QuoteSourceType;
@@ -96,6 +120,7 @@ export type FxQuote = {
   fees?: QuoteFees;
   limits?: QuoteLimits;
   warnings: ArbitrageIssueCode[];
+  verification: QuoteVerification;
 };
 
 export type ProviderQuoteResult = {
@@ -128,6 +153,7 @@ export type TransferRoute = {
   estimatedTransferFeeArs?: number;
   estimatedTransferFeeUsd?: number;
   costConfidence: CostConfidence;
+  verificationLevel: VerificationLevel;
 };
 
 export type ArbitrageOpportunity = {
@@ -148,6 +174,9 @@ export type ArbitrageOpportunity = {
   capitalRequiredArs: number;
   isCompatible: boolean;
   isProfitable: boolean;
+  isPotentiallyProfitable: boolean;
+  classification: OpportunityClassification;
+  verificationLevel: VerificationLevel;
   costStatus: "verified" | "estimated" | "unknown";
   freshnessStatus: FreshnessStatus;
   blockers: ArbitrageIssueCode[];
@@ -163,7 +192,7 @@ export type ArbitrageQuotesResponse = {
   cache: {
     plusTtlSeconds: number;
     bnaTtlSeconds: number;
-    dolarApiTtlSeconds: number;
+    criptoYaTtlSeconds: number;
   };
   disclaimer: "informational_only";
 };

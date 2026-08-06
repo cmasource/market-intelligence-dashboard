@@ -1,5 +1,16 @@
 type BcraPoint = { fecha: string; valor: number };
 type BcraResult = { idVariable: number; detalle: BcraPoint[] };
+type MacroMetric = {
+  id: number;
+  label: string;
+  unit: string;
+  value: number;
+  date: string;
+  change: number | null;
+  series: BcraPoint[];
+  source: "BCRA" | "CriptoYa (fallback)";
+  sourceUrl: string;
+};
 type BcraExchangeRate = {
   codigoMoneda: string;
   descripcion: string;
@@ -23,7 +34,7 @@ function isoDate(value: Date) {
   return value.toISOString().slice(0, 10);
 }
 
-async function getSeries(variable: (typeof variables)[number]) {
+async function getSeries(variable: (typeof variables)[number]): Promise<MacroMetric | null> {
   const until = new Date();
   const since = new Date(until);
   since.setDate(since.getDate() - variable.days);
@@ -48,6 +59,8 @@ async function getSeries(variable: (typeof variables)[number]) {
     date: current.fecha,
     change: previous ? current.valor - previous.valor : null,
     series: points.slice(-12),
+    source: "BCRA" as const,
+    sourceUrl: `https://api.bcra.gob.ar/estadisticas/v4.0/monetarias/${variable.id}`,
   };
 }
 
@@ -76,13 +89,45 @@ async function getExchangeRates() {
 }
 
 export async function GET() {
-  const [metricResults, exchangeRateResult] = await Promise.all([
+  const [metricResults, exchangeRateResult, criptoYaIndices] = await Promise.all([
     Promise.allSettled(variables.map(getSeries)),
     getExchangeRates().catch(() => []),
+    getCriptoYaIndexReferences().catch(() => []),
   ]);
-  const metrics = metricResults.flatMap((result) => result.status === "fulfilled" && result.value ? [result.value] : []);
+  const metrics = variables.flatMap((variable, index): MacroMetric[] => {
+    const result = metricResults[index];
+    if (result.status === "fulfilled" && result.value) return [result.value];
+    const fallback = criptoYaIndices.find((item) => item.id === variable.id);
+    if (!fallback) return [];
+    return [{
+      id: fallback.id,
+      label: fallback.label,
+      unit: fallback.unit,
+      value: fallback.value,
+      date: fallback.date,
+      change: null,
+      series: [{ fecha: fallback.date, valor: fallback.value }],
+      source: "CriptoYa (fallback)" as const,
+      sourceUrl: fallback.sourceUrl,
+    }];
+  });
+  const reconciliation = ([30, 31] as const).flatMap((id) => {
+    const primary = metrics.find((item) => item.id === id && item.source === "BCRA");
+    const comparison = criptoYaIndices.find((item) => item.id === id);
+    if (!primary || !comparison) return [];
+    return [{
+      id,
+      primarySource: "BCRA" as const,
+      comparisonSource: "CriptoYa" as const,
+      absoluteDifference: Math.abs(primary.value - comparison.value),
+      relativeDifference: Math.abs(primary.value - comparison.value) / primary.value,
+      primaryDate: primary.date,
+      comparisonDate: comparison.date,
+    }];
+  });
   return Response.json(
-    { updatedAt: new Date().toISOString(), metrics, exchangeRates: exchangeRateResult },
+    { updatedAt: new Date().toISOString(), metrics, exchangeRates: exchangeRateResult, reconciliation },
     { headers: { "Cache-Control": "s-maxage=3600, stale-while-revalidate=86400" } },
   );
 }
+import { getCriptoYaIndexReferences } from "@/lib/market-data/argentina-references";
