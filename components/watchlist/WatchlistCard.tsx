@@ -31,7 +31,9 @@ function formatPrice(value: number | null | undefined, currency: string) {
 export function WatchlistCard({ item, lists, activeListId, memberships, price, changePercent, currency, updatedAt, loading, onRemove, onMove, onCopy }: WatchlistCardProps) {
   const destinations = lists.filter((list) => list.id !== activeListId);
   const positive = typeof changePercent === "number" && changePercent >= 0;
-  const tradeRadarHref = `/trade-radar?symbol=${encodeURIComponent(item.symbol)}${item.instrumentId ? `&instrumentId=${encodeURIComponent(item.instrumentId)}` : ""}`;
+  const tradeRadarParams = new URLSearchParams({ symbol: item.symbol, interval: "1d", analyze: "1" });
+  if (item.instrumentId) tradeRadarParams.set("instrumentId", item.instrumentId);
+  const tradeRadarHref = `/trade-radar?${tradeRadarParams.toString()}`;
 
   return (
     <article className="cma-panel p-4" data-testid="watchlist-asset-row">
