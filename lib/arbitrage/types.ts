@@ -193,6 +193,7 @@ export type ArbitrageQuotesResponse = {
     plusTtlSeconds: number;
     bnaTtlSeconds: number;
     criptoYaTtlSeconds: number;
+    comparaDolarTtlSeconds: number;
   };
   disclaimer: "informational_only";
 };

@@ -14,6 +14,7 @@
     "test:technical": "node --import tsx --test tests/technical/*.test.ts tests/market-data/*.test.ts tests/api/*.test.ts tests/intelligence/*.test.ts",
     "test:watchlist": "node --import tsx --test tests/watchlist/*.test.ts",
     "test:auth": "node --import tsx --test tests/auth/*.test.ts",
+    "test:arbitrage": "node --import tsx --test tests/arbitrage/*.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },

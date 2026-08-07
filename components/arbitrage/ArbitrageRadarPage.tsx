@@ -1,26 +1,41 @@
 "use client";
 
-import { AlertTriangle, ArrowRight, CheckCircle2, Clock3, RefreshCw, ShieldAlert } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, Clock3, Info, RefreshCw, ShieldAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { buildOpportunityMatrix, calculateArbitrageOpportunity, findBestOpportunity, findBestPotentialDifference, getFreshnessStatus, rankBuyQuotes, rankSellQuotes } from "@/lib/arbitrage";
-import { getInstrumentLabel, getProviderStatusLabel, getProviderTypeLabel, type ArbitrageTranslate } from "@/lib/arbitrage/labels";
-import type { ArbitrageOpportunity, ArbitrageQuotesResponse, FxInstrument, ProviderType } from "@/lib/arbitrage/types";
+import { getProviderStatusLabel, getProviderTypeLabel, type ArbitrageTranslate } from "@/lib/arbitrage/labels";
+import type { ArbitrageOpportunity, ArbitrageQuotesResponse, FxProvider, FxQuote, TransferAsset } from "@/lib/arbitrage/types";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { ArbitrageCalculator } from "./ArbitrageCalculator";
 import { ArbitrageMatrix } from "./ArbitrageMatrix";
 import { formatArs, formatTimestamp, formatUsd } from "./format";
-import { QuoteRankingTable } from "./QuoteRankingTable";
+import { ProviderLogo } from "./ProviderLogo";
+import { ProviderQuoteCard } from "./ProviderQuoteCard";
 
-const providerTypes: ProviderType[] = ["bank", "wallet", "broker", "exchange", "exchange_agency", "aggregator"];
-const instruments: FxInstrument[] = ["bank_usd", "official_usd", "usd_24_7", "mep", "usdt", "usdc", "crypto_usd_route"];
+const assets: TransferAsset[] = ["USD_BANK", "USDT", "USDC"];
 
-function getDefaultQuoteSelection(quotes: ArbitrageQuotesResponse["quotes"]) {
-  const best = findBestOpportunity(buildOpportunityMatrix(quotes, 1000));
-  return {
-    sourceId: best?.sourceQuoteId ?? rankBuyQuotes(quotes)[0]?.id ?? "",
-    destinationId: best?.destinationQuoteId ?? rankSellQuotes(quotes)[0]?.id ?? "",
-  };
+function assetLabel(asset: TransferAsset, language: "es" | "en") {
+  if (asset === "USD_BANK") return language === "es" ? "USD bancario" : "Bank USD";
+  return asset;
+}
+
+export function getDefaultQuoteSelectionForAsset(quotes: FxQuote[], asset: TransferAsset) {
+  const assetQuotes = quotes.filter((quote) => quote.transferAsset === asset);
+  const buyQuotes = rankBuyQuotes(assetQuotes);
+  const sellQuotes = rankSellQuotes(assetQuotes);
+  const matrix = buildOpportunityMatrix(assetQuotes, 1000);
+  const preferred = findBestOpportunity(matrix)
+    ?? findBestPotentialDifference(matrix)
+    ?? matrix
+      .filter((item) => !item.blockers.includes("same_provider") && !item.blockers.includes("asset_mismatch"))
+      .toSorted((left, right) => right.grossSpreadPerUsd - left.grossSpreadPerUsd)[0];
+  const sourceId = preferred?.sourceQuoteId ?? buyQuotes[0]?.id ?? "";
+  const sourceProviderId = assetQuotes.find((quote) => quote.id === sourceId)?.providerId;
+  const destinationId = preferred?.destinationQuoteId
+    ?? sellQuotes.find((quote) => quote.providerId !== sourceProviderId)?.id
+    ?? "";
+  return { sourceId, destinationId };
 }
 
 export function ArbitrageRadarPage() {
@@ -31,15 +46,10 @@ export function ArbitrageRadarPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
   const [amount, setAmount] = useState("1000");
+  const [selectedAsset, setSelectedAsset] = useState<TransferAsset>("USD_BANK");
   const [sourceId, setSourceId] = useState("");
   const [destinationId, setDestinationId] = useState("");
-  const [providerType, setProviderType] = useState<ProviderType | "all">("all");
-  const [instrument, setInstrument] = useState<FxInstrument | "all">("all");
-  const [only24x7, setOnly24x7] = useState(false);
-  const [onlyCompatible, setOnlyCompatible] = useState(false);
   const [onlyFresh, setOnlyFresh] = useState(false);
-  const [onlyPositive, setOnlyPositive] = useState(false);
-  const [onlyActive, setOnlyActive] = useState(true);
 
   const loadQuotes = useCallback(async (forceRefresh: boolean, signal?: AbortSignal) => {
     if (forceRefresh) setRefreshing(true);
@@ -47,11 +57,7 @@ export function ArbitrageRadarPage() {
     try {
       const response = await fetch(`/api/arbitrage/quotes${forceRefresh ? "?refresh=1" : ""}`, { signal, cache: "no-store" });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const next = await response.json() as ArbitrageQuotesResponse;
-      setPayload(next);
-      const defaults = getDefaultQuoteSelection(next.quotes);
-      setSourceId((current) => next.quotes.some((quote) => quote.id === current) ? current : defaults.sourceId);
-      setDestinationId((current) => next.quotes.some((quote) => quote.id === current) ? current : defaults.destinationId);
+      setPayload(await response.json() as ArbitrageQuotesResponse);
     } catch {
       if (!signal?.aborted) setError(true);
     } finally {
@@ -64,109 +70,122 @@ export function ArbitrageRadarPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetch("/api/arbitrage/quotes", { signal: controller.signal, cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.json() as Promise<ArbitrageQuotesResponse>;
-      })
-      .then((next) => {
-        const defaults = getDefaultQuoteSelection(next.quotes);
-        setPayload(next);
-        setSourceId(defaults.sourceId);
-        setDestinationId(defaults.destinationId);
-        setError(false);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setError(true);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
+    queueMicrotask(() => void loadQuotes(false, controller.signal));
     return () => controller.abort();
-  }, []);
+  }, [loadQuotes]);
 
   const amountUsd = Number.parseFloat(amount.replace(",", "."));
   const validAmount = Number.isFinite(amountUsd) && amountUsd > 0 ? amountUsd : 0;
   const providers = useMemo(() => new Map((payload?.providers ?? []).map((provider) => [provider.id, provider])), [payload]);
-  const baseQuotes = useMemo(() => (payload?.quotes ?? []).filter((quote) => {
-    const provider = providers.get(quote.providerId);
-    if (providerType !== "all" && provider?.providerType !== providerType) return false;
-    if (instrument !== "all" && quote.instrument !== instrument) return false;
-    if (only24x7 && !provider?.operates24x7) return false;
-    if (onlyFresh && getFreshnessStatus(quote) !== "fresh") return false;
-    if (onlyActive && provider?.status !== "active") return false;
+  const quotes = useMemo(() => (payload?.quotes ?? []).filter((quote) => {
+    if (quote.transferAsset !== selectedAsset) return false;
+    if (providers.get(quote.providerId)?.status !== "active") return false;
+    if (onlyFresh && ["stale", "unverifiable"].includes(getFreshnessStatus(quote))) return false;
     return true;
-  }), [instrument, only24x7, onlyActive, onlyFresh, payload, providerType, providers]);
-  const baseMatrix = useMemo(() => validAmount ? buildOpportunityMatrix(baseQuotes, validAmount) : [], [baseQuotes, validAmount]);
-  const visibleQuoteIds = useMemo(() => {
-    if (!onlyCompatible && !onlyPositive) return null;
-    const matches = baseMatrix.filter((item) => (!onlyCompatible || item.isCompatible) && (!onlyPositive || item.isProfitable || item.isPotentiallyProfitable));
-    return new Set(matches.flatMap((item) => [item.sourceQuoteId, item.destinationQuoteId]));
-  }, [baseMatrix, onlyCompatible, onlyPositive]);
-  const quotes = useMemo(() => visibleQuoteIds ? baseQuotes.filter((quote) => visibleQuoteIds.has(quote.id)) : baseQuotes, [baseQuotes, visibleQuoteIds]);
+  }), [onlyFresh, payload, providers, selectedAsset]);
   const buyQuotes = useMemo(() => rankBuyQuotes(quotes), [quotes]);
   const sellQuotes = useMemo(() => rankSellQuotes(quotes), [quotes]);
   const matrix = useMemo(() => validAmount ? buildOpportunityMatrix(quotes, validAmount) : [], [quotes, validAmount]);
   const best = useMemo(() => findBestOpportunity(matrix), [matrix]);
   const bestPotential = useMemo(() => findBestPotentialDifference(matrix), [matrix]);
-  const bestComparable = useMemo(() => matrix.filter((item) => !item.blockers.includes("same_provider") && !item.blockers.includes("asset_mismatch") && item.buyRate > 0 && item.sellRate > 0).toSorted((a, b) => b.grossSpreadPerUsd - a.grossSpreadPerUsd)[0], [matrix]);
-  const selectedSource = buyQuotes.find((quote) => quote.id === sourceId) ?? buyQuotes[0];
-  const selectedDestination = sellQuotes.find((quote) => quote.id === destinationId) ?? sellQuotes[0];
-  const selectedOpportunity = selectedSource && selectedDestination && validAmount ? calculateArbitrageOpportunity(selectedSource, selectedDestination, validAmount) : undefined;
+  const bestComparable = useMemo(() => matrix
+    .filter((item) => !item.blockers.includes("same_provider") && !item.blockers.includes("asset_mismatch") && item.buyRate > 0 && item.sellRate > 0)
+    .toSorted((left, right) => right.grossSpreadPerUsd - left.grossSpreadPerUsd)[0], [matrix]);
+  const defaults = useMemo(() => getDefaultQuoteSelectionForAsset(quotes, selectedAsset), [quotes, selectedAsset]);
+  const selectedSource = buyQuotes.find((quote) => quote.id === sourceId) ?? buyQuotes.find((quote) => quote.id === defaults.sourceId);
+  const destinationCandidates = sellQuotes.filter((quote) => quote.providerId !== selectedSource?.providerId);
+  const selectedDestination = destinationCandidates.find((quote) => quote.id === destinationId)
+    ?? destinationCandidates.find((quote) => quote.id === defaults.destinationId)
+    ?? destinationCandidates[0];
+  const selectedOpportunity = selectedSource && selectedDestination && validAmount
+    ? calculateArbitrageOpportunity(selectedSource, selectedDestination, validAmount)
+    : undefined;
+  const bestBuyId = buyQuotes[0]?.id;
+  const bestSellId = sellQuotes[0]?.id;
+
+  function selectAsset(asset: TransferAsset) {
+    setSelectedAsset(asset);
+    setSourceId("");
+    setDestinationId("");
+  }
+
+  function selectSource(nextSourceId: string) {
+    setSourceId(nextSourceId);
+    const providerId = quotes.find((quote) => quote.id === nextSourceId)?.providerId;
+    if (quotes.find((quote) => quote.id === destinationId)?.providerId === providerId) setDestinationId("");
+  }
 
   return (
     <AppShell>
-      <div className="space-y-6 py-4 sm:py-6">
-        <section className="cma-panel-elevated cma-hero-panel p-5 sm:p-6">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="cma-kicker">{t("arbitrageEyebrow")}</p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--cma-text-primary)] sm:text-4xl">{t("arbitrageTitle")}</h1>
-              <p className="mt-3 max-w-4xl text-sm leading-6 text-[var(--cma-text-secondary)]">{t("arbitrageSubtitle")}</p>
-            </div>
-            <button type="button" onClick={() => void loadQuotes(true)} disabled={refreshing} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[var(--cma-border-strong)] bg-[var(--cma-bg-elevated)] px-4 text-sm font-semibold text-[var(--cma-text-primary)] transition hover:border-[var(--cma-accent-cyan)] disabled:opacity-60">
+      <div className="space-y-5 py-3 sm:py-5">
+        <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="cma-kicker">{t("arbitrageEyebrow")}</p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[var(--cma-text-primary)]">{t("arbitrageTitle")}</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--cma-text-secondary)]">{language === "es" ? "Compará cotizaciones públicas por activo sin mezclar USD bancario con stablecoins." : "Compare public quotes by asset without mixing bank USD with stablecoins."}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <p className="hidden text-right text-[10px] leading-4 text-[var(--cma-text-muted)] sm:block">{payload ? t("arbitrageUpdatedAt", { time: formatTimestamp(payload.generatedAt, language) }) : loading ? t("arbitrageRefreshing") : ""}</p>
+            <button type="button" onClick={() => void loadQuotes(true)} disabled={refreshing} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[var(--cma-border-strong)] bg-[var(--cma-bg-panel)] px-4 text-sm font-semibold text-[var(--cma-text-primary)] transition hover:border-[var(--cma-accent-cyan)] disabled:opacity-60">
               <RefreshCw size={16} aria-hidden="true" className={refreshing ? "animate-spin" : ""} />{refreshing ? t("arbitrageRefreshing") : t("arbitrageRefresh")}
             </button>
           </div>
-          <div className="mt-5 flex gap-3 rounded-lg border border-amber-400/25 bg-amber-400/10 p-4 text-sm leading-6 text-amber-100"><ShieldAlert size={19} aria-hidden="true" className="mt-0.5 shrink-0" /><p>{t("arbitrageDisclaimer")}</p></div>
-          <p className="mt-3 text-xs text-[var(--cma-text-muted)]" aria-live="polite">{payload ? t("arbitrageUpdatedAt", { time: formatTimestamp(payload.generatedAt, language) }) : loading ? t("arbitrageRefreshing") : ""}</p>
         </section>
 
-        {error ? <div role="alert" className="flex items-center gap-3 rounded-lg border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-200"><AlertTriangle size={18} aria-hidden="true" />{t("arbitrageLoadError")}</div> : null}
-
-        <section className="cma-panel p-4 sm:p-5" aria-labelledby="arbitrage-filters-heading">
-          <h2 id="arbitrage-filters-heading" className="text-lg font-semibold text-[var(--cma-text-primary)]">{t("arbitrageFilters")}</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <label className="text-sm text-[var(--cma-text-secondary)]">{t("arbitrageProviderType")}<select value={providerType} onChange={(event) => setProviderType(event.target.value as ProviderType | "all")} className="mt-1 h-10 w-full rounded-md border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] px-3 text-[var(--cma-text-primary)]"><option value="all">{t("arbitrageAllProviders")}</option>{providerTypes.map((type) => <option key={type} value={type}>{getProviderTypeLabel(type, translate)}</option>)}</select></label>
-            <label className="text-sm text-[var(--cma-text-secondary)]">{t("arbitrageInstrument")}<select value={instrument} onChange={(event) => setInstrument(event.target.value as FxInstrument | "all")} className="mt-1 h-10 w-full rounded-md border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] px-3 text-[var(--cma-text-primary)]"><option value="all">{t("arbitrageAllInstruments")}</option>{instruments.map((item) => <option key={item} value={item}>{getInstrumentLabel(item, translate)}</option>)}</select></label>
-          </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-            {[[only24x7, setOnly24x7, "arbitrageOnly24x7"], [onlyCompatible, setOnlyCompatible, "arbitrageOnlyCompatible"], [onlyFresh, setOnlyFresh, "arbitrageOnlyFresh"], [onlyPositive, setOnlyPositive, "arbitrageOnlyPositive"], [onlyActive, setOnlyActive, "arbitrageOnlyActive"]].map(([checked, setter, key]) => <label key={String(key)} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] px-3 text-sm text-[var(--cma-text-secondary)]"><input type="checkbox" checked={checked as boolean} onChange={(event) => (setter as (value: boolean) => void)(event.target.checked)} className="h-4 w-4 accent-[var(--cma-accent-cyan)]" />{t(key as string)}</label>)}
-          </div>
+        <section className="flex gap-3 rounded-xl border border-sky-400/20 bg-sky-400/10 p-4 text-sm leading-6 text-[var(--cma-text-secondary)]">
+          <Info size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-sky-300" />
+          <p><strong className="text-[var(--cma-text-primary)]">{language === "es" ? "Perspectiva del usuario:" : "User perspective:"}</strong> {language === "es" ? "“Comprás a” es el precio que pagás (ask/venta de la entidad). “Vendés a” es el precio que recibís (bid/compra de la entidad)." : "“You buy at” is the price you pay (provider ask). “You sell at” is the price you receive (provider bid)."}</p>
         </section>
 
-        <section className="cma-panel-elevated p-5" data-testid="best-arbitrage-opportunity">
-          {best ? <BestOpportunity opportunity={best} providers={providers} language={language} t={translate} /> : bestPotential ? <PotentialDifference opportunity={bestPotential} providers={providers} language={language} t={translate} /> : <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-300">{bestComparable ? t("arbitrageNoVerifiedOpportunities") : t("arbitrageInsufficientData")}</p>{bestComparable ? <p className="mt-3 text-sm text-[var(--cma-text-secondary)]">{t("arbitrageBestReferenceDifference", { value: formatArs(bestComparable.grossSpreadPerUsd, language, true) })}</p> : <p className="mt-3 text-sm text-[var(--cma-text-muted)]">{t("arbitrageNoQuotes")}</p>}</div>}
+        <section className="flex gap-3 rounded-xl border border-amber-400/20 bg-amber-400/10 p-4 text-xs leading-5 text-amber-200">
+          <ShieldAlert size={17} aria-hidden="true" className="mt-0.5 shrink-0" /><p>{t("arbitrageDisclaimer")}</p>
         </section>
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          <QuoteRankingTable mode="buy" quotes={buyQuotes} providers={providers} language={language} t={translate} />
-          <QuoteRankingTable mode="sell" quotes={sellQuotes} providers={providers} language={language} t={translate} />
-        </div>
-        <ArbitrageMatrix buyQuotes={buyQuotes} sellQuotes={sellQuotes} opportunities={matrix} providers={providers} language={language} t={translate} />
-        <ArbitrageCalculator amount={amount} onAmountChange={setAmount} sourceId={selectedSource?.id ?? ""} destinationId={selectedDestination?.id ?? ""} onSourceChange={setSourceId} onDestinationChange={setDestinationId} buyQuotes={buyQuotes} sellQuotes={sellQuotes} opportunity={selectedOpportunity} providers={providers} language={language} t={translate} />
+        {error ? <div role="alert" className="flex items-center gap-3 rounded-xl border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-200"><AlertTriangle size={18} aria-hidden="true" />{t("arbitrageLoadError")}</div> : null}
 
-        <section className="cma-panel p-4 sm:p-5" data-testid="arbitrage-source-status">
-          <h2 className="text-xl font-semibold text-[var(--cma-text-primary)]">{t("arbitrageSourcesStatus")}</h2>
-          <p className="mt-1 text-sm leading-6 text-[var(--cma-text-muted)]">{t("arbitrageSourcesDescription")}</p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {(payload?.providers ?? []).map((provider) => {
-              const providerQuotes = payload?.quotes.filter((quote) => quote.providerId === provider.id) ?? [];
-              const available = providerQuotes.length > 0;
-              const partial = providerQuotes.some((quote) => quote.warnings.includes("observed_at_unavailable") || quote.warnings.includes("provider_partial_data"));
-              const capabilityVerified = provider.verification.deposit === "verified" && provider.verification.withdrawal === "verified";
-              return <article key={provider.id} className="rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-[var(--cma-text-primary)]">{provider.name}</p><p className="mt-1 text-xs text-[var(--cma-text-muted)]">{getProviderTypeLabel(provider.providerType, translate)} · {getProviderStatusLabel(provider.status, translate)}</p></div>{available ? <CheckCircle2 size={18} aria-label={partial ? t("arbitragePartialSource") : t("arbitrageActive")} className={partial ? "text-amber-300" : "text-emerald-300"} /> : <Clock3 size={18} aria-label={t("arbitrageProviderUnavailable")} className="text-amber-300" />}</div><p className="mt-3 text-xs text-[var(--cma-text-secondary)]">{available ? t("arbitrageQuoteCount", { count: providerQuotes.length }) : t("arbitrageProviderUnavailable")}{partial ? ` · ${t("arbitragePartialSource")}` : ""}</p><p className="mt-2 text-xs text-[var(--cma-text-muted)]">{capabilityVerified ? t("arbitrageVerifiedCapabilities") : t("arbitrageUnverifiedCapability")}</p></article>;
+        <section aria-label={language === "es" ? "Activo comparado" : "Compared asset"} className="border-b border-[var(--cma-border-soft)]">
+          <div className="flex gap-1 overflow-x-auto">
+            {assets.map((asset) => {
+              const active = selectedAsset === asset;
+              const count = payload?.quotes.filter((quote) => quote.transferAsset === asset).length ?? 0;
+              return <button key={asset} type="button" onClick={() => selectAsset(asset)} aria-pressed={active} className={`relative min-h-12 shrink-0 px-4 text-sm font-semibold transition ${active ? "text-[var(--cma-accent-cyan)]" : "text-[var(--cma-text-muted)] hover:text-[var(--cma-text-primary)]"}`}>{assetLabel(asset, language)}<span className="ml-2 rounded-full border border-[var(--cma-border-soft)] px-1.5 py-0.5 text-[10px]">{count}</span>{active ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[var(--cma-accent-cyan)]" /> : null}</button>;
             })}
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] p-4 sm:p-5" data-testid="best-arbitrage-opportunity">
+          <OpportunitySummary opportunity={best ?? bestPotential ?? bestComparable} verified={Boolean(best)} potential={Boolean(bestPotential)} providers={providers} language={language} />
+        </section>
+
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)]">
+          <section className="min-w-0" data-testid="arbitrage-quote-cards">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-[var(--cma-text-muted)]">{language === "es" ? `Cotizaciones de ${assetLabel(selectedAsset, language)}` : `${assetLabel(selectedAsset, language)} quotes`}</h2>
+                <p className="mt-1 text-xs text-[var(--cma-text-muted)]">{language === "es" ? `${quotes.length} cotización(es) comparables en este activo.` : `${quotes.length} comparable quote(s) for this asset.`}</p>
+              </div>
+              <div className="inline-flex rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] p-1" aria-label={language === "es" ? "Filtro de frescura" : "Freshness filter"}>
+                <button type="button" onClick={() => setOnlyFresh(false)} aria-pressed={!onlyFresh} className={`min-h-9 rounded-md px-3 text-xs font-semibold ${!onlyFresh ? "bg-[var(--cma-bg-elevated)] text-[var(--cma-text-primary)]" : "text-[var(--cma-text-muted)]"}`}>{language === "es" ? "Todas" : "All"}</button>
+                <button type="button" onClick={() => setOnlyFresh(true)} aria-pressed={onlyFresh} className={`min-h-9 rounded-md px-3 text-xs font-semibold ${onlyFresh ? "bg-[var(--cma-bg-elevated)] text-[var(--cma-text-primary)]" : "text-[var(--cma-text-muted)]"}`}>{language === "es" ? "Sólo vigentes" : "Fresh only"}</button>
+              </div>
+            </div>
+
+            {quotes.length ? <div className="mt-4 grid gap-4 md:grid-cols-2">{buyQuotes.map((quote) => <ProviderQuoteCard key={quote.id} quote={quote} provider={providers.get(quote.providerId)} asset={selectedAsset} isBestBuy={quote.id === bestBuyId} isBestSell={quote.id === bestSellId} language={language} t={translate} />)}</div> : <div className="mt-4 rounded-xl border border-dashed border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] p-8 text-center"><Clock3 size={22} aria-hidden="true" className="mx-auto text-[var(--cma-text-muted)]" /><p className="mt-2 text-sm font-semibold text-[var(--cma-text-primary)]">{t("arbitrageNoQuotes")}</p></div>}
+          </section>
+
+          <aside className="min-w-0 space-y-5">
+            <ArbitrageMatrix buyQuotes={buyQuotes} sellQuotes={sellQuotes} opportunities={matrix} providers={providers} language={language} asset={selectedAsset} t={translate} />
+            <ArbitrageCalculator amount={amount} onAmountChange={setAmount} sourceId={selectedSource?.id ?? ""} destinationId={selectedDestination?.id ?? ""} onSourceChange={selectSource} onDestinationChange={setDestinationId} buyQuotes={buyQuotes} sellQuotes={sellQuotes} opportunity={selectedOpportunity} providers={providers} asset={selectedAsset} language={language} t={translate} />
+          </aside>
+        </div>
+
+        <section className="rounded-xl border border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] p-4 sm:p-5" data-testid="arbitrage-source-status">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-[var(--cma-text-muted)]">{t("arbitrageSourcesStatus")}</h2>
+            <p className="mt-1 text-xs leading-5 text-[var(--cma-text-muted)]">{t("arbitrageSourcesDescription")}</p>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {(payload?.providers ?? []).map((provider) => <ProviderStatusCard key={provider.id} provider={provider} quotes={payload?.quotes.filter((quote) => quote.providerId === provider.id) ?? []} language={language} t={translate} />)}
           </div>
         </section>
       </div>
@@ -174,15 +193,21 @@ export function ArbitrageRadarPage() {
   );
 }
 
-function PotentialDifference({ opportunity, providers, language, t }: { opportunity: ArbitrageOpportunity; providers: Map<string, { name: string }>; language: "es" | "en"; t: ArbitrageTranslate }) {
+function OpportunitySummary({ opportunity, verified, potential, providers, language }: { opportunity?: ArbitrageOpportunity; verified: boolean; potential: boolean; providers: Map<string, FxProvider>; language: "es" | "en" }) {
+  const positive = Boolean(opportunity && opportunity.grossSpreadPerUsd > 0);
+  const title = verified
+    ? (language === "es" ? "Oportunidad verificada" : "Verified opportunity")
+    : potential
+      ? (language === "es" ? "Posible diferencia bruta" : "Possible gross difference")
+      : (language === "es" ? "Sin oportunidades verificadas" : "No verified opportunities");
+  if (!opportunity) return <div><p className="text-xs font-semibold uppercase tracking-[0.15em] text-[var(--cma-text-muted)]">{language === "es" ? "Datos insuficientes" : "Insufficient data"}</p><p className="mt-2 text-sm text-[var(--cma-text-muted)]">{language === "es" ? "Se necesitan dos proveedores comparables dentro del mismo activo." : "Two comparable providers for the same asset are required."}</p></div>;
   const source = providers.get(opportunity.sourceProviderId)?.name ?? opportunity.sourceProviderId;
   const destination = providers.get(opportunity.destinationProviderId)?.name ?? opportunity.destinationProviderId;
-  return <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-300">{t("arbitragePossibleGross")}</p><p className="mt-2 text-sm text-amber-200">{t("arbitragePossibleGrossWarning")}</p><p className="mt-4 text-lg font-semibold text-[var(--cma-text-primary)]">{source} → {destination}</p><dl className="mt-4 grid gap-3 sm:grid-cols-3"><div><dt className="text-xs text-[var(--cma-text-muted)]">{t("arbitrageGrossSpread")}</dt><dd className="mt-1 font-semibold text-amber-300">{formatArs(opportunity.grossSpreadPerUsd, language, true)}</dd></div><div><dt className="text-xs text-[var(--cma-text-muted)]">{t("arbitrageGrossProfit")}</dt><dd className="mt-1 font-semibold text-amber-300">{formatArs(opportunity.grossProfitArs, language, true)}</dd></div><div><dt className="text-xs text-[var(--cma-text-muted)]">{t("arbitrageVerification")}</dt><dd className="mt-1 text-sm font-semibold text-[var(--cma-text-primary)]">{t("arbitrageCostsAndCapabilitiesPending")}</dd></div></dl></div>;
+  return <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div><p className={`text-xs font-semibold uppercase tracking-[0.15em] ${verified ? "text-emerald-300" : potential ? "text-amber-300" : "text-[var(--cma-text-muted)]"}`}>{title}</p><p className="mt-2 text-sm text-[var(--cma-text-secondary)]">{positive ? (language === "es" ? "La diferencia sigue sujeta a costos, límites y capacidades verificadas." : "The difference remains subject to verified costs, limits and capabilities.") : (language === "es" ? "La mejor combinación comparable no presenta una diferencia positiva." : "The best comparable combination does not show a positive difference.")}</p></div><div className="flex flex-wrap items-center gap-3"><span className="text-xs font-semibold text-[var(--cma-text-primary)]">{source}</span><ArrowRight size={15} aria-hidden="true" className="text-[var(--cma-accent-cyan)]" /><span className="text-xs font-semibold text-[var(--cma-text-primary)]">{destination}</span><span className={`cma-metric rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] px-3 py-2 text-sm font-semibold ${positive ? "text-emerald-300" : "text-rose-300"}`}>{formatArs(opportunity.grossSpreadPerUsd, language, true)} / u.</span>{verified ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-300"><CheckCircle2 size={14} aria-hidden="true" />{formatUsd(opportunity.amountUsd, language)}</span> : null}</div></div>;
 }
 
-function BestOpportunity({ opportunity, providers, language, t }: { opportunity: ArbitrageOpportunity; providers: Map<string, { name: string }>; language: "es" | "en"; t: ArbitrageTranslate }) {
-  const source = providers.get(opportunity.sourceProviderId)?.name ?? opportunity.sourceProviderId;
-  const destination = providers.get(opportunity.destinationProviderId)?.name ?? opportunity.destinationProviderId;
-  const unknownCosts = opportunity.costStatus === "unknown";
-  return <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300">{unknownCosts ? t("arbitragePossibleGross") : t("arbitrageBestOpportunity")}</p>{unknownCosts ? <p className="mt-2 text-sm text-amber-200">{t("arbitragePossibleGrossWarning")}</p> : null}<div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center"><div className="rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] p-4"><p className="text-xs text-[var(--cma-text-muted)]">{t("arbitrageBuyIn", { provider: source })}</p><p className="mt-1 text-lg font-semibold text-[var(--cma-text-primary)]">{formatArs(opportunity.buyRate, language)}</p></div><ArrowRight aria-hidden="true" className="hidden text-[var(--cma-accent-cyan)] md:block" /><div className="rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] p-4"><p className="text-xs text-[var(--cma-text-muted)]">{t("arbitrageSellIn", { provider: destination })}</p><p className="mt-1 text-lg font-semibold text-[var(--cma-text-primary)]">{formatArs(opportunity.sellRate, language)}</p></div></div><dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><div><dt className="text-xs text-[var(--cma-text-muted)]">{t("arbitrageGrossSpread")}</dt><dd className="mt-1 font-semibold text-emerald-300">{formatArs(opportunity.grossSpreadPerUsd, language, true)}</dd></div><div><dt className="text-xs text-[var(--cma-text-muted)]">{t("arbitrageAmount")}</dt><dd className="mt-1 font-semibold text-[var(--cma-text-primary)]">{formatUsd(opportunity.amountUsd, language)}</dd></div><div><dt className="text-xs text-[var(--cma-text-muted)]">{unknownCosts ? t("arbitrageGrossProfit") : t("arbitrageNetProfit")}</dt><dd className="mt-1 font-semibold text-emerald-300">{formatArs(opportunity.netProfitArs ?? opportunity.grossProfitArs, language, true)}</dd></div><div><dt className="text-xs text-[var(--cma-text-muted)]">{t("arbitrageCapitalRequired")}</dt><dd className="mt-1 font-semibold text-[var(--cma-text-primary)]">{formatArs(opportunity.capitalRequiredArs, language)}</dd></div></dl></div>;
+function ProviderStatusCard({ provider, quotes, language, t }: { provider: FxProvider; quotes: FxQuote[]; language: "es" | "en"; t: ArbitrageTranslate }) {
+  const available = quotes.length > 0;
+  const partial = quotes.some((quote) => quote.warnings.includes("observed_at_unavailable") || quote.warnings.includes("provider_partial_data"));
+  return <article className="rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] p-3"><div className="flex items-start gap-3"><ProviderLogo providerId={provider.id} providerName={provider.name} size="sm" /><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-[var(--cma-text-primary)]">{provider.name}</p><p className="mt-1 text-[10px] text-[var(--cma-text-muted)]">{getProviderTypeLabel(provider.providerType, t)} · {getProviderStatusLabel(provider.status, t)}</p></div>{available ? <CheckCircle2 size={15} aria-label={partial ? t("arbitragePartialSource") : t("arbitrageActive")} className={partial ? "text-amber-300" : "text-emerald-300"} /> : <Clock3 size={15} aria-label={t("arbitrageProviderUnavailable")} className="text-[var(--cma-text-muted)]" />}</div><p className="mt-3 text-[10px] text-[var(--cma-text-secondary)]">{available ? t("arbitrageQuoteCount", { count: quotes.length }) : t("arbitrageProviderUnavailable")}</p><p className="mt-1 text-[10px] text-[var(--cma-text-muted)]">{provider.operates24x7 ? "24/7" : (language === "es" ? "Horario o disponibilidad no 24/7" : "Not 24/7 or schedule unverified")}</p></article>;
 }

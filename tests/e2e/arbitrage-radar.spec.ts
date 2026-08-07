@@ -3,10 +3,11 @@ import { expect, test, type Page } from "@playwright/test";
 const now = new Date().toISOString();
 
 const providers = [
-  { id: "plus", name: "Plus", providerType: "exchange_agency", operates24x7: true, supportsArsDeposit: true, supportsArsWithdrawal: true, supportsUsdDeposit: true, supportsUsdWithdrawal: true, requiresSameHolderAccount: true, sourceType: "public_endpoint", status: "active", verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "verified" } },
+  { id: "plus", name: "Plus", providerType: "exchange_agency", operates24x7: false, supportsArsDeposit: true, supportsArsWithdrawal: true, supportsUsdDeposit: true, supportsUsdWithdrawal: true, requiresSameHolderAccount: true, sourceType: "public_endpoint", status: "active", verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "unverified" } },
   { id: "bna", name: "Banco Nación", providerType: "bank", operates24x7: false, supportsArsDeposit: true, supportsArsWithdrawal: true, supportsUsdDeposit: true, supportsUsdWithdrawal: true, requiresSameHolderAccount: true, sourceType: "public_page", status: "active", verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "verified" } },
   { id: "satoshitango", name: "Satoshi Tango", providerType: "exchange", operates24x7: true, sourceType: "aggregator", status: "active", verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "unverified", availability24x7: "reference_only" } },
   { id: "fiwind", name: "Fiwind", providerType: "wallet", operates24x7: true, sourceType: "aggregator", status: "active", verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "verified", transferAsset: "partially_verified", availability24x7: "partially_verified" } },
+  { id: "banco-hipotecario", name: "Banco Hipotecario", providerType: "bank", operates24x7: false, sourceType: "aggregator", status: "active", verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "partially_verified", availability24x7: "reference_only" } },
   { id: "galicia", name: "Banco Galicia", providerType: "bank", sourceType: "unavailable", status: "unsupported", verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "unverified", availability24x7: "unverified" } },
 ] as const;
 
@@ -35,10 +36,12 @@ function quote(overrides: Record<string, unknown>) {
 
 function response({ negative = false } = {}) {
   const quotes = [
-    quote({ id: "plus-usd", providerId: "plus", instrument: "usd_24_7", userBuysUsdAt: negative ? 1519 : 1500, userSellsUsdAt: 1490 }),
+    quote({ id: "plus-usd", providerId: "plus", instrument: "bank_usd", userBuysUsdAt: negative ? 1519 : 1500, userSellsUsdAt: 1490 }),
     quote({ id: "bna-usd", providerId: "bna", userBuysUsdAt: negative ? 1530 : 1510, userSellsUsdAt: negative ? 1501.92 : 1505, sourceType: "public_page", fees: { confidence: "unknown" }, warnings: ["costs_unverified"] }),
-    quote({ id: "satoshi-usdt", providerId: "satoshitango", instrument: "usdt", transferAsset: "USDT", userBuysUsdAt: 1495, userSellsUsdAt: 1494, observedAt: "2020-01-01T00:00:00.000Z", status: "stale", sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["stale_quote", "observed_at_unavailable"] }),
-    quote({ id: "fiwind-usdt", providerId: "fiwind", instrument: "usdt", transferAsset: "USDT", userBuysUsdAt: 1578, userSellsUsdAt: 1565, quotedAmountUsd: 1000, status: "delayed", sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["costs_unverified", "verify_final_price", "volume_specific_quote"], verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" } }),
+    quote({ id: "fiwind-usd-via-usdt", providerId: "fiwind", instrument: "crypto_usd_route", userBuysUsdAt: 1532, userSellsUsdAt: negative ? 1501 : 1520, observedAt: undefined, status: "delayed", sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["observed_at_unavailable", "costs_unverified", "verify_final_price", "provider_partial_data"], verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" } }),
+    quote({ id: "hipotecario-usd", providerId: "banco-hipotecario", userBuysUsdAt: 1540, userSellsUsdAt: 1495, observedAt: undefined, status: "delayed", sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["observed_at_unavailable", "costs_unverified", "provider_partial_data"], verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" } }),
+    quote({ id: "satoshi-usdt", providerId: "satoshitango", instrument: "usdt", transferAsset: "USDT", userBuysUsdAt: 1590, userSellsUsdAt: 1562, observedAt: "2020-01-01T00:00:00.000Z", status: "stale", sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["stale_quote", "observed_at_unavailable"], verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" } }),
+    quote({ id: "fiwind-usdt", providerId: "fiwind", instrument: "usdt", transferAsset: "USDT", userBuysUsdAt: 1580, userSellsUsdAt: 1567, quotedAmountUsd: 1000, status: "delayed", sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["costs_unverified", "verify_final_price", "volume_specific_quote"], verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" } }),
   ];
   return {
     generatedAt: now,
@@ -47,10 +50,10 @@ function response({ negative = false } = {}) {
     providerResults: [
       { providerId: "plus", quotes: [quotes[0]], status: "success", fetchedAt: now, cacheStatus: "fresh" },
       { providerId: "bna", quotes: [quotes[1]], status: "success", fetchedAt: now, cacheStatus: "fresh" },
-      { providerId: "satoshitango", quotes: [quotes[2]], status: "partial", fetchedAt: now, cacheStatus: "fresh" },
-      { providerId: "criptoya-stablecoins", quotes: [quotes[3]], status: "success", fetchedAt: now, cacheStatus: "fresh" },
+      { providerId: "comparadolar-usd", quotes: quotes.slice(2, 4), status: "partial", fetchedAt: now, cacheStatus: "fresh" },
+      { providerId: "criptoya-stablecoins", quotes: quotes.slice(4), status: "success", fetchedAt: now, cacheStatus: "fresh" },
     ],
-    cache: { plusTtlSeconds: 60, bnaTtlSeconds: 300, criptoYaTtlSeconds: 60 },
+    cache: { plusTtlSeconds: 60, bnaTtlSeconds: 300, criptoYaTtlSeconds: 60, comparaDolarTtlSeconds: 60 },
     disclaimer: "informational_only",
   };
 }
@@ -63,7 +66,7 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => window.localStorage.clear());
 });
 
-test("loads rankings, opportunity, matrix, calculator and source failures", async ({ page }) => {
+test("separates assets, shows both user-side prices and constrains routes", async ({ page }) => {
   const consoleErrors: string[] = [];
   page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(message.text()); });
   await mockQuotes(page);
@@ -71,32 +74,45 @@ test("loads rankings, opportunity, matrix, calculator and source failures", asyn
 
   await expect(page.getByRole("heading", { name: /Radar de Arbitraje|Arbitrage Radar/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /Radar de Arbitraje|Arbitrage Radar/ })).toHaveAttribute("href", "/radar-arbitraje");
-  await expect(page.getByTestId("arbitrage-buy-ranking")).toContainText("Plus");
-  await expect(page.getByTestId("arbitrage-sell-ranking")).toContainText("Banco Nación");
+  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText("Plus");
+  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText("Banco Nación");
+  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/Comprás USD a|You buy USD at/);
+  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/Vendés USD a|You sell USD at/);
+  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText("Fiwind");
+  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/USD → USDT → ARS/);
+  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/Unverifiable freshness|Frescura no verificable/);
   await expect(page.getByTestId("best-arbitrage-opportunity")).toContainText(/Possible gross difference|Posible diferencia bruta/);
-  await expect(page.getByTestId("arbitrage-matrix")).toBeVisible();
-  await expect(page.getByTestId("arbitrage-calculator")).toContainText(/Route calculator|Calculadora de ruta/);
+  await expect(page.getByTestId("arbitrage-matrix")).toContainText(/USD bancario|bank USD/i);
+  await expect(page.getByTestId("arbitrage-calculator")).toContainText(/Calculadora|calculator/i);
   await expect(page.getByTestId("arbitrage-source-status")).toContainText("Fiwind");
-  await expect(page.getByTestId("arbitrage-source-status")).toContainText(/Provider unavailable|Proveedor no disponible/);
-  await expect(page.getByTestId("arbitrage-buy-ranking")).toContainText(/Reference volume|Volumen de referencia/);
-  await expect(page.getByTestId("arbitrage-buy-ranking")).toContainText(/Informational reference|Referencia informativa/);
-  if (process.env.ARBITRAGE_SCREENSHOT_PATH) {
-    await page.screenshot({ path: process.env.ARBITRAGE_SCREENSHOT_PATH, fullPage: true });
-  }
+  await expect(page.getByTestId("arbitrage-source-status")).toContainText(/Banco Hipotecario/);
 
+  await page.getByRole("button", { name: /USDT/ }).click();
+  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText("Fiwind");
+  await expect(page.getByTestId("arbitrage-quote-cards")).not.toContainText("Plus");
+  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/Volume|Volumen/);
+  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/Informational reference|Referencia informativa/);
+  await expect(page.getByTestId("arbitrage-matrix")).toContainText("USDT");
+
+  await page.getByRole("button", { name: /USD bancario|Bank USD/ }).click();
+  await page.getByRole("button", { name: /Fresh only|Sólo vigentes/ }).click();
+  await expect(page.getByTestId("arbitrage-quote-cards")).not.toContainText("Fiwind");
+  await expect(page.getByTestId("arbitrage-quote-cards")).not.toContainText("Banco Hipotecario");
+  await page.getByRole("button", { name: /All|Todas/ }).click();
   const calculator = page.getByTestId("arbitrage-calculator");
   await calculator.getByLabel(/Origin provider|Proveedor de origen/).selectOption("plus-usd");
   await calculator.getByLabel(/Destination provider|Proveedor de destino/).selectOption("bna-usd");
   await calculator.getByLabel(/Amount in USD|Monto en USD/).fill("2000");
   await expect(calculator).toContainText(/10[,.]000/);
 
-  await page.getByLabel(/Fresh quotes only|Sólo cotizaciones frescas/).check();
-  await expect(page.getByTestId("arbitrage-buy-ranking")).not.toContainText("Satoshi Tango");
-  await expect(page.getByTestId("arbitrage-sell-ranking")).not.toContainText("Satoshi Tango");
+  await page.getByRole("button", { name: /USDT/ }).click();
+  await page.getByRole("button", { name: /Fresh only|Sólo vigentes/ }).click();
+  await expect(page.getByTestId("arbitrage-quote-cards")).not.toContainText("Satoshi Tango");
+  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText("Fiwind");
   expect(consoleErrors).toEqual([]);
 });
 
-test("keeps the mandatory negative comparison unprofitable in the calculator", async ({ page }) => {
+test("keeps the negative Plus and BNA comparison unprofitable", async ({ page }) => {
   await mockQuotes(page, response({ negative: true }));
   await page.goto("/radar-arbitraje");
   await expect(page.getByTestId("best-arbitrage-opportunity")).toContainText(/No verified opportunities|Sin oportunidades verificadas/);
