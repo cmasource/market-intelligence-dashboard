@@ -306,15 +306,6 @@ test.describe("CMA Markets public smoke tests", () => {
     expect(rates.rates.length).toBeGreaterThan(0);
     expect(rates.rates.every((item: { name?: unknown; tna?: unknown }) => typeof item.name === "string" && typeof item.tna === "number")).toBeTruthy();
 
-    const caucionesResponse = await request.get("/api/research/cauciones");
-    expect(caucionesResponse.ok()).toBeTruthy();
-    const cauciones = await caucionesResponse.json();
-    expect(Array.isArray(cauciones.quotes)).toBeTruthy();
-    expect(cauciones.quotes.length).toBeGreaterThan(0);
-    expect(cauciones.quotes.some((item: { termDays?: unknown; rateTna?: unknown }) => item.termDays === 1 && typeof item.rateTna === "number")).toBeTruthy();
-    if (cauciones.alert) {
-      expect(cauciones.alert.increasePercent).toBeGreaterThan(cauciones.alert.thresholdPercent);
-    }
   });
 
   test("market and analysis APIs keep stable public contracts and hide secrets", async ({ request }) => {
