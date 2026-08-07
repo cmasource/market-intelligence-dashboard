@@ -1,0 +1,165 @@
+# Intelligent alerts
+
+## Objective and scope
+
+This phase adds account-scoped, explainable alerts for instruments saved in CMA Market Intelligence watchlists. It is integrated into the existing App Router application at `/alerts`, `/alerts/[id]`, and `/account/alerts`; it reuses Supabase Auth, Instrument Master identities, Trade Radar OHLCV providers, the shared shell, themes, language context, and watchlist repository.
+
+Alerts are informational. They never place orders, connect brokers, create positions or portfolios, estimate a guaranteed return, or provide personalized advice. Radar de Arbitraje files, providers, routes, tests, and documentation are not used by this module.
+
+## Initial diagnosis
+
+- The repository uses Next.js 16.2 App Router, React 19, cookie-based `@supabase/ssr`, and root `proxy.ts`.
+- Anonymous watchlists use versioned browser storage. Authenticated watchlists already had a partial `SupabaseWatchlistRepository` and the migration `20260804150000_account_watchlists.sql`.
+- There was no notification store, rule catalog, job runner, transactional email provider, WhatsApp provider, or configured local Supabase environment.
+- Trade Radar provides normalized OHLCV, provider identity, observed/fetched timestamps, delay, indicators, and a 220-candle sufficiency gate.
+- Fixed-income pages currently disclose mock or incomplete data. News coverage does not provide the licensed material-event contract required for alerts. Those rules remain disabled.
+
+## Architecture
+
+```text
+Local watchlists -- explicit consent --> account watchlists (Supabase + RLS)
+                                             |
+Vercel Cron --> protected Route Handler --> unique account instruments
+                                             |
+                                      Trade Radar OHLCV
+                                             |
+                         freshness + provider + sample validation
+                                             |
+                              versioned pure rule evaluations
+                                             |
+                  severity/preferences/deduplication/cooldown/lifecycle
+                                             |
+                          alert_events + alert_deliveries (in-app)
+                                             |
+                         center, unread count, detail, Trade Radar
+```
+
+Financial rules live in `lib/alerts/engine.ts` and `lib/alerts/rules.ts`; React components do not calculate indicators or determine severity. Inputs and outputs are deterministic and can be replayed for future calibration.
+
+## Watchlist persistence and import
+
+Anonymous users continue to use `cma-market-intelligence-watchlists-v2` in local storage. Authenticated users use `watchlists` and `watchlist_items`, protected by ownership RLS. The alert migration adds explicit instrument columns to `watchlist_items` while retaining the complete normalized item JSON for compatibility.
+
+On the first authenticated visit with non-empty local lists, an accessible consent dialog offers:
+
+- import to the account;
+- keep only on this device;
+- decide later.
+
+Import matches list names case-insensitively, preserves item timestamps, skips stable `assetKey` duplicates, reports partial errors, is safe to repeat, and never deletes the local backup. The decision is stored per user on the device; “later” is only suppressed for the current browser session.
+
+## Data model and RLS
+
+`supabase/migrations/20260805190000_intelligent_alerts.sql` adds or creates:
+
+- explicit identity fields on `watchlist_items`;
+- `alert_preferences`;
+- `alert_rule_versions`;
+- `alert_events`;
+- `alert_deliveries`;
+- `alert_job_runs` for execution locks and safe operational counts.
+
+RLS is enabled on every exposed table. Authenticated clients may manage their own preferences, read their own delivered events/deliveries, and update only the `read_at` column on their own events. They receive no insert privilege on events/deliveries and no access to internal rule versions or job runs. Rules and events are written through a server-only Supabase client using `SUPABASE_SECRET_KEY` (preferred) or the legacy `SUPABASE_SERVICE_ROLE_KEY` fallback; neither value may be exposed to client code or prefixed with `NEXT_PUBLIC_`.
+
+No `profiles` table is required. Authorization uses the validated Auth identity and row ownership, never user-editable metadata.
+
+## Classification and rule catalog
+
+Instrument types are normalized before evaluation. Active technical rules support stocks, ETFs, ADRs, CEDEARs, CEDEAR ETFs, and crypto only. Bonds, bills, corporate bonds, and unknown types are skipped because their required real inputs are unavailable.
+
+Active version 1 rules:
+
+- volatility-adjusted unusual price move;
+- unusual volume against the prior 20 usable bars;
+- trend break/recovery through EMA50 or the prior 20-bar range with ATR buffer;
+- elevated 10-bar realized volatility against the instrument's own preceding baseline;
+- optional opportunity, only when an upward trend event and a second independent price/volume rule trigger together.
+
+See `docs/alert-rules-catalog.md` for exact requirements and limitations.
+
+Severity uses informational, low, medium, high, and critical. It combines normalized magnitude, independent confirmations, usable volume, freshness, and data quality. Critical requires a confidence score of at least 0.94 and should be rare. Confidence is an evidence-quality priority score, not a probability of profit.
+
+## Freshness and sources
+
+Every evaluation requires parseable `observedAt` and `fetchedAt`, `fetchedAt >= observedAt`, a successful non-mock Trade Radar provider response, and at least 220 normalized candles at scheduler level. Daily crypto data is considered stale after 36 hours; other daily markets after 96 hours to account for weekends. Stale, incomplete, or failed-provider inputs produce no alert.
+
+The operational source is the provider selected by the existing Trade Radar provider router (for example Yahoo-compatible public data, Binance, or a configured provider). The exact provider and timestamps are persisted with each event and evidence item. Local BYMA quote-only snapshots are not converted into OHLCV history.
+
+Disabled categories:
+
+- bonds and bills: current prices/cash flows/yields are not sufficiently real and complete;
+- corporate bonds: issuer/cash-flow/credit-event source unavailable;
+- material news: no validated licensed material-news contract;
+- arbitrage opportunity: future placeholder only and intentionally disconnected from Radar de Arbitraje.
+
+## Deduplication, cooldown, and lifecycle
+
+One partial unique index allows only one active event per user, instrument, rule, and direction. Each execution also stores a time-window deduplication key. When a condition remains active, the scheduler updates evidence and evaluation time instead of inserting another event; higher severity escalates the existing event. Missing conditions resolve active events. A resolved condition can reactivate only after the rule-specific cooldown. Delivery rows are unique per event/channel.
+
+Deleting a watchlist sets historical event `watchlist_id` to null instead of deleting history. Because the scheduler reads only existing monitored lists, future evaluation for that deleted list stops automatically.
+
+## Scheduler
+
+The repository deliberately ships without an active scheduler until the deployment plan and secrets are known. Choose exactly one strategy; enabling both would duplicate requests even though the database execution lock prevents duplicate processing.
+
+- **Vercel Pro or a plan supporting hourly Cron:** copy `docs/vercel-cron.pro.example.json` to the repository root as `vercel.json`. Configure `CRON_SECRET` in Vercel and keep Supabase Cron disabled.
+- **Vercel Hobby or no suitable Vercel Cron:** keep `vercel.json` absent. Store `cma_alerts_endpoint_url` and `cma_alerts_cron_secret` in Supabase Vault, then run `supabase/snippets/enable_intelligent_alerts_cron.sql`. The secret must equal the application's `CRON_SECRET`. Use the paired disable snippet for rollback.
+
+Both strategies invoke `/api/alerts/evaluate` with `Authorization: Bearer <CRON_SECRET>`; the handler validates it with a constant-time comparison. The same endpoint accepts an authorized POST for controlled manual validation. Never write the endpoint or secret value into a versioned SQL file.
+
+The hourly invocation does not evaluate every asset indiscriminately:
+
+- crypto: hourly, 24/7;
+- Argentina instruments: once on weekdays at 21:00 UTC;
+- US/other supported instruments: once on weekdays at 22:00 UTC.
+
+The job uses a database unique lock per execution window, bounded batches, per-instrument error isolation, safe aggregate counters, provider failure isolation, deduplicated user/instrument work, and a 60-second function limit. Fatal setup/query failures mark the job run as failed; isolated instrument failures mark it partial. Later runs safely resume from persisted state.
+
+## Preferences, quiet hours, and channels
+
+Users choose monitored lists, minimum severity, immediate/hourly/daily delivery, quiet hours/timezone, opportunities, global enablement, and in-app enablement. They do not configure RSI, moving averages, ATR, price targets, or boolean trading rules.
+
+In-app is implemented through persisted delivery rows. Immediate items outside quiet hours are marked sent; digest or quiet-hour items remain pending and a later scheduler run releases them. The center and unread badge display only sent in-app deliveries, so delivery preferences apply even when the page is closed.
+
+Email has a channel interface but is unavailable: Supabase Auth email is not a transactional alert provider. The UI cannot enable it, and no email is simulated. WhatsApp is a disabled future channel and no phone number is collected.
+
+## User interface and accessibility
+
+- `/alerts`: delivered history, unread count, severity/category/watchlist/instrument/date filters, mark one/all read.
+- `/alerts/[id]`: rule/version, severity, confidence, provider, freshness, evidence, limitations, market/currency, and Trade Radar link.
+- `/account/alerts`: delivery preferences.
+- desktop/mobile sidebar: visible Alerts entry and accessible unread count.
+
+Controls have labels and touch-sized targets; state is not communicated by color alone; the import dialog traps/restores focus and supports Escape; status messages use live regions. The surfaces reuse existing CSS variables and therefore support dark/light modes.
+
+## Configuration and migration
+
+Required server configuration:
+
+```text
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+SUPABASE_SECRET_KEY             server only, preferred
+SUPABASE_SERVICE_ROLE_KEY       server only, legacy fallback
+CRON_SECRET                    server only, random 16+ characters
+```
+
+1. Review and apply migrations in timestamp order to the intended Supabase project. With a linked CLI use `supabase db push`; otherwise paste the reviewed migration into the project's SQL Editor.
+2. Confirm the Data API exposes `public`, the migration grants are present, and the Supabase security/performance advisors show no new alert-table issue.
+3. Add the server-only variables to the application environment. Do not put them in browser code, SQL, screenshots, or logs.
+4. Determine the Vercel plan and activate exactly one scheduler strategy described above. The Supabase strategy requires the `pg_cron`, `pg_net`, and Vault capabilities used by the supplied snippet.
+5. Run one authorized controlled evaluation, then verify `alert_job_runs`, rule versions, events, deliveries, and the account UI.
+6. Test two real users: each can see only their own watchlists, preferences, events, and deliveries; neither can insert events/deliveries nor read rule/job internals.
+7. Test the explicit browser-local watchlist import, repeat it to verify idempotency, and confirm the local backup remains intact.
+
+Safe rollback is to disable the Cron job and remove the navigation exposure while retaining tables/history for investigation. Do not drop alert tables or watchlist columns without a reviewed backup and a separate destructive migration.
+
+## Tests and limitations
+
+Unit tests cover classification, compatible/incompatible rules, all active categories, opportunity confirmation, freshness, incomplete data, provider health, preferences, quiet hours, deduplication, cooldown, cadence, idempotent import, and static RLS/grant invariants. Playwright covers discoverability, authentication boundaries, configuration messaging, and mobile overflow without requiring real market movements.
+
+At integration time, this worktree had public Supabase browser configuration in the primary worktree but no server secret, `CRON_SECRET`, Supabase CLI project link, or detectable Vercel plan. Therefore no migration, live two-user RLS test, scheduler activation, or real alert insertion was performed. These external checks remain explicitly pending; no such flow is operational merely because this code compiles.
+
+The alert branch was integrated with the then-current `main` changes for Radar de Arbitraje and Argentina reference sources. Shared navigation and translations expose both modules; alert rules remain independent from arbitrage providers and calculations.
+
+Future work: licensed news/email providers, verified fixed-income inputs, calibrated thresholds from historical replay, batched/queued execution for larger user counts, alert utility metrics, retry policies, and production browser/RLS evidence.

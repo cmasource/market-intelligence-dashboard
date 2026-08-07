@@ -352,7 +352,18 @@ export class SupabaseWatchlistRepository implements LocalWatchlistRepository {
   async addItem(watchlistId: string, input: WatchlistItemInput) {
     const item = normalizeWatchlistItem(input); const existing = await this.supabase.from("watchlist_items").select("id,asset_key,item,added_at").eq("watchlist_id", watchlistId).eq("user_id", this.userId()).eq("asset_key", item.assetKey).maybeSingle();
     if (existing.error) throw existing.error; if (existing.data) return { ...normalizeWatchlistItem(existing.data.item as WatchlistItemInput), id: existing.data.id, assetKey: existing.data.asset_key, addedAt: existing.data.added_at };
-    const result = await this.supabase.from("watchlist_items").insert({ watchlist_id: watchlistId, user_id: this.userId(), asset_key: item.assetKey, item }).select("id,asset_key,item,added_at").single(); if (result.error) throw result.error; return { ...item, id: result.data.id, assetKey: result.data.asset_key, addedAt: result.data.added_at };
+    const result = await this.supabase.from("watchlist_items").insert({
+      watchlist_id: watchlistId,
+      user_id: this.userId(),
+      asset_key: item.assetKey,
+      instrument_id: item.instrumentId ?? null,
+      symbol: item.symbol,
+      market: item.market,
+      exchange: item.exchange ?? null,
+      asset_type: item.assetType,
+      item,
+      added_at: item.addedAt,
+    }).select("id,asset_key,item,added_at").single(); if (result.error) throw result.error; return { ...item, id: result.data.id, assetKey: result.data.asset_key, addedAt: result.data.added_at };
   }
   async removeItem(watchlistId: string, itemId: string) { const result = await this.supabase.from("watchlist_items").delete().eq("id", itemId).eq("watchlist_id", watchlistId).eq("user_id", this.userId()); if (result.error) throw result.error; }
   async copyItem(itemId: string, toWatchlistId: string) { const result = await this.supabase.from("watchlist_items").select("item").eq("id", itemId).eq("user_id", this.userId()).single(); if (result.error) throw result.error; await this.addItem(toWatchlistId, result.data.item as WatchlistItemInput); }
@@ -369,6 +380,63 @@ export function getWatchlistRepository() {
   const repository = browserRepository();
   if (!repository) throw new Error("El almacenamiento de listas sÃ³lo estÃ¡ disponible en el navegador.");
   return authenticatedUserId ? new SupabaseWatchlistRepository() : repository;
+}
+
+export async function importWatchlists(
+  source: LocalWatchlistRepository,
+  target: LocalWatchlistRepository,
+): Promise<import("./watchlist-types").WatchlistImportResult> {
+  const result = { listsCreated: 0, itemsImported: 0, itemsSkipped: 0, errors: [] as string[] };
+  const [sourceLists, initialTargetLists] = await Promise.all([source.getWatchlists(), target.getWatchlists()]);
+  const targetByName = new Map(initialTargetLists.map((list) => [comparableName(list.name), list]));
+
+  for (const sourceList of sourceLists) {
+    try {
+      let targetList = targetByName.get(comparableName(sourceList.name));
+      if (!targetList) {
+        targetList = await target.createWatchlist({ name: sourceList.name });
+        targetByName.set(comparableName(targetList.name), targetList);
+        result.listsCreated += 1;
+      }
+      const [sourceItems, targetItems] = await Promise.all([
+        source.getItems(sourceList.id),
+        target.getItems(targetList.id),
+      ]);
+      const targetKeys = new Set(targetItems.map((item) => item.assetKey));
+      for (const item of sourceItems) {
+        if (targetKeys.has(item.assetKey)) {
+          result.itemsSkipped += 1;
+          continue;
+        }
+        try {
+          await target.addItem(targetList.id, item);
+          targetKeys.add(item.assetKey);
+          result.itemsImported += 1;
+        } catch (error) {
+          result.errors.push(`${sourceList.name}/${item.displaySymbol}: ${error instanceof Error ? error.message : "error"}`);
+        }
+      }
+    } catch (error) {
+      result.errors.push(`${sourceList.name}: ${error instanceof Error ? error.message : "error"}`);
+    }
+  }
+  return result;
+}
+
+export async function importLocalWatchlistsToAccount(userId: string) {
+  if (typeof window === "undefined") throw new Error("La importación sólo se inicia desde el navegador.");
+  const source = new LocalStorageWatchlistRepository(window.localStorage);
+  setWatchlistUser(userId);
+  const target = new SupabaseWatchlistRepository();
+  return importWatchlists(source, target);
+}
+
+export async function hasLocalWatchlistData() {
+  if (typeof window === "undefined") return false;
+  const repository = new LocalStorageWatchlistRepository(window.localStorage);
+  const lists = await repository.getWatchlists();
+  const items = await Promise.all(lists.map((list) => repository.getItems(list.id)));
+  return items.some((listItems) => listItems.length > 0);
 }
 
 // Compatibility helpers for the count badge and older call sites during migration.

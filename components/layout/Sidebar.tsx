@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   BarChart3,
+  BellRing,
   Bitcoin,
   Calculator,
   CalendarDays,
@@ -26,6 +27,8 @@ import {
 import { AuthNavigation } from "@/components/auth/AuthNavigation";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { getWatchlistCountAsync, WATCHLIST_UPDATED_EVENT } from "@/lib/watchlist";
+import { ALERTS_UPDATED_EVENT, getUnreadAlertCount } from "@/lib/alerts/client";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 import { AppearanceToggle } from "./AppearanceToggle";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
@@ -38,6 +41,7 @@ export const navItems = [
   { labelKey: "navArgentina", href: "/argentina", icon: CircleDollarSign },
   { labelKey: "navCrypto", href: "/crypto", icon: Bitcoin },
   { labelKey: "navWatchlist", href: "/watchlist", icon: ListChecks },
+  { labelKey: "navAlerts", href: "/alerts", icon: BellRing },
   { labelKey: "navReports", href: "/reports", icon: ScanSearch },
   { labelKey: "navContact", href: "/contact", icon: Contact },
 ];
@@ -61,10 +65,19 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [watchlistCount, setWatchlistCount] = useState(0);
+  const [alertCount, setAlertCount] = useState(0);
   const [reportsOpen, setReportsOpen] = useState(pathname.startsWith("/reports"));
 
   useEffect(() => {
     queueMicrotask(() => setCollapsed(window.localStorage.getItem(COLLAPSE_KEY) === "1"));
+  }, []);
+
+  useEffect(() => {
+    if (!getSupabaseConfig()) return;
+    const sync = () => { void getUnreadAlertCount().then(setAlertCount).catch(() => setAlertCount(0)); };
+    sync();
+    window.addEventListener(ALERTS_UPDATED_EVENT, sync);
+    return () => window.removeEventListener(ALERTS_UPDATED_EVENT, sync);
   }, []);
 
   useEffect(() => {
@@ -157,6 +170,7 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
                 }`}
               >
                 <Icon aria-hidden="true" size={17} strokeWidth={isActive ? 2 : 1.7} className={isActive ? "text-[var(--cma-accent-cyan)]" : "text-[var(--cma-text-muted)]"} />
+                {collapsed && item.labelKey === "navAlerts" && alertCount > 0 ? <span aria-label={`${alertCount} ${t("navAlerts")}`} className="rounded-full bg-cyan-300 px-1 text-[9px] font-bold text-slate-950">{Math.min(alertCount, 99)}</span> : null}
                 {!collapsed ? (
                   <span className="min-w-0 flex-1 truncate font-medium">
                     {t(item.labelKey)}
@@ -164,6 +178,9 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
                       <span className="ml-1.5 rounded-full border border-[var(--cma-border-soft)] px-1.5 py-0.5 text-[10px] text-[var(--cma-text-muted)]">
                         {watchlistCount}
                       </span>
+                    ) : null}
+                    {item.labelKey === "navAlerts" && alertCount > 0 ? (
+                      <span aria-live="polite" className="ml-1.5 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-1.5 py-0.5 text-[10px] text-cyan-100">{Math.min(alertCount, 99)}</span>
                     ) : null}
                   </span>
                 ) : null}

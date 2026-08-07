@@ -68,6 +68,7 @@ const PPI_CAUCIONES_URL = "https://www.portfoliopersonal.com/Cotizaciones/Caucio
 const IOL_CAUCIONES_URL = "https://iol.invertironline.com/mercado/cotizaciones/argentina/cauciones";
 const ARS_CURRENCY_ID = 10000;
 const ALERT_THRESHOLD_PERCENT = 10;
+const CAUCION_MARKET_OPEN_HOUR = 11;
 
 function toNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -218,7 +219,7 @@ export function parseIolCauciones(html: string): CaucionesPayload {
     const termDays = Number(cells[0].replace(/\D/g, ""));
     const rateTna = parseLocaleNumber(cells[5]);
     const lastQuote = parseIolTimestamp(cells[6]);
-    if (!Number.isInteger(termDays) || termDays < 1 || termDays > 30 || rateTna === null) continue;
+    if (!Number.isInteger(termDays) || termDays < 1 || termDays > 30 || rateTna === null || rateTna <= 0) continue;
 
     quotes.push({
       termDays,
@@ -272,13 +273,30 @@ function argentinaDateKey(value: string | Date) {
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
-function expectedMarketDateKey(now = new Date()) {
-  const weekdayName = new Intl.DateTimeFormat("en-US", {
+function argentinaMarketClock(value: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Argentina/Buenos_Aires",
     weekday: "long",
-  }).format(now);
-  const offset = weekdayName === "Sunday" ? -2 : weekdayName === "Monday" ? -3 : 0;
-  const marketDate = new Date(now.getTime() + offset * 86_400_000);
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(value);
+  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
+  return { weekday: part("weekday"), hour: Number(part("hour")) };
+}
+
+export function expectedCaucionMarketDateKey(now = new Date()) {
+  let marketDate = now;
+  const currentClock = argentinaMarketClock(now);
+  const isWeekend = currentClock.weekday === "Saturday" || currentClock.weekday === "Sunday";
+
+  if (isWeekend || currentClock.hour < CAUCION_MARKET_OPEN_HOUR) {
+    marketDate = new Date(marketDate.getTime() - 86_400_000);
+  }
+
+  while (["Saturday", "Sunday"].includes(argentinaMarketClock(marketDate).weekday)) {
+    marketDate = new Date(marketDate.getTime() - 86_400_000);
+  }
+
   return argentinaDateKey(marketDate);
 }
 
@@ -314,7 +332,7 @@ function enrichCurrentQuotes(current: CaucionesPayload, ppi: CaucionesPayload | 
 }
 
 export async function getCauciones() {
-  const marketDateKey = expectedMarketDateKey();
+  const marketDateKey = expectedCaucionMarketDateKey();
   const [iolResult, ppiResult] = await Promise.allSettled([
     fetchCaucionesHtml(IOL_CAUCIONES_URL),
     fetchCaucionesHtml(PPI_CAUCIONES_URL),

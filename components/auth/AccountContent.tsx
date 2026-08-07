@@ -56,7 +56,7 @@ export function AccountContent({ email, displayName, provider, createdAt, passwo
         <section className="cma-panel p-5 sm:p-6">
           <h2 className="text-xl font-semibold text-[var(--cma-text-primary)]">{isSpanish ? "Seguridad" : "Security"}</h2>
           <p className="mt-2 text-sm leading-6 text-[var(--cma-text-secondary)]">{isSpanish ? "Podés definir una nueva contraseña desde una sesión validada." : "You can choose a new password from a validated session."}</p>
-          <Link href="/auth/update-password" className="mt-4 inline-flex min-h-10 items-center rounded-md border border-[var(--cma-border-strong)] px-4 text-sm font-semibold text-[var(--cma-accent-cyan)]">{isSpanish ? "Cambiar contraseña" : "Change password"}</Link>
+          <div className="mt-4 flex flex-wrap gap-2"><Link href="/auth/update-password" className="inline-flex min-h-10 items-center rounded-md border border-[var(--cma-border-strong)] px-4 text-sm font-semibold text-[var(--cma-accent-cyan)]">{isSpanish ? "Cambiar contraseña" : "Change password"}</Link><Link href="/account/alerts" className="inline-flex min-h-10 items-center rounded-md border border-[var(--cma-border-strong)] px-4 text-sm font-semibold text-[var(--cma-accent-cyan)]">{isSpanish ? "Configurar alertas" : "Alert settings"}</Link></div>
         </section>
 
         <section className="rounded-lg border border-amber-300/20 bg-amber-300/[0.05] p-5 text-sm leading-6 text-[var(--cma-text-secondary)]">

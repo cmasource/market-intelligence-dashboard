@@ -5,6 +5,7 @@ import { AppHeader } from "./AppHeader";
 import { AppFooter } from "./AppFooter";
 import { Sidebar } from "./Sidebar";
 import { useTheme } from "@/lib/theme/useTheme";
+import { WatchlistImportPrompt } from "@/components/watchlist/WatchlistImportPrompt";
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -24,6 +25,7 @@ export function AppShell({ children, width = "dashboard" }: AppShellProps) {
 
   return (
     <div className="cma-shell flex" data-app-theme={resolvedMode}>
+      <WatchlistImportPrompt />
       <Sidebar mobileOpen={mobileNavOpen} onCloseMobile={() => setMobileNavOpen(false)} />
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader onOpenMobileNav={() => setMobileNavOpen(true)} />

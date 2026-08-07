@@ -1,23 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { GET } from "@/app/api/research/cauciones/route";
+import { expectedCaucionMarketDateKey } from "@/lib/argentina/cauciones";
 
 function currentMarketTimestamp() {
-  const now = new Date();
-  const weekday = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Argentina/Buenos_Aires",
-    weekday: "long",
-  }).format(now);
-  const offsetDays = weekday === "Sunday" ? -2 : weekday === "Monday" ? -3 : 0;
-  const marketDate = new Date(now.getTime() + offsetDays * 86_400_000);
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Argentina/Buenos_Aires",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(marketDate);
-  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
-  return `${Number(part("day"))}/${Number(part("month"))}/${part("year")} 12:00:00`;
+  const [year, month, day] = expectedCaucionMarketDateKey().split("-");
+  return `${Number(day)}/${Number(month)}/${year} 12:00:00`;
 }
 
 test("cauciones route returns normalized source-backed data without a live provider dependency", async () => {
