@@ -3,9 +3,10 @@ import { analyzeTradeRadar } from "@/lib/technical/trade-radar";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { InAppNotificationChannel } from "./channels";
 import { canReactivate, classifyAlertAssetType, deduplicationKey, evaluateAlertRules } from "./engine";
-import { DEFAULT_ALERT_PREFERENCES, shouldCreateInAppAlert } from "./preferences";
+import { evaluatePersonalAlert } from "./personal";
+import { DEFAULT_ALERT_PREFERENCES, shouldCreateInAppAlert, shouldCreatePersonalInAppAlert } from "./preferences";
 import { alertRuleCatalog } from "./rules";
-import { severityRank, type AlertEvaluation, type AlertPreferences } from "./types";
+import { severityRank, type AlertEvaluation, type AlertPreferences, type PersonalAlertCondition, type PersonalAlertSubscription } from "./types";
 
 type WatchlistRow = { id: string; user_id: string; name: string };
 type ItemRow = {
@@ -44,6 +45,12 @@ type ExistingEvent = {
   triggered_at: string;
   updated_at: string;
 };
+type SubscriptionRow = {
+  id: string; user_id: string; watchlist_id: string; watchlist_item_id: string; instrument_id: string;
+  instrument_symbol: string; instrument_name: string; market: string; exchange: string | null; currency: string;
+  asset_type: PersonalAlertSubscription["assetType"]; condition: PersonalAlertCondition; target_value: number | null;
+  threshold_percent: number | null; lookback_bars: number | null; enabled: boolean; created_at: string; updated_at: string;
+};
 
 export type AlertJobSummary = {
   status: "completed" | "partial";
@@ -73,6 +80,17 @@ function preferenceFromRow(row?: PreferenceRow): AlertPreferences {
 
 function eventIdentity(userId: string, instrumentId: string, ruleId: string, direction: string) {
   return `${userId}:${instrumentId}:${ruleId}:${direction}`;
+}
+
+function subscriptionFromRow(row: SubscriptionRow): PersonalAlertSubscription {
+  return {
+    id: row.id, userId: row.user_id, watchlistId: row.watchlist_id, watchlistItemId: row.watchlist_item_id,
+    instrumentId: row.instrument_id, instrumentSymbol: row.instrument_symbol, instrumentName: row.instrument_name,
+    market: row.market, exchange: row.exchange, currency: row.currency, assetType: row.asset_type,
+    condition: row.condition, targetValue: row.target_value === null ? null : Number(row.target_value),
+    thresholdPercent: row.threshold_percent === null ? null : Number(row.threshold_percent),
+    lookbackBars: row.lookback_bars, enabled: row.enabled, createdAt: row.created_at, updatedAt: row.updated_at,
+  };
 }
 
 function evaluationWindow(now: Date) {
@@ -125,13 +143,14 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
   let fatalError = false;
   try {
     await Promise.all([syncRuleVersions(supabase), releaseScheduledDeliveries(supabase, now)]);
-    const [watchlistsResult, preferencesResult, activeEventsResult, recentEventsResult] = await Promise.all([
+    const [watchlistsResult, preferencesResult, subscriptionsResult, activeEventsResult, recentEventsResult] = await Promise.all([
       supabase.from("watchlists").select("id,user_id,name").order("created_at").limit(500),
       supabase.from("alert_preferences").select("user_id,alerts_enabled,minimum_severity,frequency,quiet_hours_start,quiet_hours_end,timezone,opportunity_alerts_enabled,in_app_enabled,email_enabled,monitored_watchlist_ids"),
+      supabase.from("alert_subscriptions").select("id,user_id,watchlist_id,watchlist_item_id,instrument_id,instrument_symbol,instrument_name,market,exchange,currency,asset_type,condition,target_value,threshold_percent,lookback_bars,enabled,created_at,updated_at").eq("enabled", true).limit(2000),
       supabase.from("alert_events").select("id,user_id,instrument_id,rule_id,direction,severity,status,triggered_at,updated_at").eq("status", "active").limit(2000),
       supabase.from("alert_events").select("id,user_id,instrument_id,rule_id,direction,severity,status,triggered_at,updated_at").neq("status", "active").order("triggered_at", { ascending: false }).limit(2000),
     ]);
-    for (const result of [watchlistsResult, preferencesResult, activeEventsResult, recentEventsResult]) if (result.error) throw result.error;
+    for (const result of [watchlistsResult, preferencesResult, subscriptionsResult, activeEventsResult, recentEventsResult]) if (result.error) throw result.error;
     const watchlists = (watchlistsResult.data ?? []) as WatchlistRow[];
     const preferences = new Map(((preferencesResult.data ?? []) as PreferenceRow[]).map((row) => [row.user_id, preferenceFromRow(row)]));
     const activeEvents = new Map(((activeEventsResult.data ?? []) as ExistingEvent[]).map((event) => [eventIdentity(event.user_id, event.instrument_id, event.rule_id, event.direction), event]));
@@ -145,6 +164,13 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
       return pref.alertsEnabled && pref.frequency !== "disabled" && (pref.monitoredWatchlistIds === null || pref.monitoredWatchlistIds.includes(watchlist.id));
     });
     const watchlistById = new Map(enabledWatchlists.map((row) => [row.id, row]));
+    const subscriptionsByInstrument = new Map<string, PersonalAlertSubscription[]>();
+    for (const row of (subscriptionsResult.data ?? []) as SubscriptionRow[]) {
+      if (!watchlistById.has(row.watchlist_id)) continue;
+      const subscription = subscriptionFromRow(row);
+      const key = `${subscription.userId}:${subscription.instrumentId}`;
+      subscriptionsByInstrument.set(key, [...(subscriptionsByInstrument.get(key) ?? []), subscription]);
+    }
     summary.processedUsers = new Set(enabledWatchlists.map((row) => row.user_id)).size;
     if (!enabledWatchlists.length) return summary;
 
@@ -173,7 +199,7 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
       summary.processedInstruments += 1;
       try {
         const analysis = await analyzeTradeRadar({ instrumentId, symbol, market: marketFromItem(item), interval: "1d", provider: "auto" });
-        const evaluations = evaluateAlertRules({
+        const snapshot = {
           instrumentId,
           symbol: analysis.symbol,
           name: String(item.item.name ?? analysis.instrument?.name ?? symbol),
@@ -187,11 +213,22 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
           fetchedAt: analysis.fetchedAt,
           dataDelay: analysis.dataDelay,
           bars: analysis.ohlcv,
-        }, now);
+        };
+        const automaticEvaluations = evaluateAlertRules(snapshot, now);
+        const personalEvaluations = (subscriptionsByInstrument.get(`${item.user_id}:${instrumentId}`) ?? [])
+          .map((subscription) => ({ evaluation: evaluatePersonalAlert(snapshot, subscription, now), subscription }));
+        const evaluations = [
+          ...automaticEvaluations.map((evaluation) => ({ evaluation, subscription: null })),
+          ...personalEvaluations,
+        ];
         const triggeredIdentities = new Set<string>();
 
-        for (const evaluation of evaluations.filter((candidate) => candidate.triggered)) {
-          if (!shouldCreateInAppAlert({ severity: evaluation.severity, category: evaluation.category, watchlistId: item.watchlist_id, preferences: preferencesForUser })) continue;
+        for (const candidate of evaluations.filter((entry) => entry.evaluation.triggered)) {
+          const { evaluation, subscription } = candidate;
+          const deliveryAllowed = subscription
+            ? shouldCreatePersonalInAppAlert(subscription.watchlistId, preferencesForUser)
+            : shouldCreateInAppAlert({ severity: evaluation.severity, category: evaluation.category, watchlistId: item.watchlist_id, preferences: preferencesForUser });
+          if (!deliveryAllowed) continue;
           const identity = eventIdentity(item.user_id, instrumentId, evaluation.ruleId, evaluation.direction);
           triggeredIdentities.add(identity);
           const existing = activeEvents.get(identity);
@@ -225,7 +262,7 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
             instrument_symbol: analysis.symbol,
             market: analysis.market,
             currency: analysis.currency,
-            watchlist_id: item.watchlist_id,
+            watchlist_id: subscription?.watchlistId ?? item.watchlist_id,
             rule_id: evaluation.ruleId,
             rule_version: evaluation.ruleVersion,
             category: evaluation.category,

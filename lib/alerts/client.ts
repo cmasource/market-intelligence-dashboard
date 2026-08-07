@@ -1,8 +1,81 @@
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_ALERT_PREFERENCES } from "./preferences";
-import type { AlertCategory, AlertDirection, AlertEvidence, AlertPreferences, AlertSeverity, AlertStatus } from "./types";
+import type { WatchlistItem } from "@/lib/watchlist";
+import type { AlertCategory, AlertDirection, AlertEvidence, AlertPreferences, AlertSeverity, AlertStatus, PersonalAlertCondition, PersonalAlertSubscription } from "./types";
 
 export const ALERTS_UPDATED_EVENT = "cma-alerts-updated";
+export const ALERT_SUBSCRIPTIONS_UPDATED_EVENT = "cma-alert-subscriptions-updated";
+
+type SubscriptionRow = {
+  id: string; user_id: string; watchlist_id: string; watchlist_item_id: string; instrument_id: string;
+  instrument_symbol: string; instrument_name: string; market: string; exchange: string | null; currency: string;
+  asset_type: PersonalAlertSubscription["assetType"]; condition: PersonalAlertCondition; target_value: number | null;
+  threshold_percent: number | null; lookback_bars: number | null; enabled: boolean; created_at: string; updated_at: string;
+};
+
+function subscriptionFromRow(row: SubscriptionRow): PersonalAlertSubscription {
+  return {
+    id: row.id, userId: row.user_id, watchlistId: row.watchlist_id, watchlistItemId: row.watchlist_item_id,
+    instrumentId: row.instrument_id, instrumentSymbol: row.instrument_symbol, instrumentName: row.instrument_name,
+    market: row.market, exchange: row.exchange, currency: row.currency, assetType: row.asset_type,
+    condition: row.condition, targetValue: row.target_value === null ? null : Number(row.target_value),
+    thresholdPercent: row.threshold_percent === null ? null : Number(row.threshold_percent),
+    lookbackBars: row.lookback_bars, enabled: row.enabled, createdAt: row.created_at, updatedAt: row.updated_at,
+  };
+}
+
+const subscriptionColumns = "id,user_id,watchlist_id,watchlist_item_id,instrument_id,instrument_symbol,instrument_name,market,exchange,currency,asset_type,condition,target_value,threshold_percent,lookback_bars,enabled,created_at,updated_at";
+
+export async function getPersonalAlertSubscriptions() {
+  const result = await createClient().from("alert_subscriptions").select(subscriptionColumns).order("updated_at", { ascending: false });
+  if (result.error) throw result.error;
+  return ((result.data ?? []) as SubscriptionRow[]).map(subscriptionFromRow);
+}
+
+export async function savePersonalAlertSubscription(input: {
+  userId: string;
+  watchlistId: string;
+  item: WatchlistItem;
+  condition: PersonalAlertCondition;
+  targetValue?: number | null;
+  thresholdPercent?: number | null;
+  lookbackBars?: number | null;
+}) {
+  const payload = {
+    user_id: input.userId,
+    watchlist_id: input.watchlistId,
+    watchlist_item_id: input.item.id,
+    instrument_id: input.item.instrumentId ?? input.item.assetKey,
+    instrument_symbol: input.item.symbol,
+    instrument_name: input.item.name,
+    market: input.item.market,
+    exchange: input.item.exchange ?? null,
+    currency: input.item.currency,
+    asset_type: input.item.assetType,
+    condition: input.condition,
+    target_value: input.targetValue ?? null,
+    threshold_percent: input.thresholdPercent ?? null,
+    lookback_bars: input.lookbackBars ?? null,
+    enabled: true,
+    updated_at: new Date().toISOString(),
+  };
+  const result = await createClient().from("alert_subscriptions").upsert(payload, { onConflict: "user_id,instrument_id,condition" }).select(subscriptionColumns).single();
+  if (result.error) throw result.error;
+  window.dispatchEvent(new Event(ALERT_SUBSCRIPTIONS_UPDATED_EVENT));
+  return subscriptionFromRow(result.data as SubscriptionRow);
+}
+
+export async function setPersonalAlertSubscriptionEnabled(id: string, enabled: boolean) {
+  const { error } = await createClient().from("alert_subscriptions").update({ enabled, updated_at: new Date().toISOString() }).eq("id", id);
+  if (error) throw error;
+  window.dispatchEvent(new Event(ALERT_SUBSCRIPTIONS_UPDATED_EVENT));
+}
+
+export async function deletePersonalAlertSubscription(id: string) {
+  const { error } = await createClient().from("alert_subscriptions").delete().eq("id", id);
+  if (error) throw error;
+  window.dispatchEvent(new Event(ALERT_SUBSCRIPTIONS_UPDATED_EVENT));
+}
 
 export type AlertEventRecord = {
   id: string;

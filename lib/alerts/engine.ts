@@ -120,7 +120,7 @@ function triggered(
 export function evaluateAlertRules(snapshot: AlertMarketSnapshot, now = new Date()): AlertEvaluation[] {
   const evaluatedAt = now.toISOString();
   const freshnessStatus = freshnessFor(snapshot, now);
-  const rules = alertRuleCatalog.filter((rule) => rule.enabled && rule.supportedAssetTypes.includes(snapshot.assetType));
+  const rules = alertRuleCatalog.filter((rule) => rule.enabled && rule.scope === "automatic" && rule.supportedAssetTypes.includes(snapshot.assetType));
   const results = rules.filter((rule) => rule.category !== "opportunity").map((rule) => baseEvaluation(snapshot, rule.id, evaluatedAt, freshnessStatus));
   if (freshnessStatus !== "fresh" || !snapshot.providerHealthy || snapshot.bars.length < 60) return results;
 

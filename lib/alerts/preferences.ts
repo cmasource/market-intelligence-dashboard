@@ -59,3 +59,10 @@ export function shouldCreateInAppAlert(input: {
   if (input.category === "opportunity" && !preferences.opportunityAlertsEnabled) return false;
   return meetsMinimumSeverity(input.severity, preferences.minimumSeverity);
 }
+
+export function shouldCreatePersonalInAppAlert(watchlistId: string, preferences: AlertPreferences) {
+  return preferences.alertsEnabled
+    && preferences.inAppEnabled
+    && preferences.frequency !== "disabled"
+    && isWatchlistMonitored(watchlistId, preferences.monitoredWatchlistIds);
+}

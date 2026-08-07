@@ -29,6 +29,7 @@ import { useLanguage } from "@/lib/i18n/useLanguage";
 import { getWatchlistCountAsync, WATCHLIST_UPDATED_EVENT } from "@/lib/watchlist";
 import { ALERTS_UPDATED_EVENT, getUnreadAlertCount } from "@/lib/alerts/client";
 import { getSupabaseConfig } from "@/lib/supabase/config";
+import { createClient } from "@/lib/supabase/client";
 import { AppearanceToggle } from "./AppearanceToggle";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
@@ -74,7 +75,15 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
 
   useEffect(() => {
     if (!getSupabaseConfig()) return;
-    const sync = () => { void getUnreadAlertCount().then(setAlertCount).catch(() => setAlertCount(0)); };
+    const sync = () => {
+      void createClient().auth.getSession().then(({ data }) => {
+        if (!data.session) {
+          setAlertCount(0);
+          return;
+        }
+        void getUnreadAlertCount().then(setAlertCount).catch(() => setAlertCount(0));
+      });
+    };
     sync();
     window.addEventListener(ALERTS_UPDATED_EVENT, sync);
     return () => window.removeEventListener(ALERTS_UPDATED_EVENT, sync);

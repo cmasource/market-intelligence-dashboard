@@ -14,6 +14,14 @@ export type AlertCategory =
   | "arbitrage_opportunity";
 export type AlertDirection = "up" | "down" | "neutral";
 export type AlertStatus = "active" | "resolved" | "expired" | "dismissed";
+export type PersonalAlertCondition =
+  | "price_above"
+  | "price_below"
+  | "rapid_rise"
+  | "rapid_fall"
+  | "near_ema200"
+  | "near_period_low"
+  | "near_period_high";
 export type AlertAssetType =
   | "stock"
   | "etf"
@@ -74,6 +82,7 @@ export type AlertRuleDefinition = {
   category: AlertCategory;
   supportedAssetTypes: AlertAssetType[];
   enabled: boolean;
+  scope: "automatic" | "personal";
   description: string;
   requiredData: string[];
   cooldownMinutes: number;
@@ -101,4 +110,25 @@ export const severityRank: Record<AlertSeverity, number> = {
   medium: 2,
   high: 3,
   critical: 4,
+};
+
+export type PersonalAlertSubscription = {
+  id: string;
+  userId: string;
+  watchlistId: string;
+  watchlistItemId: string;
+  instrumentId: string;
+  instrumentSymbol: string;
+  instrumentName: string;
+  market: string;
+  exchange: string | null;
+  currency: string;
+  assetType: AlertAssetType;
+  condition: PersonalAlertCondition;
+  targetValue: number | null;
+  thresholdPercent: number | null;
+  lookbackBars: number | null;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
 };

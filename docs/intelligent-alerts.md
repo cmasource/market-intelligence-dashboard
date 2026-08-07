@@ -19,6 +19,8 @@ Alerts are informational. They never place orders, connect brokers, create posit
 ```text
 Local watchlists -- explicit consent --> account watchlists (Supabase + RLS)
                                              |
+                         user-defined alert subscriptions
+                                             |
 Vercel Cron --> protected Route Handler --> unique account instruments
                                              |
                                       Trade Radar OHLCV
@@ -59,11 +61,13 @@ Import matches list names case-insensitively, preserves item timestamps, skips s
 - `alert_deliveries`;
 - `alert_job_runs` for execution locks and safe operational counts.
 
+`supabase/migrations/20260807190105_configurable_alert_subscriptions.sql` adds the user-owned `alert_subscriptions` table and its RLS policies. It must be applied after the base alert migration.
+
 RLS is enabled on every exposed table. Authenticated clients may manage their own preferences, read their own delivered events/deliveries, and update only the `read_at` column on their own events. They receive no insert privilege on events/deliveries and no access to internal rule versions or job runs. Rules and events are written through a server-only Supabase client using `SUPABASE_SECRET_KEY` (preferred) or the legacy `SUPABASE_SERVICE_ROLE_KEY` fallback; neither value may be exposed to client code or prefixed with `NEXT_PUBLIC_`.
 
 No `profiles` table is required. Authorization uses the validated Auth identity and row ownership, never user-editable metadata.
 
-## Classification and rule catalog
+## Automatic and configurable alerts
 
 Instrument types are normalized before evaluation. Active technical rules support stocks, ETFs, ADRs, CEDEARs, CEDEAR ETFs, and crypto only. Bonds, bills, corporate bonds, and unknown types are skipped because their required real inputs are unavailable.
 
@@ -74,6 +78,15 @@ Active version 1 rules:
 - trend break/recovery through EMA50 or the prior 20-bar range with ATR buffer;
 - elevated 10-bar realized volatility against the instrument's own preceding baseline;
 - optional opportunity, only when an upward trend event and a second independent price/volume rule trigger together.
+
+In addition, an authenticated user can create deterministic personal alerts from any supported asset card in a watchlist or from the alert center. The available conditions are:
+
+- crossing above or below a configured price;
+- rising or falling by a configured close-to-close percentage in the latest daily bar;
+- approaching EMA 200 within a configured percentage;
+- approaching the prior 20, 60, 120, or 200-session low or high within a configured percentage.
+
+"Period low/high" is intentionally explicit: it is not an undocumented all-time historical floor or ceiling. Creating an alert from search first adds the normalized Instrument Master identity to the selected account watchlist, then stores the alert subscription. Personal alerts use the same provider, freshness, evidence, deduplication, cadence, and no-order guarantees as automatic rules.
 
 See `docs/alert-rules-catalog.md` for exact requirements and limitations.
 
@@ -117,7 +130,7 @@ The job uses a database unique lock per execution window, bounded batches, per-i
 
 ## Preferences, quiet hours, and channels
 
-Users choose monitored lists, minimum severity, immediate/hourly/daily delivery, quiet hours/timezone, opportunities, global enablement, and in-app enablement. They do not configure RSI, moving averages, ATR, price targets, or boolean trading rules.
+Users choose monitored lists, minimum severity for automatic alerts, immediate/hourly/daily delivery, quiet hours/timezone, opportunities, global enablement, and in-app enablement. A personal alert is an explicit request, so it is not hidden by the global minimum-severity selector; global enablement, channel, frequency, quiet hours, and selected-list settings still apply. Users can pause, resume, or delete each personal alert.
 
 In-app is implemented through persisted delivery rows. Immediate items outside quiet hours are marked sent; digest or quiet-hour items remain pending and a later scheduler run releases them. The center and unread badge display only sent in-app deliveries, so delivery preferences apply even when the page is closed.
 
@@ -125,7 +138,7 @@ Email has a channel interface but is unavailable: Supabase Auth email is not a t
 
 ## User interface and accessibility
 
-- `/alerts`: delivered history, unread count, severity/category/watchlist/instrument/date filters, mark one/all read.
+- `/alerts`: create and manage personal alerts, understand automatic monitoring, view delivered history, unread count, severity/category/watchlist/instrument/date filters, and mark one/all read.
 - `/alerts/[id]`: rule/version, severity, confidence, provider, freshness, evidence, limitations, market/currency, and Trade Radar link.
 - `/account/alerts`: delivery preferences.
 - desktop/mobile sidebar: visible Alerts entry and accessible unread count.

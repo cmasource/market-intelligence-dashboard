@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Copy, ExternalLink, MoveRight, Trash2 } from "lucide-react";
+import { BellPlus, Copy, ExternalLink, MoveRight, Trash2 } from "lucide-react";
 import { AssetLogo } from "@/components/assets/AssetLogo";
 import { formatPercent } from "@/lib/formatters";
 import type { Watchlist, WatchlistItem } from "@/lib/watchlist";
@@ -19,6 +19,7 @@ type WatchlistCardProps = {
   onRemove: () => void;
   onMove: (targetId: string) => void;
   onCopy: (targetId: string) => void;
+  onCreateAlert: () => void;
 };
 
 function formatPrice(value: number | null | undefined, currency: string) {
@@ -28,7 +29,7 @@ function formatPrice(value: number | null | undefined, currency: string) {
   } catch { return value.toLocaleString("es-AR"); }
 }
 
-export function WatchlistCard({ item, lists, activeListId, memberships, price, changePercent, currency, updatedAt, loading, onRemove, onMove, onCopy }: WatchlistCardProps) {
+export function WatchlistCard({ item, lists, activeListId, memberships, price, changePercent, currency, updatedAt, loading, onRemove, onMove, onCopy, onCreateAlert }: WatchlistCardProps) {
   const destinations = lists.filter((list) => list.id !== activeListId);
   const positive = typeof changePercent === "number" && changePercent >= 0;
   const tradeRadarParams = new URLSearchParams({ symbol: item.symbol, interval: "1d", analyze: "1" });
@@ -63,6 +64,9 @@ export function WatchlistCard({ item, lists, activeListId, memberships, price, c
       <div className="mt-4 flex flex-col gap-3 border-t border-[var(--cma-border-soft)] pt-4 lg:flex-row lg:items-center lg:justify-between">
         <p className="text-xs text-[var(--cma-text-muted)]">También en: {memberships.length ? memberships.join(", ") : "ninguna otra lista"}</p>
         <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={onCreateAlert} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-emerald-300/30 bg-emerald-300/10 px-3 text-sm font-medium text-emerald-100">
+            <BellPlus size={15} aria-hidden="true" /> Crear alerta
+          </button>
           <Link href={tradeRadarHref} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-3 text-sm font-medium text-cyan-100">
             <ExternalLink size={15} aria-hidden="true" /> Abrir en Trade Radar
           </Link>

@@ -16,4 +16,16 @@ The integration with the current `main` branch did not change thresholds, enable
 | `corporate_bond_event` | 1 | Disabled | Corporate bonds/ONs | Reserved for verified issuer, cash-flow, yield and event data | 1440 min | Source unavailable |
 | `arbitrage_opportunity` | 1 | Disabled placeholder | None | None | 60 min | Outside this phase and disconnected from Radar de Arbitraje |
 
-All enabled rules additionally require a healthy provider response, fresh timestamps, normalized OHLCV, and the scheduler's 220-candle minimum. Evidence persists the observed value, unit, provider, and observation time. Confidence is capped below 1 and is used only for filtering/prioritization.
+## Personal rules
+
+| Rule | User setting | Trigger | Main limitation |
+| --- | --- | --- | --- |
+| `personal_price_above` | Target price | Latest daily close crosses from below to at/above the target | Evaluated on closing data, not intraday ticks |
+| `personal_price_below` | Target price | Latest daily close crosses from above to at/below the target | Evaluated on closing data, not intraday ticks |
+| `personal_rapid_rise` | Percentage | Latest close-to-close return is at least the configured percentage | One daily bar; no intraday interpretation |
+| `personal_rapid_fall` | Percentage | Latest close-to-close loss is at least the configured percentage | One daily bar; no intraday interpretation |
+| `personal_near_ema200` | Proximity percentage | Latest close is within the configured percentage of EMA 200 | Requires at least 200 usable closes |
+| `personal_near_period_low` | Proximity and 20/60/120/200 sessions | Latest close is within the configured percentage of the prior period low | Period low, not all-time historical floor |
+| `personal_near_period_high` | Proximity and 20/60/120/200 sessions | Latest close is within the configured percentage of the prior period high | Period high, not all-time historical ceiling |
+
+All enabled automatic and personal rules require a healthy provider response, fresh timestamps, normalized OHLCV, and the scheduler's 220-candle minimum. Evidence persists the observed value, unit, provider, and observation time. Confidence is capped below 1 and is used only for filtering/prioritization.

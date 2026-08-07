@@ -14,6 +14,7 @@ import {
 } from "@/lib/watchlist";
 import { AddAssetDialog } from "./AddAssetDialog";
 import { WatchlistCard } from "./WatchlistCard";
+import { AlertComposerDialog } from "@/components/alerts/AlertComposerDialog";
 
 type SortOption = "ticker" | "name" | "change-desc" | "change-asc";
 
@@ -34,6 +35,7 @@ export function WatchlistPanel() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [assetDialogOpen, setAssetDialogOpen] = useState(false);
+  const [alertItem, setAlertItem] = useState<WatchlistItem | null>(null);
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sort, setSort] = useState<SortOption>("ticker");
@@ -221,11 +223,12 @@ export function WatchlistPanel() {
                 {visibleItems.map((item) => {
                   const quote = quoteFor(item);
                   const memberships = lists.filter((list) => list.id !== activeId && (itemsByList[list.id] ?? []).some((candidate) => candidate.assetKey === item.assetKey)).map((list) => list.name);
-                  return <WatchlistCard key={item.id} item={item} lists={lists} activeListId={activeId} memberships={memberships} {...quote} onRemove={() => void removeItem(item)} onMove={(target) => void moveItem(item, target)} onCopy={(target) => void copyItem(item, target)} />;
+                  return <WatchlistCard key={item.id} item={item} lists={lists} activeListId={activeId} memberships={memberships} {...quote} onRemove={() => void removeItem(item)} onMove={(target) => void moveItem(item, target)} onCopy={(target) => void copyItem(item, target)} onCreateAlert={() => setAlertItem(item)} />;
                 })}
               </div>
             ) : <div className="cma-panel mt-4 p-6 text-sm text-[var(--cma-text-muted)]">No hay activos que coincidan con los filtros.</div>}
             <AddAssetDialog open={assetDialogOpen} watchlistId={activeList.id} onClose={() => setAssetDialogOpen(false)} onAdded={() => void load()} />
+            <AlertComposerDialog open={Boolean(alertItem)} watchlists={lists} initialItem={alertItem} initialWatchlistId={activeList.id} onClose={() => setAlertItem(null)} onSaved={() => setStatus(`Alerta configurada para ${alertItem?.displaySymbol ?? "el activo"}.`)} />
           </>
         ) : null}
       </div>
