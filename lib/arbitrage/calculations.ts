@@ -1,6 +1,6 @@
 import { getFreshnessStatus } from "./freshness";
 import { buildTransferRoute } from "./routes";
-import type { ArbitrageIssueCode, ArbitrageOpportunity, CostConfidence, FxQuote, QuoteFees, TransferRoute } from "./types";
+import type { ArbitrageIssueCode, ArbitrageOpportunity, CostConfidence, FxQuote, QuoteFees, TransferAsset, TransferRoute } from "./types";
 
 function feeInArs(fees: QuoteFees | undefined, arsValue: number, usdRate: number) {
   if (!fees) return 0;
@@ -106,6 +106,14 @@ export function buildOpportunityMatrix(quotes: FxQuote[], amountUsd: number, now
   const buyQuotes = rankBuyQuotes(quotes);
   const sellQuotes = rankSellQuotes(quotes);
   return buyQuotes.flatMap((source) => sellQuotes.map((destination) => calculateArbitrageOpportunity(source, destination, amountUsd, undefined, now)));
+}
+
+export function filterQuotesByTransferAsset(quotes: FxQuote[], transferAsset: TransferAsset) {
+  return quotes.filter((quote) => quote.transferAsset === transferAsset);
+}
+
+export function buildOpportunityMatrixForAsset(quotes: FxQuote[], transferAsset: TransferAsset, amountUsd: number, now = new Date()) {
+  return buildOpportunityMatrix(filterQuotesByTransferAsset(quotes, transferAsset), amountUsd, now);
 }
 
 export function rankBuyQuotes(quotes: FxQuote[]) {

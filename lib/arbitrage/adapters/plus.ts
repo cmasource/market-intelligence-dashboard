@@ -28,7 +28,7 @@ export function normalizePlusPayload(payload: unknown, fetchedAt: string): Provi
     quotes: [{
       id: "plus-usd-bank",
       providerId: "plus",
-      instrument: "usd_24_7",
+      instrument: "bank_usd",
       transferAsset: "USD_BANK",
       userBuysUsdAt,
       userSellsUsdAt,

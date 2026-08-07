@@ -37,12 +37,15 @@ test("expanded CEDEAR underlyings are admitted by market-data providers", () => 
   assert.equal(getYahooSymbol("ADBE"), "ADBE");
 });
 
-test("local Argentine equity resolution uses associated ADR when available", () => {
+test("local Argentine equity resolution keeps the local ARS history when an ADR exists", () => {
   const resolution = resolveInstrument({ instrumentId: "ar-equity:GGAL" });
 
   assert.equal(resolution?.instrument.market, "argentina");
   assert.equal(resolution?.instrument.underlyingSymbol, "GGAL");
-  assert.equal(resolution?.technicalLayer?.symbol, "GGAL");
+  assert.equal(resolution?.technicalLayer?.symbol, "GGAL.BA");
+  assert.equal(resolution?.technicalLayer?.market, "argentina");
+  assert.equal(resolution?.dataCoverage.includes("technical_full"), true);
+  assert.equal(resolution?.dataCoverage.includes("fundamentals_underlying"), true);
   assert.equal(resolution?.localLayer?.provider, "byma");
 });
 

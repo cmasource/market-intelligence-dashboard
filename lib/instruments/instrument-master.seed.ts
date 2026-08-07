@@ -176,7 +176,7 @@ function localEquity(symbol: string, name: string): Instrument {
     country: "AR",
     currency: "ARS",
     bymaSymbol: symbol,
-    providerSymbol: adr ?? localHistorySymbol,
+    providerSymbol: localHistorySymbol,
     tradingViewSymbol: `BCBA:${symbol}`,
     underlyingSymbol: adr,
     underlyingExchange: adr ? "US" : undefined,
@@ -185,16 +185,14 @@ function localEquity(symbol: string, name: string): Instrument {
     settlementPeriods: ["0000", "0001", "0002"],
     aliases: adr ? [adr] : [],
     tags: ["argentina", "byma", "local", "accion"],
-    dataCapabilities: adr
-      ? ["technical_underlying", "quote_only"]
-      : hasLocalHistory
-        ? ["technical_full", "quote_only"]
-        : ["quote_only"],
-    warnings: adr
-      ? ["El tecnico usa el ADR/subyacente US; la accion local puede diferir por CCL, liquidez y plazo."]
-      : hasLocalHistory
-        ? ["El tecnico usa el historico diario de la especie local disponible publicamente."]
-        : ["La especie no cuenta con historico OHLCV suficiente para publicar indicadores."],
+    dataCapabilities: hasLocalHistory
+      ? ["technical_full", "quote_only", ...(adr ? ["fundamentals_underlying" as const] : [])]
+      : ["quote_only"],
+    warnings: hasLocalHistory
+      ? [adr
+          ? "El técnico usa el histórico público de la especie local en ARS. Los fundamentos pueden corresponder al ADR asociado."
+          : "El técnico usa el histórico público de la especie local en ARS."]
+      : ["La especie no cuenta con histórico OHLCV suficiente para publicar indicadores."],
     source: "seed",
     enabled: true,
   };

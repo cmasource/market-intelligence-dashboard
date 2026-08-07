@@ -3,31 +3,20 @@
 import { useState } from "react";
 import type { InstrumentSearchResult } from "@/lib/instruments/types";
 import { useInstrumentSearch } from "@/lib/hooks/useInstrumentSearch";
-import type { TradeRadarInterval, TradeRadarMarket, TradeRadarProviderName } from "@/lib/market-data/providers/base";
+import type { TradeRadarInterval, TradeRadarProviderName } from "@/lib/market-data/providers/base";
 
 type AnalyzerFormProps = {
   symbol: string;
-  market: TradeRadarMarket;
   interval: TradeRadarInterval;
   provider: TradeRadarProviderName;
   loading: boolean;
   selectedSuggestion: InstrumentSearchResult | null;
   onSymbolChange: (symbol: string) => void;
-  onMarketChange: (market: TradeRadarMarket) => void;
   onIntervalChange: (interval: TradeRadarInterval) => void;
   onProviderChange: (provider: TradeRadarProviderName) => void;
   onSuggestionSelect: (suggestion: InstrumentSearchResult) => void;
   onSubmit: () => void;
 };
-
-const marketOptions: Array<{ value: TradeRadarMarket; label: string }> = [
-  { value: "auto", label: "Auto" },
-  { value: "us", label: "US" },
-  { value: "argentina", label: "Argentina" },
-  { value: "cedear", label: "CEDEAR" },
-  { value: "crypto", label: "Crypto" },
-  { value: "bond", label: "Bono" },
-];
 
 const intervalOptions: Array<{ value: TradeRadarInterval; label: string }> = [
   { value: "1h", label: "1h" },
@@ -47,13 +36,11 @@ const providerOptions: Array<{ value: TradeRadarProviderName; label: string }> =
 
 export function AnalyzerForm({
   symbol,
-  market,
   interval,
   provider,
   loading,
   selectedSuggestion,
   onSymbolChange,
-  onMarketChange,
   onIntervalChange,
   onProviderChange,
   onSuggestionSelect,
@@ -64,7 +51,7 @@ export function AnalyzerForm({
 
   return (
     <form
-      className="cma-panel-elevated cma-glow-cyan grid gap-4 p-4 sm:grid-cols-[minmax(220px,1.2fr)_repeat(3,minmax(130px,0.7fr))_auto] sm:items-start sm:p-5"
+      className="cma-panel-elevated cma-glow-cyan grid gap-4 p-4 sm:grid-cols-[minmax(260px,1.4fr)_repeat(2,minmax(150px,0.7fr))_auto] sm:items-start sm:p-5"
       style={{ overflow: "visible" }}
       onSubmit={(event) => {
         event.preventDefault();
@@ -140,21 +127,6 @@ export function AnalyzerForm({
             ))}
           </div>
         ) : null}
-      </label>
-
-      <label className="grid gap-2">
-        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200">Mercado</span>
-        <select
-          className="h-11 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm text-white outline-none transition focus:border-cyan-300/60"
-          value={market}
-          onChange={(event) => onMarketChange(event.target.value as TradeRadarMarket)}
-        >
-          {marketOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
       </label>
 
       <label className="grid gap-2">

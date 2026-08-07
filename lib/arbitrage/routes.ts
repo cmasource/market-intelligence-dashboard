@@ -8,7 +8,7 @@ function unique(items: ArbitrageIssueCode[]) {
 
 function instrumentsAreCompatible(source: FxQuote, destination: FxQuote) {
   if (source.instrument === destination.instrument) return true;
-  const bankUsdInstruments = new Set(["bank_usd", "usd_24_7"]);
+  const bankUsdInstruments = new Set(["bank_usd", "usd_24_7", "crypto_usd_route"]);
   return source.transferAsset === "USD_BANK"
     && destination.transferAsset === "USD_BANK"
     && bankUsdInstruments.has(source.instrument)

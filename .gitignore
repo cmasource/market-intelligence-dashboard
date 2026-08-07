@@ -42,6 +42,7 @@ yarn-error.log*
 next-env.d.ts
 
 test-results/
+.superdesign/tmp/
 
 test-results/
 .vercel

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildOpportunityMatrix, buildTransferRoute, calculateArbitrageOpportunity, rankBuyQuotes, rankSellQuotes } from "../../lib/arbitrage";
+import { buildOpportunityMatrix, buildOpportunityMatrixForAsset, buildTransferRoute, calculateArbitrageOpportunity, filterQuotesByTransferAsset, rankBuyQuotes, rankSellQuotes } from "../../lib/arbitrage";
 import type { FxQuote, TransferRoute } from "../../lib/arbitrage/types";
 
 function quote(overrides: Partial<FxQuote> & Pick<FxQuote, "id" | "providerId">): FxQuote {
@@ -63,6 +63,32 @@ test("mandatory negative Plus to Fiwind example is not profitable", () => {
   const result = calculateArbitrageOpportunity(source, destination, 1000, compatibleRoute(source, destination, 1000));
   assert.ok(Math.abs(result.grossSpreadPerUsd - (-17.08)) < 1e-9);
   assert.ok(Math.abs(result.grossProfitArs - (-17_080)) < 1e-6);
+  assert.equal(result.isProfitable, false);
+});
+
+test("Plus to Fiwind composite USD route stays informational even when gross spread is positive", () => {
+  const source = quote({ id: "plus-usd", providerId: "plus", instrument: "bank_usd", userBuysUsdAt: 1500 });
+  const destination = quote({
+    id: "fiwind-usd-via-usdt",
+    providerId: "fiwind",
+    instrument: "crypto_usd_route",
+    userSellsUsdAt: 1510,
+    observedAt: undefined,
+    status: "delayed",
+    fees: { confidence: "unknown" },
+    warnings: ["observed_at_unavailable", "costs_unverified", "verify_final_price"],
+    verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" },
+  });
+  const route = buildTransferRoute(source, destination, 1000);
+  assert.equal(route.isCompatible, true);
+  assert.equal(route.transferredAsset, "USD_BANK");
+  assert.equal(route.destinationInstrument, "crypto_usd_route");
+
+  const result = calculateArbitrageOpportunity(source, destination, 1000, route);
+  assert.equal(result.freshnessStatus, "unverifiable");
+  assert.equal(result.grossProfitArs, 10_000);
+  assert.equal(result.netProfitArs, undefined);
+  assert.equal(result.classification, "potential_gross_difference");
   assert.equal(result.isProfitable, false);
 });
 
@@ -136,4 +162,14 @@ test("partial quotes remain in rankings only for their available side", () => {
   assert.equal(rankBuyQuotes([partial]).length, 1);
   assert.equal(rankSellQuotes([partial]).length, 0);
   assert.equal(buildOpportunityMatrix([partial], 1000).length, 0);
+});
+
+test("asset-scoped matrices never compare bank USD with USDT or USDC", () => {
+  const bankUsd = quote({ id: "plus-usd", providerId: "plus" });
+  const usdt = quote({ id: "fiwind-usdt", providerId: "fiwind", instrument: "usdt", transferAsset: "USDT" });
+  const usdc = quote({ id: "dolarapp-usdc", providerId: "dolarapp", instrument: "usdc", transferAsset: "USDC" });
+  assert.deepEqual(filterQuotesByTransferAsset([bankUsd, usdt, usdc], "USDT").map((item) => item.id), ["fiwind-usdt"]);
+  const matrix = buildOpportunityMatrixForAsset([bankUsd, usdt, usdc], "USD_BANK", 1000);
+  assert.ok(matrix.every((item) => item.sourceQuoteId === "plus-usd" && item.destinationQuoteId === "plus-usd"));
+  assert.ok(matrix.every((item) => !item.blockers.includes("asset_mismatch")));
 });

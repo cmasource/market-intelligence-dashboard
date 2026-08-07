@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parseBnaBilleteHtml } from "../../lib/arbitrage/adapters/bna";
+import { normalizeComparaDolarUsdPayload } from "../../lib/arbitrage/adapters/comparadolar";
 import { normalizeCriptoYaPayloads } from "../../lib/arbitrage/adapters/criptoya";
 import { errorResult } from "../../lib/arbitrage/adapters/shared";
 import { normalizePlusPayload } from "../../lib/arbitrage/adapters/plus";
@@ -16,7 +17,14 @@ test("normalizes Plus sell/buy fields to the user perspective", () => {
   assert.equal(quote?.userSellsUsdAt, 1479);
   assert.equal(quote?.originalBuyLabel, "sell");
   assert.equal(quote?.originalSellLabel, "buy");
+  assert.equal(quote?.instrument, "bank_usd");
   assert.equal(quote?.fees?.confidence, "confirmed");
+});
+
+test("Plus is registered as bank USD without a verified 24/7 claim", () => {
+  const plus = getArbitrageProvider("plus");
+  assert.equal(plus?.operates24x7, false);
+  assert.equal(plus?.verification.availability24x7, "unverified");
 });
 
 test("Plus parses the real Argentina timestamp separately from fetchedAt and preserves genuine staleness", () => {
@@ -85,6 +93,40 @@ test("Fiwind is integrated as an aggregator reference without upgrading route ca
   assert.equal(fiwind?.verification.deposit, "partially_verified");
   assert.equal(fiwind?.verification.withdrawal, "partially_verified");
   assert.equal(fiwind?.verification.sameHolder, "verified");
+});
+
+test("ComparaDólar preserves the user perspective and never invents observation time", () => {
+  const result = normalizeComparaDolarUsdPayload([
+    { slug: "plus", bid: 1475, ask: 1515 },
+    { slug: "banco-hipotecario", bid: "1490.25", ask: "1520.50" },
+    { slug: "fiwind-cripto", bid: 1504, ask: 1532 },
+    { slug: "uala", bid: 1_480_000, ask: 1_515_000 },
+  ], fetchedAt);
+
+  assert.equal(result.status, "partial");
+  assert.deepEqual(result.quotes.map((quote) => quote.providerId), ["banco-hipotecario", "fiwind"]);
+  const bank = result.quotes[0];
+  assert.equal(bank?.userBuysUsdAt, 1520.5);
+  assert.equal(bank?.userSellsUsdAt, 1490.25);
+  assert.equal(bank?.observedAt, undefined);
+  assert.equal(getFreshnessStatus(bank!), "unverifiable");
+  assert.equal(bank?.verification.quote, "reference_only");
+
+  const fiwind = result.quotes[1];
+  assert.equal(fiwind?.instrument, "crypto_usd_route");
+  assert.equal(fiwind?.transferAsset, "USD_BANK");
+  assert.equal(fiwind?.userBuysUsdAt, 1532);
+  assert.equal(fiwind?.userSellsUsdAt, 1504);
+  assert.match(fiwind?.originalSellLabel ?? "", /USD → USDT → ARS/);
+});
+
+test("ComparaDólar rejects inverted or unusably scaled curated rows", () => {
+  const result = normalizeComparaDolarUsdPayload([
+    { slug: "banco-ciudad", bid: 1490, ask: 1520 },
+    { slug: "reba", bid: 1600, ask: 1500 },
+    { slug: "uala", bid: 1_480_000, ask: 1_515_000 },
+  ], fetchedAt);
+  assert.deepEqual(result.quotes.map((quote) => quote.providerId), ["banco-ciudad"]);
 });
 
 test("invalid payloads and provider failures expose safe error codes", () => {
