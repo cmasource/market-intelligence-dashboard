@@ -42,6 +42,31 @@ test.describe("multiple local watchlists", () => {
     await expect(addButton).toBeFocused();
   });
 
+  test("explains and pre-fills each configurable alert threshold", async ({ page }) => {
+    await page.goto("/watchlist");
+    await page.getByRole("button", { name: "Agregar activo" }).first().click();
+    const addDialog = page.getByRole("dialog", { name: "Agregar activo" });
+    await addDialog.getByLabel("Ticker o nombre").fill("MSFT");
+    await addDialog.getByRole("button", { name: /MSFT.*Microsoft/i }).first().click();
+    await addDialog.getByRole("button", { name: "Cerrar" }).click();
+
+    await page.getByRole("button", { name: "Crear alerta" }).click();
+    const alertDialog = page.getByRole("dialog", { name: /Crear alerta|Create alert/ });
+    const condition = alertDialog.getByLabel(/¿Qué querés monitorear\?|What do you want to monitor\?/);
+    await condition.selectOption("near_ema200");
+    await expect(alertDialog.getByLabel(/Distancia máxima a la EMA 200|Maximum distance to EMA 200/)).toHaveValue("1");
+    await expect(alertDialog.getByText(/entre 495 y 505|between 495 and 505/)).toBeVisible();
+    await expect(alertDialog.getByText(/19:00.*Argentina/)).toBeVisible();
+
+    await condition.selectOption("rapid_rise");
+    await expect(alertDialog.getByLabel(/Suba diaria mínima|Minimum daily rise/)).toHaveValue("5");
+    await expect(alertDialog.getByText(/sube 5% o más|rises 5% or more/)).toBeVisible();
+
+    await condition.selectOption("price_above");
+    await expect(alertDialog.getByLabel(/Precio objetivo \(USD\)|Target price \(USD\)/)).toHaveValue("");
+    await expect(alertDialog.getByRole("button", { name: /Crear alerta|Create alert/ })).toBeDisabled();
+  });
+
   test("watchlists remain usable without horizontal overflow on mobile", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/watchlist");
