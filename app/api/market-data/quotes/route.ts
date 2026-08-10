@@ -29,7 +29,9 @@ function failedQuote(symbol: string, error: string): MarketQuoteResponse {
     provider: "unavailable",
     sourceLabel: "No verified quote",
     isFallback: true,
+    observedAt: null,
     fetchedAt: new Date().toISOString(),
+    dataDelay: "unknown",
     error,
   };
 }
@@ -65,7 +67,7 @@ export async function POST(request: Request) {
     { quotes },
     {
       headers: {
-        "Cache-Control": "s-maxage=30, stale-while-revalidate=120",
+        "Cache-Control": "private, no-store",
       },
     },
   );

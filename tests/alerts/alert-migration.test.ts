@@ -4,6 +4,8 @@ import test from "node:test";
 
 const sql = readFileSync("supabase/migrations/20260805190000_intelligent_alerts.sql", "utf8");
 const subscriptionsSql = readFileSync("supabase/migrations/20260807190105_configurable_alert_subscriptions.sql", "utf8");
+const intradayStateSql = readFileSync("supabase/migrations/20260811131558_intraday_alert_state.sql", "utf8");
+const externalChannelsSql = readFileSync("supabase/migrations/20260811131603_external_alert_channels.sql", "utf8");
 
 test("migration enables RLS and does not grant clients alert creation privileges", () => {
   for (const table of ["alert_preferences", "alert_rule_versions", "alert_events", "alert_deliveries", "alert_job_runs"]) {
@@ -25,4 +27,19 @@ test("configurable alert subscriptions are user-owned and constrained to support
   assert.match(subscriptionsSql, /unique \(user_id, instrument_id, condition\)/i);
   assert.match(subscriptionsSql, /grant select, insert, update, delete on public\.alert_subscriptions to authenticated/i);
   assert.doesNotMatch(subscriptionsSql, /grant [^;]+ to anon/i);
+});
+
+test("intraday alert state is private and service-managed", () => {
+  assert.match(intradayStateSql, /create table if not exists public\.alert_subscription_states/i);
+  assert.match(intradayStateSql, /alter table public\.alert_subscription_states enable row level security/i);
+  assert.match(intradayStateSql, /revoke all on public\.alert_subscription_states from anon, authenticated/i);
+  assert.match(intradayStateSql, /grant select, insert, update, delete on public\.alert_subscription_states to service_role/i);
+});
+
+test("external channels require explicit consent and retain provider delivery metadata", () => {
+  assert.match(externalChannelsSql, /whatsapp_phone_e164/);
+  assert.match(externalChannelsSql, /whatsapp_consent_at/);
+  assert.match(externalChannelsSql, /\^\\\+\[1-9\]\[0-9\]\{7,14\}\$/);
+  assert.match(externalChannelsSql, /provider_message_id/);
+  assert.match(externalChannelsSql, /provider_status/);
 });

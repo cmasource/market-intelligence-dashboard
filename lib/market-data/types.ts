@@ -43,7 +43,9 @@ export type MarketQuoteResponse = {
   provider: MarketDataProviderName;
   sourceLabel: string;
   isFallback: boolean;
+  observedAt: string | null;
   fetchedAt: string;
+  dataDelay: "realtime" | "delayed" | "eod" | "unknown";
   error?: string;
   providerTrace?: ProviderTraceEntry[];
 };

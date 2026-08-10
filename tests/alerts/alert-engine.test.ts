@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { canReactivate, classifyAlertAssetType, deduplicationKey, evaluateAlertRules } from "../../lib/alerts/engine";
 import type { AlertMarketSnapshot } from "../../lib/alerts/types";
-import { shouldEvaluateOnThisRun } from "../../lib/alerts/scheduler";
+import { shouldEvaluateOnThisRun, shouldEvaluatePersonalOnThisRun } from "../../lib/alerts/scheduler";
 
 function bars(options: { latestMove?: number; latestVolume?: number; volatileTail?: boolean } = {}) {
   const result = Array.from({ length: 80 }, (_, index) => {
@@ -84,4 +84,8 @@ test("evaluation cadence follows instrument market instead of polling every asse
   assert.equal(shouldEvaluateOnThisRun("stock", "us", new Date("2026-08-03T22:00:00Z")), true);
   assert.equal(shouldEvaluateOnThisRun("stock", "us", new Date("2026-08-03T18:00:00Z")), false);
   assert.equal(shouldEvaluateOnThisRun("stock", "us", new Date("2026-08-02T22:00:00Z")), false);
+  assert.equal(shouldEvaluatePersonalOnThisRun("stock", "us", new Date("2026-08-03T15:05:00Z")), true);
+  assert.equal(shouldEvaluatePersonalOnThisRun("stock", "argentina", new Date("2026-08-03T14:05:00Z")), true);
+  assert.equal(shouldEvaluatePersonalOnThisRun("stock", "us", new Date("2026-08-03T23:00:00Z")), false);
+  assert.equal(shouldEvaluatePersonalOnThisRun("stock", "us", new Date("2026-08-02T15:00:00Z")), false);
 });

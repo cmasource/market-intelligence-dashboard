@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { evaluatePersonalAlert } from "../../lib/alerts/personal";
-import type { AlertMarketSnapshot, PersonalAlertCondition, PersonalAlertSubscription } from "../../lib/alerts/types";
+import { evaluatePersonalAlert, isPersonalQuoteFresh } from "../../lib/alerts/personal";
+import type { AlertMarketSnapshot, PersonalAlertCondition, PersonalAlertQuoteContext, PersonalAlertSubscription } from "../../lib/alerts/types";
 
 function marketBars() {
   return Array.from({ length: 220 }, (_, index) => {
@@ -27,49 +27,57 @@ function subscription(condition: PersonalAlertCondition, overrides: Partial<Pers
 
 const now = new Date("2026-08-08T01:00:00.000Z");
 
-test("price alerts trigger only when the latest close crosses the configured threshold", () => {
+function quote(price: number, previousObservedPrice: number | null, changePercent: number | null = null): PersonalAlertQuoteContext {
+  return { price, previousObservedPrice, changePercent, provider: "yahoo", observedAt: "2026-08-08T00:58:00.000Z", fetchedAt: "2026-08-08T00:59:00.000Z", dataDelay: "delayed" };
+}
+
+test("price alerts trigger only when the observed quote crosses the configured threshold", () => {
   const above = marketBars();
   above[218].close = 99;
   above[219].close = 101;
-  assert.equal(evaluatePersonalAlert(snapshot(above), subscription("price_above", { targetValue: 100 }), now).triggered, true);
+  assert.equal(evaluatePersonalAlert(snapshot(above), subscription("price_above", { targetValue: 100 }), now, quote(101, 99)).triggered, true);
 
   const below = marketBars();
   below[218].close = 101;
   below[219].close = 99;
-  assert.equal(evaluatePersonalAlert(snapshot(below), subscription("price_below", { targetValue: 100 }), now).triggered, true);
+  assert.equal(evaluatePersonalAlert(snapshot(below), subscription("price_below", { targetValue: 100 }), now, quote(99, 101)).triggered, true);
+  assert.equal(evaluatePersonalAlert(snapshot(above), subscription("price_above", { targetValue: 100 }), now, quote(101, null)).triggered, false);
 });
 
-test("rapid rise and fall alerts use the latest close-to-close percentage", () => {
+test("rapid rise and fall alerts use the provider current-session percentage", () => {
   const rise = marketBars();
   rise[218].close = 100;
   rise[219].close = 106;
-  assert.equal(evaluatePersonalAlert(snapshot(rise), subscription("rapid_rise", { thresholdPercent: 5 }), now).triggered, true);
+  assert.equal(evaluatePersonalAlert(snapshot(rise), subscription("rapid_rise", { thresholdPercent: 5 }), now, quote(106, 100, 6)).triggered, true);
 
   const fall = marketBars();
   fall[218].close = 100;
   fall[219].close = 94;
-  assert.equal(evaluatePersonalAlert(snapshot(fall), subscription("rapid_fall", { thresholdPercent: 5 }), now).triggered, true);
+  assert.equal(evaluatePersonalAlert(snapshot(fall), subscription("rapid_fall", { thresholdPercent: 5 }), now, quote(94, 100, -6)).triggered, true);
 });
 
 test("technical proximity alerts compare against EMA 200 and prior period extremes", () => {
   const flat = marketBars().map((bar) => ({ ...bar, open: 100, high: 101, low: 99, close: 100 }));
-  assert.equal(evaluatePersonalAlert(snapshot(flat), subscription("near_ema200", { thresholdPercent: 0.5 }), now).triggered, true);
+  assert.equal(evaluatePersonalAlert(snapshot(flat), subscription("near_ema200", { thresholdPercent: 0.5 }), now, quote(100, 99)).triggered, true);
 
   const nearLow = marketBars().map((bar) => ({ ...bar, open: 100, high: 101, low: 90, close: 100 }));
   nearLow[219] = { ...nearLow[219], open: 91, high: 91, low: 90, close: 90.5 };
-  assert.equal(evaluatePersonalAlert(snapshot(nearLow), subscription("near_period_low", { thresholdPercent: 1, lookbackBars: 60 }), now).triggered, true);
+  assert.equal(evaluatePersonalAlert(snapshot(nearLow), subscription("near_period_low", { thresholdPercent: 1, lookbackBars: 60 }), now, quote(90.5, 100)).triggered, true);
 
   const nearHigh = marketBars().map((bar) => ({ ...bar, open: 100, high: 110, low: 99, close: 100 }));
   nearHigh[219] = { ...nearHigh[219], open: 109, high: 110, low: 109, close: 109.5 };
-  assert.equal(evaluatePersonalAlert(snapshot(nearHigh), subscription("near_period_high", { thresholdPercent: 1, lookbackBars: 60 }), now).triggered, true);
+  assert.equal(evaluatePersonalAlert(snapshot(nearHigh), subscription("near_period_high", { thresholdPercent: 1, lookbackBars: 60 }), now, quote(109.5, 100)).triggered, true);
 });
 
 test("personal alerts are suppressed when provider data is stale or unhealthy", () => {
   const stale = snapshot();
   stale.observedAt = "2026-07-01T00:00:00.000Z";
-  assert.equal(evaluatePersonalAlert(stale, subscription("rapid_rise", { thresholdPercent: 0 }), now).triggered, false);
+  assert.equal(evaluatePersonalAlert(stale, subscription("rapid_rise", { thresholdPercent: 0 }), now, quote(101, 100, 1)).triggered, false);
 
   const unhealthy = snapshot();
   unhealthy.providerHealthy = false;
-  assert.equal(evaluatePersonalAlert(unhealthy, subscription("rapid_rise", { thresholdPercent: 0 }), now).triggered, false);
+  assert.equal(evaluatePersonalAlert(unhealthy, subscription("rapid_rise", { thresholdPercent: 0 }), now, quote(101, 100, 1)).triggered, false);
+  assert.equal(isPersonalQuoteFresh({ ...quote(101, 100), observedAt: "2026-08-07T20:00:00.000Z" }, now), false);
+  assert.equal(isPersonalQuoteFresh({ ...quote(101, 100), dataDelay: "eod" }, now), false);
+  assert.equal(isPersonalQuoteFresh({ ...quote(101, 100), observedAt: "2026-08-08T01:10:00.000Z" }, now), false);
 });

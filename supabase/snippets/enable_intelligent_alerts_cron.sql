@@ -9,7 +9,7 @@ create extension if not exists pg_net with schema extensions;
 do $$
 declare
   missing_secrets text[];
-  existing_job_id bigint;
+  existing_job record;
 begin
   select array_agg(required.name)
     into missing_secrets
@@ -22,17 +22,16 @@ begin
     raise exception 'Missing required Vault secrets: %', array_to_string(missing_secrets, ', ');
   end if;
 
-  select jobid into existing_job_id
-  from cron.job
-  where jobname = 'evaluate-intelligent-alerts-hourly';
-
-  if existing_job_id is not null then
-    perform cron.unschedule(existing_job_id);
-  end if;
+  for existing_job in
+    select jobid from cron.job
+    where jobname in ('evaluate-intelligent-alerts-hourly', 'evaluate-intelligent-alerts-five-minutes')
+  loop
+    perform cron.unschedule(existing_job.jobid);
+  end loop;
 
   perform cron.schedule(
-    'evaluate-intelligent-alerts-hourly',
-    '0 * * * *',
+    'evaluate-intelligent-alerts-five-minutes',
+    '*/5 * * * *',
     $command$
       select net.http_post(
         url := (select decrypted_secret from vault.decrypted_secrets where name = 'cma_alerts_endpoint_url'),

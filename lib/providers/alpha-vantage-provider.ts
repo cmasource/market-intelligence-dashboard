@@ -130,7 +130,9 @@ export async function getAlphaVantageQuoteSnapshot(symbol: string): Promise<Mark
       provider: "alpha_vantage",
       sourceLabel: "Alpha Vantage quote",
       isFallback: false,
+      observedAt: null,
       fetchedAt: new Date().toISOString(),
+      dataDelay: "unknown",
       error: result.error,
       providerTrace: [buildAlphaQuoteTrace(false, result.reason ?? "unknown_error")],
     };
@@ -146,7 +148,9 @@ export async function getAlphaVantageQuoteSnapshot(symbol: string): Promise<Mark
       provider: "alpha_vantage",
       sourceLabel: "Alpha Vantage quote",
       isFallback: false,
+      observedAt: null,
       fetchedAt: new Date().toISOString(),
+      dataDelay: "unknown",
       error: "Alpha Vantage returned an empty quote response.",
       providerTrace: [buildAlphaQuoteTrace(false, "empty_response")],
     };
@@ -162,7 +166,9 @@ export async function getAlphaVantageQuoteSnapshot(symbol: string): Promise<Mark
       provider: "alpha_vantage",
       sourceLabel: "Alpha Vantage quote",
       isFallback: false,
+      observedAt: null,
       fetchedAt: new Date().toISOString(),
+      dataDelay: "unknown",
       error: "Alpha Vantage returned no usable quote price.",
       providerTrace: [buildAlphaQuoteTrace(false, "invalid_price")],
     };
@@ -179,7 +185,9 @@ export async function getAlphaVantageQuoteSnapshot(symbol: string): Promise<Mark
     provider: "alpha_vantage",
     sourceLabel: "Alpha Vantage quote",
     isFallback: false,
-    fetchedAt: latestTradingDay ? new Date(`${latestTradingDay}T21:00:00.000Z`).toISOString() : new Date().toISOString(),
+    observedAt: latestTradingDay ? new Date(`${latestTradingDay}T21:00:00.000Z`).toISOString() : null,
+    fetchedAt: new Date().toISOString(),
+    dataDelay: "eod",
     providerTrace: [buildAlphaQuoteTrace(true)],
   };
 }
