@@ -6,6 +6,7 @@ const sql = readFileSync("supabase/migrations/20260805190000_intelligent_alerts.
 const subscriptionsSql = readFileSync("supabase/migrations/20260807190105_configurable_alert_subscriptions.sql", "utf8");
 const intradayStateSql = readFileSync("supabase/migrations/20260811131558_intraday_alert_state.sql", "utf8");
 const externalChannelsSql = readFileSync("supabase/migrations/20260811131603_external_alert_channels.sql", "utf8");
+const arbitrageSubscriptionsSql = readFileSync("supabase/migrations/20260811142159_arbitrage_alert_subscriptions.sql", "utf8");
 
 test("migration enables RLS and does not grant clients alert creation privileges", () => {
   for (const table of ["alert_preferences", "alert_rule_versions", "alert_events", "alert_deliveries", "alert_job_runs"]) {
@@ -42,4 +43,14 @@ test("external channels require explicit consent and retain provider delivery me
   assert.match(externalChannelsSql, /\^\\\+\[1-9\]\[0-9\]\{7,14\}\$/);
   assert.match(externalChannelsSql, /provider_message_id/);
   assert.match(externalChannelsSql, /provider_status/);
+});
+
+test("arbitrage alert subscriptions are user-owned, constrained and service-readable", () => {
+  assert.match(arbitrageSubscriptionsSql, /create table if not exists public\.arbitrage_alert_subscriptions/i);
+  assert.match(arbitrageSubscriptionsSql, /source_provider_id <> destination_provider_id/i);
+  assert.match(arbitrageSubscriptionsSql, /transfer_asset in \('USD_BANK', 'USDT', 'USDC'\)/i);
+  assert.match(arbitrageSubscriptionsSql, /alter table public\.arbitrage_alert_subscriptions enable row level security/i);
+  assert.match(arbitrageSubscriptionsSql, /using \(\(select auth\.uid\(\)\) = user_id\)/i);
+  assert.match(arbitrageSubscriptionsSql, /grant select, insert, update, delete on public\.arbitrage_alert_subscriptions to authenticated/i);
+  assert.doesNotMatch(arbitrageSubscriptionsSql, /grant [^;]+ to anon/i);
 });

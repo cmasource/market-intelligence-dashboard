@@ -117,6 +117,7 @@ export type FxQuote = {
   sourceType: QuoteSourceType;
   status: QuoteStatus;
   estimatedDelaySeconds?: number;
+  sourcePollingIntervalSeconds?: number;
   fees?: QuoteFees;
   limits?: QuoteLimits;
   warnings: ArbitrageIssueCode[];

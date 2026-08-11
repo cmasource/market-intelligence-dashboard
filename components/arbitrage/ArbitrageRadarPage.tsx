@@ -8,6 +8,7 @@ import { getProviderStatusLabel, getProviderTypeLabel, type ArbitrageTranslate }
 import type { ArbitrageOpportunity, ArbitrageQuotesResponse, FxProvider, FxQuote, TransferAsset } from "@/lib/arbitrage/types";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { ArbitrageCalculator } from "./ArbitrageCalculator";
+import { ArbitrageAlertDialog } from "./ArbitrageAlertDialog";
 import { ArbitrageMatrix } from "./ArbitrageMatrix";
 import { formatArs, formatTimestamp, formatUsd } from "./format";
 import { ProviderLogo } from "./ProviderLogo";
@@ -50,6 +51,7 @@ export function ArbitrageRadarPage() {
   const [sourceId, setSourceId] = useState("");
   const [destinationId, setDestinationId] = useState("");
   const [onlyFresh, setOnlyFresh] = useState(false);
+  const [alertOpportunity, setAlertOpportunity] = useState<ArbitrageOpportunity | null>(null);
 
   const loadQuotes = useCallback(async (forceRefresh: boolean, signal?: AbortSignal) => {
     if (forceRefresh) setRefreshing(true);
@@ -72,6 +74,11 @@ export function ArbitrageRadarPage() {
     const controller = new AbortController();
     queueMicrotask(() => void loadQuotes(false, controller.signal));
     return () => controller.abort();
+  }, [loadQuotes]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => void loadQuotes(false), 60_000);
+    return () => window.clearInterval(timer);
   }, [loadQuotes]);
 
   const amountUsd = Number.parseFloat(amount.replace(",", "."));
@@ -166,7 +173,7 @@ export function ArbitrageRadarPage() {
               </div>
               <div className="inline-flex rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] p-1" aria-label={language === "es" ? "Filtro de frescura" : "Freshness filter"}>
                 <button type="button" onClick={() => setOnlyFresh(false)} aria-pressed={!onlyFresh} className={`min-h-9 rounded-md px-3 text-xs font-semibold ${!onlyFresh ? "bg-[var(--cma-bg-elevated)] text-[var(--cma-text-primary)]" : "text-[var(--cma-text-muted)]"}`}>{language === "es" ? "Todas" : "All"}</button>
-                <button type="button" onClick={() => setOnlyFresh(true)} aria-pressed={onlyFresh} className={`min-h-9 rounded-md px-3 text-xs font-semibold ${onlyFresh ? "bg-[var(--cma-bg-elevated)] text-[var(--cma-text-primary)]" : "text-[var(--cma-text-muted)]"}`}>{language === "es" ? "Sólo vigentes" : "Fresh only"}</button>
+                <button type="button" onClick={() => setOnlyFresh(true)} aria-pressed={onlyFresh} className={`min-h-9 rounded-md px-3 text-xs font-semibold ${onlyFresh ? "bg-[var(--cma-bg-elevated)] text-[var(--cma-text-primary)]" : "text-[var(--cma-text-muted)]"}`}>{language === "es" ? "Hora fuente verificada" : "Verified source time"}</button>
               </div>
             </div>
 
@@ -175,7 +182,7 @@ export function ArbitrageRadarPage() {
 
           <aside className="min-w-0 space-y-5">
             <ArbitrageMatrix buyQuotes={buyQuotes} sellQuotes={sellQuotes} opportunities={matrix} providers={providers} language={language} asset={selectedAsset} t={translate} />
-            <ArbitrageCalculator amount={amount} onAmountChange={setAmount} sourceId={selectedSource?.id ?? ""} destinationId={selectedDestination?.id ?? ""} onSourceChange={selectSource} onDestinationChange={setDestinationId} buyQuotes={buyQuotes} sellQuotes={sellQuotes} opportunity={selectedOpportunity} providers={providers} asset={selectedAsset} language={language} t={translate} />
+            <ArbitrageCalculator amount={amount} onAmountChange={setAmount} sourceId={selectedSource?.id ?? ""} destinationId={selectedDestination?.id ?? ""} onSourceChange={selectSource} onDestinationChange={setDestinationId} buyQuotes={buyQuotes} sellQuotes={sellQuotes} opportunity={selectedOpportunity} providers={providers} asset={selectedAsset} language={language} t={translate} onCreateAlert={setAlertOpportunity} />
           </aside>
         </div>
 
@@ -188,6 +195,14 @@ export function ArbitrageRadarPage() {
             {(payload?.providers ?? []).map((provider) => <ProviderStatusCard key={provider.id} provider={provider} quotes={payload?.quotes.filter((quote) => quote.providerId === provider.id) ?? []} language={language} t={translate} />)}
           </div>
         </section>
+        <ArbitrageAlertDialog
+          open={Boolean(alertOpportunity)}
+          opportunity={alertOpportunity}
+          sourceProvider={alertOpportunity ? providers.get(alertOpportunity.sourceProviderId) : undefined}
+          destinationProvider={alertOpportunity ? providers.get(alertOpportunity.destinationProviderId) : undefined}
+          asset={selectedAsset}
+          onClose={() => setAlertOpportunity(null)}
+        />
       </div>
     </AppShell>
   );

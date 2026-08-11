@@ -86,6 +86,18 @@ test("CriptoYa invalid or future timestamps are never treated as fresh observati
   assert.ok(quote?.warnings.includes("observed_at_unavailable"));
 });
 
+test("CriptoYa includes timestamped quotes from the expanded wallet and exchange coverage", () => {
+  const result = normalizeCriptoYaPayloads({
+    USDT: {
+      buenbit: { totalAsk: 1590, totalBid: 1560, time: 1785959274 },
+      binancep2p: { totalAsk: 1580, totalBid: 1570, time: 1785959274 },
+      huobip2p: { totalAsk: 0, totalBid: 1500, time: 1785959274 },
+    },
+  }, "2026-08-05T20:00:00.000Z");
+  assert.deepEqual(result.quotes.map((quote) => quote.providerId), ["buenbit", "binancep2p"]);
+  assert.ok(result.quotes.every((quote) => quote.observedAt));
+});
+
 test("Fiwind is integrated as an aggregator reference without upgrading route capabilities", () => {
   const fiwind = getArbitrageProvider("fiwind");
   assert.equal(fiwind?.status, "active");
@@ -111,6 +123,7 @@ test("ComparaDólar preserves the user perspective and never invents observation
   assert.equal(bank?.observedAt, undefined);
   assert.equal(getFreshnessStatus(bank!), "unverifiable");
   assert.equal(bank?.verification.quote, "reference_only");
+  assert.equal(bank?.sourcePollingIntervalSeconds, 300);
 
   const fiwind = result.quotes[1];
   assert.equal(fiwind?.instrument, "crypto_usd_route");

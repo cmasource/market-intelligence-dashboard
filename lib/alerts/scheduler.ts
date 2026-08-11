@@ -4,11 +4,12 @@ import { getMarketQuote } from "@/lib/market-data";
 import { analyzeTradeRadar } from "@/lib/technical/trade-radar";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EmailNotificationChannel, InAppNotificationChannel, WhatsappNotificationChannel } from "./channels";
+import { arbitrageInstrumentId, evaluateArbitrageAlert } from "./arbitrage";
 import { canReactivate, classifyAlertAssetType, deduplicationKey, evaluateAlertRules } from "./engine";
 import { evaluatePersonalAlert, isPersonalQuoteFresh } from "./personal";
 import { DEFAULT_ALERT_PREFERENCES, shouldCreateAutomaticAlert, shouldCreatePersonalAlert } from "./preferences";
 import { alertRuleCatalog } from "./rules";
-import { severityRank, type AlertEvaluation, type AlertPreferences, type PersonalAlertCondition, type PersonalAlertQuoteContext, type PersonalAlertSubscription } from "./types";
+import { severityRank, type AlertEvaluation, type AlertPreferences, type ArbitrageAlertSubscription, type PersonalAlertCondition, type PersonalAlertQuoteContext, type PersonalAlertSubscription } from "./types";
 
 type WatchlistRow = { id: string; user_id: string; name: string };
 type ItemRow = {
@@ -59,6 +60,11 @@ type SubscriptionStateRow = {
   subscription_id: string; last_price: number | null; change_percent: number | null;
   observed_at: string | null; fetched_at: string | null; provider: string | null; data_delay: PersonalAlertQuoteContext["dataDelay"] | null;
 };
+type ArbitrageSubscriptionRow = {
+  id: string; user_id: string; source_provider_id: string; destination_provider_id: string;
+  transfer_asset: ArbitrageAlertSubscription["transferAsset"]; amount_usd: number | string;
+  minimum_gross_spread_ars: number | string; enabled: boolean; created_at: string; updated_at: string;
+};
 
 export type AlertJobSummary = {
   status: "completed" | "partial";
@@ -106,6 +112,15 @@ function subscriptionFromRow(row: SubscriptionRow): PersonalAlertSubscription {
 function evaluationWindow(now: Date) {
   const bucket = Math.floor(now.getUTCMinutes() / 5) * 5;
   return `${now.toISOString().slice(0, 13)}:${String(bucket).padStart(2, "0")}`;
+}
+
+function arbitrageSubscriptionFromRow(row: ArbitrageSubscriptionRow): ArbitrageAlertSubscription {
+  return {
+    id: row.id, userId: row.user_id, sourceProviderId: row.source_provider_id,
+    destinationProviderId: row.destination_provider_id, transferAsset: row.transfer_asset,
+    amountUsd: Number(row.amount_usd), minimumGrossSpreadArs: Number(row.minimum_gross_spread_ars),
+    enabled: row.enabled, createdAt: row.created_at, updatedAt: row.updated_at,
+  };
 }
 
 export function shouldEvaluateOnThisRun(assetType: string, market: string, now: Date) {
@@ -214,17 +229,23 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
   let fatalError = false;
   try {
     await Promise.all([syncRuleVersions(supabase), releaseScheduledDeliveries(supabase, now)]);
-    const [watchlistsResult, preferencesResult, subscriptionsResult, subscriptionStatesResult, activeEventsResult, recentEventsResult] = await Promise.all([
+    const [watchlistsResult, preferencesResult, subscriptionsResult, arbitrageSubscriptionsResult, subscriptionStatesResult, activeEventsResult, recentEventsResult] = await Promise.all([
       supabase.from("watchlists").select("id,user_id,name").order("created_at").limit(500),
       supabase.from("alert_preferences").select("user_id,alerts_enabled,minimum_severity,frequency,quiet_hours_start,quiet_hours_end,timezone,opportunity_alerts_enabled,in_app_enabled,email_enabled,whatsapp_enabled,whatsapp_phone_e164,monitored_watchlist_ids"),
       supabase.from("alert_subscriptions").select("id,user_id,watchlist_id,watchlist_item_id,instrument_id,instrument_symbol,instrument_name,market,exchange,currency,asset_type,condition,target_value,threshold_percent,lookback_bars,enabled,created_at,updated_at").eq("enabled", true).limit(2000),
+      supabase.from("arbitrage_alert_subscriptions").select("id,user_id,source_provider_id,destination_provider_id,transfer_asset,amount_usd,minimum_gross_spread_ars,enabled,created_at,updated_at").eq("enabled", true).limit(1000),
       supabase.from("alert_subscription_states").select("subscription_id,last_price,change_percent,observed_at,fetched_at,provider,data_delay").limit(2000),
       supabase.from("alert_events").select("id,user_id,instrument_id,rule_id,direction,severity,status,triggered_at,updated_at").eq("status", "active").limit(2000),
       supabase.from("alert_events").select("id,user_id,instrument_id,rule_id,direction,severity,status,triggered_at,updated_at").neq("status", "active").order("triggered_at", { ascending: false }).limit(2000),
     ]);
-    for (const result of [watchlistsResult, preferencesResult, subscriptionsResult, subscriptionStatesResult, activeEventsResult, recentEventsResult]) if (result.error) throw result.error;
+    for (const result of [watchlistsResult, preferencesResult, subscriptionsResult, arbitrageSubscriptionsResult, subscriptionStatesResult, activeEventsResult, recentEventsResult]) if (result.error) throw result.error;
     const watchlists = (watchlistsResult.data ?? []) as WatchlistRow[];
     const preferences = new Map(((preferencesResult.data ?? []) as PreferenceRow[]).map((row) => [row.user_id, preferenceFromRow(row)]));
+    const arbitrageSubscriptions = ((arbitrageSubscriptionsResult.data ?? []) as ArbitrageSubscriptionRow[]).map(arbitrageSubscriptionFromRow)
+      .filter((subscription) => {
+        const preference = preferences.get(subscription.userId) ?? DEFAULT_ALERT_PREFERENCES;
+        return preference.alertsEnabled && preference.frequency !== "disabled" && preference.opportunityAlertsEnabled;
+      });
     await dispatchScheduledExternalDeliveries(supabase, now, preferences);
     const activeEvents = new Map(((activeEventsResult.data ?? []) as ExistingEvent[]).map((event) => [eventIdentity(event.user_id, event.instrument_id, event.rule_id, event.direction), event]));
     const subscriptionStates = new Map(((subscriptionStatesResult.data ?? []) as SubscriptionStateRow[]).map((state) => [state.subscription_id, state]));
@@ -245,15 +266,17 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
       const key = `${subscription.userId}:${subscription.instrumentId}`;
       subscriptionsByInstrument.set(key, [...(subscriptionsByInstrument.get(key) ?? []), subscription]);
     }
-    summary.processedUsers = new Set(enabledWatchlists.map((row) => row.user_id)).size;
-    if (!enabledWatchlists.length) return summary;
-
-    const itemsResult = await supabase.from("watchlist_items")
-      .select("id,watchlist_id,user_id,asset_key,instrument_id,symbol,market,exchange,asset_type,item")
-      .in("watchlist_id", enabledWatchlists.map((row) => row.id)).limit(2000);
-    if (itemsResult.error) throw itemsResult.error;
+    summary.processedUsers = new Set([...enabledWatchlists.map((row) => row.user_id), ...arbitrageSubscriptions.map((row) => row.userId)]).size;
+    let itemRows: ItemRow[] = [];
+    if (enabledWatchlists.length) {
+      const itemsResult = await supabase.from("watchlist_items")
+        .select("id,watchlist_id,user_id,asset_key,instrument_id,symbol,market,exchange,asset_type,item")
+        .in("watchlist_id", enabledWatchlists.map((row) => row.id)).limit(2000);
+      if (itemsResult.error) throw itemsResult.error;
+      itemRows = (itemsResult.data ?? []) as ItemRow[];
+    }
     const uniqueItems = new Map<string, ItemRow>();
-    for (const item of (itemsResult.data ?? []) as ItemRow[]) {
+    for (const item of itemRows) {
       const instrumentId = item.instrument_id ?? String(item.item.instrumentId ?? item.asset_key);
       const key = `${item.user_id}:${instrumentId}`;
       if (!uniqueItems.has(key)) uniqueItems.set(key, item);
@@ -420,6 +443,115 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
           const resolved = await supabase.from("alert_events").update({ status: "resolved", resolved_at: now.toISOString(), last_evaluated_at: now.toISOString(), updated_at: now.toISOString() }).eq("id", existing.id);
           if (resolved.error) throw resolved.error;
           summary.resolvedEvents += 1;
+        }
+      } catch {
+        summary.errors += 1;
+      }
+    }
+
+    if (arbitrageSubscriptions.length) {
+      try {
+        const { getArbitrageQuotes } = await import("@/lib/arbitrage/quote-service");
+        const quotePayload = await getArbitrageQuotes(true);
+        const providerNames = new Map(quotePayload.providers.map((provider) => [provider.id, provider.name]));
+        const arbitrageRule = alertRuleCatalog.find((rule) => rule.id === "arbitrage_opportunity")!;
+        for (const subscription of arbitrageSubscriptions) {
+          summary.processedInstruments += 1;
+          try {
+            const evaluated = evaluateArbitrageAlert(subscription, quotePayload.quotes, providerNames, now);
+            if (!evaluated) continue;
+            const instrumentId = arbitrageInstrumentId(subscription);
+            const identity = eventIdentity(subscription.userId, instrumentId, evaluated.evaluation.ruleId, evaluated.evaluation.direction);
+            const existing = activeEvents.get(identity);
+            if (!evaluated.evaluation.triggered) {
+              if (existing) {
+                const resolved = await supabase.from("alert_events").update({ status: "resolved", resolved_at: now.toISOString(), last_evaluated_at: now.toISOString(), updated_at: now.toISOString() }).eq("id", existing.id);
+                if (resolved.error) throw resolved.error;
+                summary.resolvedEvents += 1;
+              }
+              continue;
+            }
+
+            const localizedContent = { title: evaluated.evaluation.title, summary: evaluated.evaluation.summary };
+            if (existing) {
+              const updated = await supabase.from("alert_events").update({
+                confidence_score: evaluated.evaluation.confidenceScore,
+                summary: evaluated.evaluation.summary.es,
+                localized_content: localizedContent,
+                evidence: evaluated.evaluation.evidence,
+                limitations: evaluated.evaluation.limitations,
+                provider: `${subscription.sourceProviderId}/${subscription.destinationProviderId}`,
+                observed_at: evaluated.sourceQuote.observedAt ?? evaluated.sourceQuote.fetchedAt,
+                fetched_at: quotePayload.generatedAt,
+                freshness_status: evaluated.evaluation.freshnessStatus,
+                last_evaluated_at: now.toISOString(),
+                updated_at: now.toISOString(),
+              }).eq("id", existing.id);
+              if (updated.error) throw updated.error;
+              summary.updatedEvents += 1;
+              continue;
+            }
+
+            const previous = recentEvents.get(identity);
+            if (!canReactivate(previous?.triggered_at ?? null, arbitrageRule.cooldownMinutes, now)) continue;
+            const sourceName = providerNames.get(subscription.sourceProviderId) ?? subscription.sourceProviderId;
+            const destinationName = providerNames.get(subscription.destinationProviderId) ?? subscription.destinationProviderId;
+            const inserted = await supabase.from("alert_events").insert({
+              user_id: subscription.userId,
+              instrument_id: instrumentId,
+              instrument_symbol: `${sourceName} → ${destinationName}`,
+              market: "arbitrage",
+              currency: "ARS",
+              watchlist_id: null,
+              rule_id: evaluated.evaluation.ruleId,
+              rule_version: evaluated.evaluation.ruleVersion,
+              category: evaluated.evaluation.category,
+              severity: evaluated.evaluation.severity,
+              confidence_score: evaluated.evaluation.confidenceScore,
+              direction: evaluated.evaluation.direction,
+              title: evaluated.evaluation.title.es,
+              summary: evaluated.evaluation.summary.es,
+              localized_content: localizedContent,
+              evidence: evaluated.evaluation.evidence,
+              limitations: evaluated.evaluation.limitations,
+              provider: `${subscription.sourceProviderId}/${subscription.destinationProviderId}`,
+              observed_at: evaluated.sourceQuote.observedAt ?? evaluated.sourceQuote.fetchedAt,
+              fetched_at: quotePayload.generatedAt,
+              freshness_status: evaluated.evaluation.freshnessStatus,
+              deduplication_key: deduplicationKey({ userId: subscription.userId, instrumentId, evaluation: evaluated.evaluation, window: evaluationWindow(now) }),
+              status: "active",
+              triggered_at: now.toISOString(),
+              last_evaluated_at: now.toISOString(),
+            }).select("id").single();
+            if (inserted.error) throw inserted.error;
+
+            const preferencesForUser = preferences.get(subscription.userId) ?? DEFAULT_ALERT_PREFERENCES;
+            const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "")
+              ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null);
+            const delivery = {
+              alertEventId: inserted.data.id,
+              userId: subscription.userId,
+              preferences: preferencesForUser,
+              now,
+              title: evaluated.evaluation.title.es,
+              summary: evaluated.evaluation.summary.es,
+              alertUrl: siteUrl ? `${siteUrl}/alerts/${inserted.data.id}` : undefined,
+            };
+            if (preferencesForUser.inAppEnabled) await inAppChannel.send(delivery);
+            if (preferencesForUser.emailEnabled) {
+              if (!recipientEmails.has(subscription.userId)) {
+                const userResult = await supabase.auth.admin.getUserById(subscription.userId);
+                recipientEmails.set(subscription.userId, userResult.data.user?.email ?? null);
+              }
+              await emailChannel.send({ ...delivery, recipientEmail: recipientEmails.get(subscription.userId) });
+            }
+            if (preferencesForUser.whatsappEnabled) {
+              await whatsappChannel.send({ ...delivery, recipientWhatsapp: preferencesForUser.whatsappPhoneE164 });
+            }
+            summary.createdEvents += 1;
+          } catch {
+            summary.errors += 1;
+          }
         }
       } catch {
         summary.errors += 1;

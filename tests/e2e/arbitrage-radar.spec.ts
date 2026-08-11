@@ -38,7 +38,7 @@ function response({ negative = false } = {}) {
   const quotes = [
     quote({ id: "plus-usd", providerId: "plus", instrument: "bank_usd", userBuysUsdAt: negative ? 1519 : 1500, userSellsUsdAt: 1490 }),
     quote({ id: "bna-usd", providerId: "bna", userBuysUsdAt: negative ? 1530 : 1510, userSellsUsdAt: negative ? 1501.92 : 1505, sourceType: "public_page", fees: { confidence: "unknown" }, warnings: ["costs_unverified"] }),
-    quote({ id: "fiwind-usd-via-usdt", providerId: "fiwind", instrument: "crypto_usd_route", userBuysUsdAt: 1532, userSellsUsdAt: negative ? 1501 : 1520, observedAt: undefined, status: "delayed", sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["observed_at_unavailable", "costs_unverified", "verify_final_price", "provider_partial_data"], verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" } }),
+    quote({ id: "fiwind-usd-via-usdt", providerId: "fiwind", instrument: "crypto_usd_route", userBuysUsdAt: 1532, userSellsUsdAt: negative ? 1501 : 1520, observedAt: undefined, status: "delayed", sourcePollingIntervalSeconds: 300, sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["observed_at_unavailable", "costs_unverified", "verify_final_price", "provider_partial_data"], verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" } }),
     quote({ id: "hipotecario-usd", providerId: "banco-hipotecario", userBuysUsdAt: 1540, userSellsUsdAt: 1495, observedAt: undefined, status: "delayed", sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["observed_at_unavailable", "costs_unverified", "provider_partial_data"], verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" } }),
     quote({ id: "satoshi-usdt", providerId: "satoshitango", instrument: "usdt", transferAsset: "USDT", userBuysUsdAt: 1590, userSellsUsdAt: 1562, observedAt: "2020-01-01T00:00:00.000Z", status: "stale", sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["stale_quote", "observed_at_unavailable"], verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" } }),
     quote({ id: "fiwind-usdt", providerId: "fiwind", instrument: "usdt", transferAsset: "USDT", userBuysUsdAt: 1580, userSellsUsdAt: 1567, quotedAmountUsd: 1000, status: "delayed", sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["costs_unverified", "verify_final_price", "volume_specific_quote"], verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" } }),
@@ -80,7 +80,8 @@ test("separates assets, shows both user-side prices and constrains routes", asyn
   await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/Vendés USD a|You sell USD at/);
   await expect(page.getByTestId("arbitrage-quote-cards")).toContainText("Fiwind");
   await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/USD → USDT → ARS/);
-  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/Unverifiable freshness|Frescura no verificable/);
+  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/Source time unavailable|Fuente sin hora propia/);
+  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/Retrieved by CMA|Consultada por CMA/);
   await expect(page.getByTestId("best-arbitrage-opportunity")).toContainText(/Possible gross difference|Posible diferencia bruta/);
   await expect(page.getByTestId("arbitrage-matrix")).toContainText(/USD bancario|bank USD/i);
   await expect(page.getByTestId("arbitrage-calculator")).toContainText(/Calculadora|calculator/i);
@@ -95,7 +96,7 @@ test("separates assets, shows both user-side prices and constrains routes", asyn
   await expect(page.getByTestId("arbitrage-matrix")).toContainText("USDT");
 
   await page.getByRole("button", { name: /USD bancario|Bank USD/ }).click();
-  await page.getByRole("button", { name: /Fresh only|Sólo vigentes/ }).click();
+  await page.getByRole("button", { name: /Verified source time|Hora fuente verificada/ }).click();
   await expect(page.getByTestId("arbitrage-quote-cards")).not.toContainText("Fiwind");
   await expect(page.getByTestId("arbitrage-quote-cards")).not.toContainText("Banco Hipotecario");
   await page.getByRole("button", { name: /All|Todas/ }).click();
@@ -104,9 +105,13 @@ test("separates assets, shows both user-side prices and constrains routes", asyn
   await calculator.getByLabel(/Destination provider|Proveedor de destino/).selectOption("bna-usd");
   await calculator.getByLabel(/Amount in USD|Monto en USD/).fill("2000");
   await expect(calculator).toContainText(/10[,.]000/);
+  await calculator.getByRole("button", { name: /Create alert for this route|Crear alerta para esta ruta/ }).click();
+  await expect(page.getByRole("dialog")).toContainText(/Create arbitrage alert|Crear alerta de arbitraje/);
+  await expect(page.getByRole("dialog")).toContainText(/gross difference|diferencia bruta/i);
+  await page.getByRole("button", { name: /Cancel|Cancelar/ }).click();
 
   await page.getByRole("button", { name: /USDT/ }).click();
-  await page.getByRole("button", { name: /Fresh only|Sólo vigentes/ }).click();
+  await page.getByRole("button", { name: /Verified source time|Hora fuente verificada/ }).click();
   await expect(page.getByTestId("arbitrage-quote-cards")).not.toContainText("Satoshi Tango");
   await expect(page.getByTestId("arbitrage-quote-cards")).toContainText("Fiwind");
   expect(consoleErrors).toEqual([]);

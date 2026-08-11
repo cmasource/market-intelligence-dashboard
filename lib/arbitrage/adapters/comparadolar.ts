@@ -23,7 +23,10 @@ const CURATED_PROVIDERS: Record<string, ProviderMapping> = {
   "banco-hipotecario": { providerId: "banco-hipotecario", instrument: "bank_usd", transferVerification: "partially_verified" },
   "banco-provincia": { providerId: "banco-provincia", instrument: "bank_usd", transferVerification: "partially_verified" },
   "banco-supervielle": { providerId: "banco-supervielle", instrument: "bank_usd", transferVerification: "partially_verified" },
+  bancor: { providerId: "bancor", instrument: "bank_usd", transferVerification: "partially_verified" },
+  brubank: { providerId: "brubank", instrument: "bank_usd", transferVerification: "partially_verified" },
   reba: { providerId: "reba", instrument: "bank_usd", transferVerification: "partially_verified" },
+  tiendadolar: { providerId: "tiendadolar", instrument: "bank_usd", transferVerification: "partially_verified" },
   uala: { providerId: "uala", instrument: "bank_usd", transferVerification: "partially_verified" },
 };
 
@@ -79,6 +82,7 @@ export function normalizeComparaDolarUsdPayload(payload: unknown, fetchedAt: str
       sourceType: "aggregator" as const,
       status: "delayed" as const,
       estimatedDelaySeconds: 300,
+      sourcePollingIntervalSeconds: 300,
       fees: {
         description: isCryptoCircuit
           ? "Tipo de cambio compuesto USD → USDT → ARS agregado por ComparaDólar; costos y monto final deben verificarse en Fiwind."

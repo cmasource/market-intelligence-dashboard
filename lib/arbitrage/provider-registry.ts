@@ -1,5 +1,42 @@
 import type { FxProvider, TransferAsset } from "./types";
 
+function referenceProvider(id: string, name: string, providerType: FxProvider["providerType"], websiteUrl?: string): FxProvider {
+  return {
+    id,
+    name,
+    providerType,
+    websiteUrl,
+    operates24x7: true,
+    sourceType: "aggregator",
+    status: "active",
+    verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "unverified", availability24x7: "reference_only" },
+  };
+}
+
+const STABLECOIN_REFERENCE_PROVIDERS: FxProvider[] = [
+  referenceProvider("astropay", "AstroPay", "wallet", "https://www.astropay.com/"),
+  referenceProvider("binance", "Binance", "exchange", "https://www.binance.com/"),
+  referenceProvider("binancep2p", "Binance P2P", "exchange", "https://p2p.binance.com/"),
+  referenceProvider("bitgetp2p", "Bitget P2P", "exchange", "https://www.bitget.com/p2p-trade"),
+  referenceProvider("bitsoalpha", "Bitso Alpha", "exchange", "https://bitso.com/"),
+  referenceProvider("buenbit", "Buenbit", "exchange", "https://www.buenbit.com/"),
+  referenceProvider("bybit", "Bybit", "exchange", "https://www.bybit.com/"),
+  referenceProvider("bybitp2p", "Bybit P2P", "exchange", "https://www.bybit.com/fiat/trade/otc"),
+  referenceProvider("cocoscrypto", "Cocos Crypto", "exchange", "https://cocos.capital/"),
+  referenceProvider("decrypto", "Decrypto", "exchange", "https://decrypto.la/"),
+  referenceProvider("kucoinp2p", "KuCoin P2P", "exchange", "https://www.kucoin.com/otc"),
+  referenceProvider("lemoncash", "Lemon", "wallet", "https://lemon.me/"),
+  referenceProvider("letsbit", "Let'sBit", "exchange", "https://letsbit.io/"),
+  referenceProvider("mexcp2p", "MEXC P2P", "exchange", "https://www.mexc.com/fiat-p2p"),
+  referenceProvider("nexo", "Nexo", "exchange", "https://nexo.com/"),
+  referenceProvider("okexp2p", "OKX P2P", "exchange", "https://www.okx.com/p2p-markets"),
+  referenceProvider("ripio", "Ripio", "exchange", "https://www.ripio.com/"),
+  referenceProvider("ripioexchange", "Ripio Trade", "exchange", "https://www.ripiotrade.co/"),
+  referenceProvider("tiendacrypto", "Tienda Crypto", "exchange", "https://tiendacrypto.com/"),
+  referenceProvider("vitawallet", "Vita Wallet", "wallet", "https://vitawallet.io/"),
+  referenceProvider("wallbit", "Wallbit", "wallet", "https://wallbit.io/"),
+];
+
 export const ARBITRAGE_PROVIDERS: FxProvider[] = [
   {
     id: "plus",
@@ -76,6 +113,7 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     requiresSameHolderAccount: true,
     verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "verified", transferAsset: "partially_verified", availability24x7: "partially_verified" },
   },
+  ...STABLECOIN_REFERENCE_PROVIDERS,
   {
     id: "banco-ciudad",
     name: "Banco Ciudad",
@@ -117,6 +155,26 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "partially_verified", availability24x7: "reference_only" },
   },
   {
+    id: "bancor",
+    name: "Bancor",
+    providerType: "bank",
+    websiteUrl: "https://www.bancor.com.ar/",
+    operates24x7: false,
+    sourceType: "aggregator",
+    status: "active",
+    verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "partially_verified", availability24x7: "reference_only" },
+  },
+  {
+    id: "brubank",
+    name: "Brubank",
+    providerType: "bank",
+    websiteUrl: "https://www.brubank.com/",
+    operates24x7: false,
+    sourceType: "aggregator",
+    status: "active",
+    verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "partially_verified", availability24x7: "reference_only" },
+  },
+  {
     id: "uala",
     name: "Ualá",
     providerType: "wallet",
@@ -132,6 +190,16 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     providerType: "wallet",
     websiteUrl: "https://www.reba.com.ar/",
     operates24x7: true,
+    sourceType: "aggregator",
+    status: "active",
+    verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "partially_verified", availability24x7: "reference_only" },
+  },
+  {
+    id: "tiendadolar",
+    name: "Tienda Dólar",
+    providerType: "exchange_agency",
+    websiteUrl: "https://tiendadolar.com/",
+    operates24x7: false,
     sourceType: "aggregator",
     status: "active",
     verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "partially_verified", availability24x7: "reference_only" },

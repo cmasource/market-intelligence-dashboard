@@ -34,8 +34,9 @@ export function ProviderQuoteCard({ quote, provider, asset, isBestBuy, isBestSel
   const providerName = provider?.name ?? quote.providerId;
   const referenceOnly = quote.verification.quote === "reference_only";
   const observedLabel = quote.observedAt ? formatAge(quote.observedAt, language) : undefined;
+  const fetchedLabel = formatAge(quote.fetchedAt, language);
   const freshnessLabel = freshness === "unverifiable"
-    ? (language === "es" ? "Frescura no verificable" : "Unverifiable freshness")
+    ? (language === "es" ? "Fuente sin hora propia" : "Source time unavailable")
     : getQuoteStatusLabel(quote.status, t);
   const isCompositeFiwindRoute = quote.providerId === "fiwind" && quote.instrument === "crypto_usd_route";
 
@@ -85,7 +86,11 @@ export function ProviderQuoteCard({ quote, provider, asset, isBestBuy, isBestSel
 
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] text-[var(--cma-text-muted)]">
         <span className="inline-flex items-center gap-1"><Info size={11} aria-hidden="true" />{getVerificationLabel(quote.verification.quote, t)}</span>
-        <span title={formatTimestamp(quote.observedAt, language)}>{language === "es" ? "Observada" : "Observed"}: {observedLabel ?? (language === "es" ? "sin hora verificable" : "unverified time")}</span>
+        {quote.observedAt
+          ? <span title={formatTimestamp(quote.observedAt, language)}>{language === "es" ? "Hora de la fuente" : "Source time"}: {observedLabel}</span>
+          : <span>{language === "es" ? "La fuente no informa hora propia" : "The source does not report its own time"}</span>}
+        <span title={formatTimestamp(quote.fetchedAt, language)} className="font-medium text-[var(--cma-text-secondary)]">{language === "es" ? "Consultada por CMA" : "Retrieved by CMA"}: {fetchedLabel}</span>
+        {!quote.observedAt && quote.sourcePollingIntervalSeconds ? <span>{language === "es" ? `Actualización estimada de la fuente: cada ${Math.round(quote.sourcePollingIntervalSeconds / 60)} min` : `Estimated source update: every ${Math.round(quote.sourcePollingIntervalSeconds / 60)} min`}</span> : null}
         {quote.quotedAmountUsd ? <span>{language === "es" ? "Volumen" : "Volume"}: {formatUsd(quote.quotedAmountUsd, language)}</span> : null}
         {referenceOnly ? <span className="inline-flex items-center gap-1 text-sky-300"><ShieldCheck size={11} aria-hidden="true" />{language === "es" ? "No confirma una ruta operable" : "Does not confirm an operable route"}</span> : null}
         {quote.sourceUrl ? <a href={quote.sourceUrl} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex min-h-8 items-center gap-1 font-semibold text-[var(--cma-accent-cyan)] hover:underline"><ExternalLink size={11} aria-hidden="true" />{t("arbitrageOpenSource")}</a> : null}

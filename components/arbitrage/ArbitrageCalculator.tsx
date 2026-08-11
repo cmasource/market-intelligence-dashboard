@@ -1,4 +1,4 @@
-import { AlertTriangle, Calculator, CheckCircle2, Info } from "lucide-react";
+import { AlertTriangle, BellRing, Calculator, CheckCircle2, Info } from "lucide-react";
 import { getIssueLabel, type ArbitrageTranslate } from "@/lib/arbitrage/labels";
 import type { ArbitrageOpportunity, FxProvider, FxQuote, TransferAsset } from "@/lib/arbitrage/types";
 import type { Language } from "@/lib/i18n/types";
@@ -18,6 +18,7 @@ type ArbitrageCalculatorProps = {
   asset: TransferAsset;
   language: Language;
   t: ArbitrageTranslate;
+  onCreateAlert?: (opportunity: ArbitrageOpportunity) => void;
 };
 
 function assetLabel(asset: TransferAsset, language: Language) {
@@ -26,7 +27,7 @@ function assetLabel(asset: TransferAsset, language: Language) {
 }
 
 export function ArbitrageCalculator(props: ArbitrageCalculatorProps) {
-  const { amount, onAmountChange, sourceId, destinationId, onSourceChange, onDestinationChange, buyQuotes, sellQuotes, opportunity, providers, asset, language, t } = props;
+  const { amount, onAmountChange, sourceId, destinationId, onSourceChange, onDestinationChange, buyQuotes, sellQuotes, opportunity, providers, asset, language, t, onCreateAlert } = props;
   const selectedSource = buyQuotes.find((quote) => quote.id === sourceId);
   const destinationOptions = sellQuotes.filter((quote) => quote.providerId !== selectedSource?.providerId);
   const issues = opportunity ? [...new Set([...opportunity.blockers, ...opportunity.warnings])] : [];
@@ -84,6 +85,7 @@ export function ArbitrageCalculator(props: ArbitrageCalculatorProps) {
           </div>
 
           <p className="mt-3 text-[10px] leading-4 text-[var(--cma-text-muted)]">{opportunity.costStatus === "unknown" ? (language === "es" ? "Costos no verificados: el resultado es una diferencia bruta, no una ganancia neta." : "Unverified costs: this is a gross difference, not net profit.") : (language === "es" ? "Verificá el precio final y las condiciones en cada proveedor." : "Verify final prices and conditions with each provider.")}</p>
+          {opportunity.grossSpreadPerUsd > 0 && onCreateAlert ? <button type="button" onClick={() => onCreateAlert(opportunity)} className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-cyan-300/35 bg-cyan-300/10 px-4 text-sm font-semibold text-cyan-100 hover:border-cyan-300/60"><BellRing aria-hidden="true" size={16} />{language === "es" ? "Crear alerta para esta ruta" : "Create alert for this route"}</button> : null}
         </div>
       )}
     </section>

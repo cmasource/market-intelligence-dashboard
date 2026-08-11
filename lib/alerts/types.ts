@@ -144,3 +144,16 @@ export type PersonalAlertSubscription = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type ArbitrageAlertSubscription = {
+  id: string;
+  userId: string;
+  sourceProviderId: string;
+  destinationProviderId: string;
+  transferAsset: "USD_BANK" | "USDT" | "USDC";
+  amountUsd: number;
+  minimumGrossSpreadArs: number;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+};

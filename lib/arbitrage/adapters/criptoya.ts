@@ -4,7 +4,12 @@ import { readJsonResponse, parseNumber } from "./shared";
 const CRIPTOYA_BASE_URL = "https://criptoya.com/api";
 const CRIPTOYA_DOCS_URL = "https://docs.criptoya.com/argentina/";
 const REFERENCE_VOLUME = 1_000;
-const SUPPORTED_PROVIDERS = new Set(["belo", "dolarapp", "fiwind", "satoshitango"]);
+const SUPPORTED_PROVIDERS = new Set([
+  "astropay", "belo", "binance", "binancep2p", "bitgetp2p", "bitsoalpha", "buenbit",
+  "bybit", "bybitp2p", "cocoscrypto", "decrypto", "dolarapp", "fiwind", "kucoinp2p",
+  "lemoncash", "letsbit", "mexcp2p", "nexo", "okexp2p", "ripio", "ripioexchange",
+  "satoshitango", "tiendacrypto", "vitawallet", "wallbit",
+]);
 
 type CriptoYaAsset = "USDT" | "USDC";
 type CriptoYaQuote = {
@@ -44,7 +49,7 @@ export function normalizeCriptoYaPayloads(
       const row = rawQuote as CriptoYaQuote;
       const userBuysUsdAt = parseNumber(row.totalAsk) ?? parseNumber(row.ask);
       const userSellsUsdAt = parseNumber(row.totalBid) ?? parseNumber(row.bid);
-      if (!userBuysUsdAt && !userSellsUsdAt) return [];
+      if (!userBuysUsdAt || !userSellsUsdAt || userBuysUsdAt < 100 || userSellsUsdAt < 100 || userBuysUsdAt < userSellsUsdAt) return [];
       const observedAt = parseObservedAt(row.time, fetchedAt);
       const warnings: ArbitrageIssueCode[] = ["costs_unverified", "verify_final_price", "volume_specific_quote"];
       if (!observedAt) warnings.push("observed_at_unavailable");
