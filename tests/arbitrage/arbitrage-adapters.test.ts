@@ -98,6 +98,14 @@ test("CriptoYa includes timestamped quotes from the expanded wallet and exchange
   assert.ok(result.quotes.every((quote) => quote.observedAt));
 });
 
+test("CriptoYa labels a quote live when its source timestamp is within the freshness window", () => {
+  const result = normalizeCriptoYaPayloads({
+    USDT: { fiwind: { totalAsk: 1580, totalBid: 1570, time: 1786456770 } },
+  }, "2026-08-11T14:00:00.000Z");
+  assert.equal(result.quotes[0]?.status, "live");
+  assert.equal(getFreshnessStatus(result.quotes[0]!, new Date("2026-08-11T14:00:00.000Z")), "fresh");
+});
+
 test("Fiwind is integrated as an aggregator reference without upgrading route capabilities", () => {
   const fiwind = getArbitrageProvider("fiwind");
   assert.equal(fiwind?.status, "active");

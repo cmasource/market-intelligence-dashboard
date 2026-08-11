@@ -1,4 +1,5 @@
 import type { ArbitrageIssueCode, ArbitrageQuoteProvider, FxInstrument, ProviderQuoteResult, TransferAsset } from "../types";
+import { deriveQuoteStatus } from "../freshness";
 import { readJsonResponse, parseNumber } from "./shared";
 
 const CRIPTOYA_BASE_URL = "https://criptoya.com/api";
@@ -69,7 +70,7 @@ export function normalizeCriptoYaPayloads(
         fetchedAt,
         sourceUrl: `${CRIPTOYA_BASE_URL}/${assetName}/ARS/${quotedAmountUsd}`,
         sourceType: "aggregator" as const,
-        status: observedAt ? "delayed" as const : "stale" as const,
+        status: observedAt ? deriveQuoteStatus(providerId, observedAt, new Date(fetchedAt)) : "stale" as const,
         estimatedDelaySeconds: 60,
         fees: {
           description: "CriptoYa informa totalAsk/totalBid para el volumen consultado; no confirma todos los costos de transferencia, retiro o conversión.",
