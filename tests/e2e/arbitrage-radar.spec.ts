@@ -84,9 +84,10 @@ test("separates assets, shows both user-side prices and constrains routes", asyn
   await expect(page.getByTestId("arbitrage-quote-cards")).not.toContainText(/Source time unavailable|Fuente sin hora propia/);
   await expect(page.getByTestId("best-arbitrage-opportunity")).toContainText(/Possible gross difference|Posible diferencia bruta/);
   await expect(page.getByTestId("arbitrage-matrix")).not.toContainText(/Unverifiable freshness|Frescura no verificable/);
-  await page.getByTestId("best-arbitrage-opportunity").getByRole("button", { name: /Alert me when there is a verified opportunity|Avisarme cuando haya una oportunidad verificada/ }).click();
-  await expect(page.getByRole("dialog")).toContainText(/Alertarme ante una oportunidad verificada|Alert me about a verified opportunity/);
-  await expect(page.getByRole("dialog")).toContainText(/fresh quotes|cotizaciones frescas/i);
+  await page.getByTestId("best-arbitrage-opportunity").getByRole("button", { name: /Create difference alert|Crear alerta por diferencia/ }).click();
+  await expect(page.getByRole("dialog")).toContainText(/Alertarme por diferencia de cotización|Alert me about a quote difference/);
+  await expect(page.getByRole("dialog")).not.toContainText(/Monto monitoreado|Monitored amount/);
+  await expect(page.getByRole("dialog").getByLabel(/Diferencia mínima|Minimum difference/)).toHaveValue("5");
   await page.getByRole("button", { name: /Cancel|Cancelar/ }).click();
   await expect(page.getByTestId("arbitrage-matrix")).toContainText(/USD bancario|bank USD/i);
   await expect(page.getByTestId("arbitrage-calculator")).toContainText(/Calculadora|calculator/i);
@@ -111,8 +112,9 @@ test("separates assets, shows both user-side prices and constrains routes", asyn
   await calculator.getByLabel(/Amount in USD|Monto en USD/).fill("2000");
   await expect(calculator).toContainText(/10[,.]000/);
   await calculator.getByRole("button", { name: /Monitor this route|Monitorear esta ruta/ }).click();
-  await expect(page.getByRole("dialog")).toContainText(/Monitor this route|Monitorear esta ruta/);
-  await expect(page.getByRole("dialog")).toContainText(/verified opportunity|oportunidad verificada/i);
+  await expect(page.getByRole("dialog")).toContainText(/Alertarme por diferencia de cotización|Alert me about a quote difference/);
+  await expect(page.getByRole("dialog")).toContainText(/diferencia por USD|per-USD difference/i);
+  await expect(page.getByRole("dialog")).not.toContainText(/Monto monitoreado|Monitored amount/);
   await page.getByRole("button", { name: /Cancel|Cancelar/ }).click();
 
   await page.getByRole("button", { name: /USDT/ }).click();

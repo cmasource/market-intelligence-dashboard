@@ -10,7 +10,7 @@ La interfaz organiza primero por activo y muestra ambas puntas en una tarjeta po
 
 ## 3. Funciones excluidas
 
-No ejecuta operaciones, transferencias ni órdenes; no conecta cuentas; no automatiza logins; no almacena credenciales, cookies externas, preferencias, historial ni alertas. Tampoco reutiliza `/api/research/wallet-rates`, que corresponde a rendimientos de cuentas.
+No ejecuta operaciones, transferencias ni órdenes; no conecta cuentas; no automatiza logins ni almacena credenciales o cookies externas. Las alertas configuradas por usuarios autenticados sólo guardan el activo, la comparación opcional y el umbral de diferencia por USD. Tampoco reutiliza `/api/research/wallet-rates`, que corresponde a rendimientos de cuentas.
 
 ## 4. Arquitectura
 
@@ -46,7 +46,7 @@ retorno neto = resultado neto / capital requerido × 100
 
 Una combinación sólo se considera **oportunidad verificada** si ambas cotizaciones son frescas y verificadas, la ruta y el activo transferido están verificados, depósito y retiro están confirmados, los costos permiten calcular un resultado neto, los límites informados admiten el monto y el resultado neto es positivo. Una diferencia bruta positiva con datos incompletos se clasifica como **ruta potencial**, no como ganancia neta ni arbitraje confirmado.
 
-El resumen principal permite activar “Avisarme cuando haya una oportunidad verificada”. Esta suscripción no queda atada a la ruta visible ni a la selección manual de la calculadora: el monitor revisa todas las rutas del activo cada cinco minutos y avisa por los canales habilitados cuando alguna supera el umbral y cumple todos los controles anteriores. La calculadora conserva un monitor de ruta específica para usuarios que quieran seguir un origen y destino determinados, con la misma exigencia de verificación antes de disparar.
+El resumen principal permite crear una alerta por diferencia de cotización. La suscripción general no queda atada a la ruta visible ni al monto de la calculadora: el monitor revisa todas las comparaciones del activo cada cinco minutos y avisa por los canales habilitados cuando la mayor diferencia bruta por USD alcanza el umbral configurado. También puede seguirse una comparación específica desde la calculadora. En ambos casos el aviso comunica una diferencia bruta reciente, no una ganancia neta ni una operación garantizada; el monto, los costos y los límites se analizan por separado en la calculadora.
 
 ## 10. Costos
 
@@ -58,7 +58,7 @@ Se admiten mínimo, máximo por operación, máximo diario y máximo mensual. Lo
 
 ## 12. Frescura
 
-Cada quote separa `observedAt` (hora publicada por la fuente, si existe) de `fetchedAt` (hora de consulta de CMA). Los umbrales son configurables por proveedor: Plus usa 120 segundos como fresco y 600 como vencido; Banco Nación, por la naturaleza de su pizarra, 4 y 12 horas. Una cotización vencida puede verse, pero no genera oportunidades activas. Cuando un agregador no entrega hora original, `observedAt` queda ausente: `fetchedAt` nunca se usa para simular frescura. La interfaz puede indicar que la consulta de CMA ocurrió hace menos de cinco minutos para transmitir el estado operativo del recolector; esa señal no convierte la cotización en verificada ni habilita una alerta estricta.
+Cada quote separa `observedAt` (hora publicada por la fuente, si existe) de `fetchedAt` (hora de consulta de CMA). Los umbrales son configurables por proveedor: Plus usa 120 segundos como fresco y 600 como vencido; Banco Nación, por la naturaleza de su pizarra, 4 y 12 horas. Una cotización vencida puede verse, pero no genera oportunidades activas. Cuando un agregador no entrega hora original, `observedAt` queda ausente: `fetchedAt` nunca se usa para simular la hora de la fuente. La alerta de diferencia admite una consulta CMA con antigüedad máxima de cinco minutos, lo declara en la evidencia y no la presenta como verificación de rentabilidad u operabilidad.
 
 La validación real del 5 de agosto de 2026 encontró en Plus el campo `date: "2026-08-05 13:54:02"` mientras la consulta se realizó a las `14:39:41` de Argentina. El parser interpreta correctamente la fecha local con `-03:00`; la fuente estaba realmente atrasada unos 46 minutos. Se conserva `stale` y la cotización queda sólo como referencia.
 

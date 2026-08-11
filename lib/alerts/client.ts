@@ -121,7 +121,6 @@ export async function saveArbitrageAlertSubscription(input: {
   sourceProviderId?: string | null;
   destinationProviderId?: string | null;
   transferAsset: ArbitrageAlertSubscription["transferAsset"];
-  amountUsd: number;
   minimumGrossSpreadArs: number;
 }) {
   const payload = {
@@ -130,7 +129,8 @@ export async function saveArbitrageAlertSubscription(input: {
     source_provider_id: input.scope === "route" ? input.sourceProviderId ?? null : null,
     destination_provider_id: input.scope === "route" ? input.destinationProviderId ?? null : null,
     transfer_asset: input.transferAsset,
-    amount_usd: input.amountUsd,
+    // Schema-compatible neutral value: quote-difference alerts are amount-independent.
+    amount_usd: 1,
     minimum_gross_spread_ars: input.minimumGrossSpreadArs,
     enabled: true,
     updated_at: new Date().toISOString(),

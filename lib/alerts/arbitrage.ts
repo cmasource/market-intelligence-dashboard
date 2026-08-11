@@ -1,14 +1,23 @@
 import {
   buildOpportunityMatrixForAsset,
   calculateArbitrageOpportunity,
-  findBestOpportunity,
-  findBestPotentialDifference,
   getFreshnessStatus,
 } from "@/lib/arbitrage";
 import type { ArbitrageOpportunity, FxQuote } from "@/lib/arbitrage/types";
 import type { AlertEvaluation, ArbitrageAlertSubscription } from "./types";
 
-const MAX_RETRIEVAL_AGE_SECONDS = 10 * 60;
+const MAX_RETRIEVAL_AGE_SECONDS = 5 * 60;
+const DIFFERENCE_ONLY_AMOUNT_USD = 1;
+const NON_COMPARABLE_BLOCKERS = new Set([
+  "same_provider",
+  "asset_mismatch",
+  "instrument_mismatch",
+  "missing_buy_price",
+  "missing_sell_price",
+  "source_unavailable",
+  "destination_unavailable",
+  "stale_quote",
+]);
 
 function ageSeconds(value: string, now: Date) {
   const timestamp = new Date(value).getTime();
@@ -23,6 +32,18 @@ function quotePairForOpportunity(opportunity: ArbitrageOpportunity, quotes: FxQu
   };
 }
 
+function quoteIsCurrent(quote: FxQuote, now: Date) {
+  const freshness = getFreshnessStatus(quote, now);
+  return ageSeconds(quote.fetchedAt, now) <= MAX_RETRIEVAL_AGE_SECONDS
+    && (freshness === "fresh" || freshness === "unverifiable")
+    && !["stale", "unavailable", "error"].includes(quote.status);
+}
+
+function differenceIsComparable(opportunity: ArbitrageOpportunity) {
+  return opportunity.grossSpreadPerUsd > 0
+    && !opportunity.blockers.some((blocker) => NON_COMPARABLE_BLOCKERS.has(blocker));
+}
+
 function selectRouteCandidate(subscription: ArbitrageAlertSubscription, quotes: FxQuote[], now: Date) {
   if (!subscription.sourceProviderId || !subscription.destinationProviderId) return null;
   const sourceQuote = quotes
@@ -33,23 +54,18 @@ function selectRouteCandidate(subscription: ArbitrageAlertSubscription, quotes: 
     .toSorted((left, right) => (right.userSellsUsdAt ?? 0) - (left.userSellsUsdAt ?? 0))[0];
   if (!sourceQuote || !destinationQuote) return null;
   return {
-    opportunity: calculateArbitrageOpportunity(sourceQuote, destinationQuote, subscription.amountUsd, undefined, now),
+    opportunity: calculateArbitrageOpportunity(sourceQuote, destinationQuote, DIFFERENCE_ONLY_AMOUNT_USD, undefined, now),
     sourceQuote,
     destinationQuote,
   };
 }
 
 function selectAnyVerifiedCandidate(subscription: ArbitrageAlertSubscription, quotes: FxQuote[], now: Date) {
-  const matrix = buildOpportunityMatrixForAsset(quotes, subscription.transferAsset, subscription.amountUsd, now);
-  const opportunity = findBestOpportunity(matrix)
-    ?? findBestPotentialDifference(matrix)
-    ?? matrix
-      .filter((candidate) => !candidate.blockers.includes("same_provider") && !candidate.blockers.includes("asset_mismatch"))
-      .toSorted((left, right) => right.grossSpreadPerUsd - left.grossSpreadPerUsd)[0];
-  if (!opportunity) return null;
-  const { sourceQuote, destinationQuote } = quotePairForOpportunity(opportunity, quotes);
-  if (!sourceQuote || !destinationQuote) return null;
-  return { opportunity, sourceQuote, destinationQuote };
+  return buildOpportunityMatrixForAsset(quotes, subscription.transferAsset, DIFFERENCE_ONLY_AMOUNT_USD, now)
+    .map((opportunity) => ({ opportunity, ...quotePairForOpportunity(opportunity, quotes) }))
+    .filter((candidate): candidate is { opportunity: ArbitrageOpportunity; sourceQuote: FxQuote; destinationQuote: FxQuote } => Boolean(candidate.sourceQuote && candidate.destinationQuote))
+    .filter(({ opportunity, sourceQuote, destinationQuote }) => differenceIsComparable(opportunity) && quoteIsCurrent(sourceQuote, now) && quoteIsCurrent(destinationQuote, now))
+    .toSorted((left, right) => right.opportunity.grossSpreadPerUsd - left.opportunity.grossSpreadPerUsd)[0] ?? null;
 }
 
 export function arbitrageInstrumentId(subscription: ArbitrageAlertSubscription) {
@@ -76,12 +92,9 @@ export function evaluateArbitrageAlert(
   if (!candidate) return null;
   const { opportunity, sourceQuote, destinationQuote } = candidate;
 
-  const sourceFreshness = getFreshnessStatus(sourceQuote, now);
-  const destinationFreshness = getFreshnessStatus(destinationQuote, now);
-  const retrievalIsCurrent = [sourceQuote, destinationQuote].every((quote) => ageSeconds(quote.fetchedAt, now) <= MAX_RETRIEVAL_AGE_SECONDS);
-  const sourceDataIsUsable = ![sourceFreshness, destinationFreshness].includes("stale") && retrievalIsCurrent;
-  const isVerifiedOpportunity = opportunity.classification === "verified_opportunity";
-  const triggered = sourceDataIsUsable && isVerifiedOpportunity && opportunity.grossSpreadPerUsd >= subscription.minimumGrossSpreadArs;
+  const sourceDataIsUsable = quoteIsCurrent(sourceQuote, now) && quoteIsCurrent(destinationQuote, now);
+  const comparableDifference = differenceIsComparable(opportunity);
+  const triggered = sourceDataIsUsable && comparableDifference && opportunity.grossSpreadPerUsd >= subscription.minimumGrossSpreadArs;
   const sourceName = providerNames.get(opportunity.sourceProviderId) ?? opportunity.sourceProviderId;
   const destinationName = providerNames.get(opportunity.destinationProviderId) ?? opportunity.destinationProviderId;
   const sourceHasTime = Boolean(sourceQuote.observedAt);
@@ -90,20 +103,16 @@ export function evaluateArbitrageAlert(
   const destinationObservedAt = destinationQuote.observedAt ?? destinationQuote.fetchedAt;
   const sourceTimeLabel = sourceHasTime ? "hora informada por la fuente" : "hora de consulta de CMA; la fuente no informa hora propia";
   const destinationTimeLabel = destinationHasTime ? "hora informada por la fuente" : "hora de consulta de CMA; la fuente no informa hora propia";
-  const freshnessStatus = !sourceDataIsUsable
-    ? "stale" as const
-    : sourceHasTime && destinationHasTime
-      ? "fresh" as const
-      : "invalid" as const;
-  const formattedAmount = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 }).format(subscription.amountUsd);
+  const freshnessStatus = sourceDataIsUsable ? "fresh" as const : "stale" as const;
+  const formattedBuy = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 2 }).format(opportunity.buyRate);
+  const formattedSell = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 2 }).format(opportunity.sellRate);
   const formattedSpread = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 2 }).format(opportunity.grossSpreadPerUsd);
-  const formattedNet = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 2 }).format(opportunity.netProfitArs ?? 0);
 
   const limitations = [
-    "La verificación confirma datos, costos, límites y compatibilidad según la información disponible; no garantiza que la ejecución mantenga el mismo resultado.",
+    "La alerta confirma una diferencia bruta entre cotizaciones consultadas recientemente; no confirma ganancia neta ni una operación ejecutable.",
+    "El monto, los costos, los límites y la acreditación pueden modificar o eliminar el resultado; deben evaluarse en la calculadora y en cada proveedor.",
     "El sistema informa la oportunidad y nunca ejecuta operaciones.",
-    ...(!sourceHasTime || !destinationHasTime ? ["Al menos una fuente no informa hora propia; por lo tanto esta diferencia no se clasifica como oportunidad verificada."] : []),
-    ...(opportunity.blockers.length ? [`Ruta no confirmada: ${opportunity.blockers.join(", ")}.`] : []),
+    ...(!sourceHasTime || !destinationHasTime ? ["Al menos una fuente no informa hora propia; se utilizó la hora de consulta de CMA, con una antigüedad máxima de cinco minutos."] : []),
   ];
 
   return {
@@ -112,22 +121,22 @@ export function evaluateArbitrageAlert(
     destinationQuote,
     evaluation: {
       ruleId: "arbitrage_opportunity",
-      ruleVersion: 3,
+      ruleVersion: 4,
       category: "arbitrage_opportunity",
       triggered,
       severity: triggered ? "medium" : "informational",
-      confidenceScore: triggered ? 0.95 : sourceHasTime && destinationHasTime ? 0.6 : 0.35,
+      confidenceScore: triggered ? (sourceHasTime && destinationHasTime ? 0.9 : 0.75) : 0.35,
       direction: "up",
       title: {
-        es: `Oportunidad de arbitraje verificada: ${sourceName} → ${destinationName}`,
-        en: `Verified arbitrage opportunity: ${sourceName} → ${destinationName}`,
+        es: `Diferencia de cotización detectada: ${sourceName} → ${destinationName}`,
+        en: `Quote difference detected: ${sourceName} → ${destinationName}`,
       },
       summary: {
-        es: `Para USD ${formattedAmount}, el resultado neto verificado estimado es ${formattedNet} (${formattedSpread} de diferencia bruta por unidad). Verificá nuevamente antes de operar.`,
-        en: `For USD ${formattedAmount}, the estimated verified net result is ${formattedNet} (${formattedSpread} gross difference per unit). Verify again before trading.`,
+        es: `Compra de referencia a ${formattedBuy} y venta a ${formattedSell}: ${formattedSpread} de diferencia bruta por USD. El monto y el resultado final se calculan por separado.`,
+        en: `Reference buy at ${formattedBuy} and sell at ${formattedSell}: ${formattedSpread} gross difference per USD. Amount and final result are calculated separately.`,
       },
       reasons: [
-        "La ruta cumple los controles determinísticos de frescura, cotizaciones, costos, límites y compatibilidad.",
+        "Las dos cotizaciones fueron consultadas por CMA dentro de los últimos cinco minutos y son comparables para el mismo activo.",
         `La diferencia por unidad alcanzó ${opportunity.grossSpreadPerUsd.toFixed(2)} ARS; el umbral configurado es ${subscription.minimumGrossSpreadArs.toFixed(2)} ARS.`,
       ],
       evidence: [
@@ -135,7 +144,7 @@ export function evaluateArbitrageAlert(
         { key: "destination_sell_rate", label: `Venta en ${destinationName}`, value: opportunity.sellRate, unit: "ARS", provider: destinationName, observedAt: destinationObservedAt },
         { key: "source_timestamp_basis", label: sourceTimeLabel, value: sourceObservedAt, provider: sourceName, observedAt: sourceObservedAt },
         { key: "destination_timestamp_basis", label: destinationTimeLabel, value: destinationObservedAt, provider: destinationName, observedAt: destinationObservedAt },
-        { key: "verified_net_result", label: "Resultado neto estimado con costos verificados", value: opportunity.netProfitArs ?? 0, unit: "ARS", provider: "CMA deterministic engine", observedAt: now.toISOString() },
+        { key: "gross_spread_per_usd", label: "Diferencia bruta por USD", value: opportunity.grossSpreadPerUsd, unit: "ARS", provider: "CMA deterministic engine", observedAt: now.toISOString() },
       ],
       limitations,
       evaluatedAt: now.toISOString(),

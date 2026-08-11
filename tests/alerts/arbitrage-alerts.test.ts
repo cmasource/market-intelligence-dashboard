@@ -39,20 +39,21 @@ function quote(overrides: Partial<FxQuote>): FxQuote {
   };
 }
 
-test("configured route does not confuse a current gross difference with a verified opportunity", () => {
+test("configured comparison triggers on a recent gross difference without claiming net profit", () => {
   const evaluated = evaluateArbitrageAlert(subscription, [
     quote({ id: "reba-usd" }),
     quote({ id: "fiwind-usd", providerId: "fiwind", instrument: "crypto_usd_route", userBuysUsdAt: 1525, userSellsUsdAt: 1501.72 }),
   ], new Map([["reba", "Reba"], ["fiwind", "Fiwind"]]), now);
-  assert.equal(evaluated?.evaluation.triggered, false);
+  assert.equal(evaluated?.evaluation.triggered, true);
   assert.ok(Math.abs((evaluated?.opportunity.grossSpreadPerUsd ?? 0) - 1.72) < 0.000001);
   assert.match(evaluated?.evaluation.title.es ?? "", /Reba → Fiwind/);
-  assert.match(evaluated?.evaluation.summary.es ?? "", /resultado neto verificado/i);
-  assert.equal(evaluated?.evaluation.freshnessStatus, "invalid");
-  assert.ok(evaluated?.evaluation.limitations.some((item) => /no se clasifica como oportunidad verificada/i.test(item)));
+  assert.match(evaluated?.evaluation.title.es ?? "", /Diferencia de cotización detectada/i);
+  assert.doesNotMatch(evaluated?.evaluation.summary.es ?? "", /USD 1[.,]000|resultado neto/i);
+  assert.equal(evaluated?.evaluation.freshnessStatus, "fresh");
+  assert.ok(evaluated?.evaluation.limitations.some((item) => /no confirma ganancia neta/i.test(item)));
 });
 
-test("global verified monitor scans every route and keeps a potential difference inactive", () => {
+test("global difference monitor scans every route and selects the largest current spread", () => {
   const evaluated = evaluateArbitrageAlert({
     ...subscription,
     scope: "any_verified",
@@ -66,8 +67,20 @@ test("global verified monitor scans every route and keeps a potential difference
   ], new Map([["reba", "Reba"], ["fiwind", "Fiwind"]]), now);
   assert.equal(evaluated?.opportunity.sourceProviderId, "reba");
   assert.equal(evaluated?.opportunity.destinationProviderId, "fiwind");
-  assert.equal(evaluated?.evaluation.triggered, false);
-  assert.match(evaluated?.evaluation.limitations.join(" ") ?? "", /no se clasifica como oportunidad verificada/i);
+  assert.equal(evaluated?.evaluation.triggered, true);
+  assert.match(evaluated?.evaluation.summary.es ?? "", /2,68|2\.68/);
+});
+
+test("quote-difference evaluation is independent of the legacy stored amount", () => {
+  const quotes = [
+    quote({ id: "reba-usd" }),
+    quote({ id: "fiwind-usd", providerId: "fiwind", userSellsUsdAt: 1506 }),
+  ];
+  const small = evaluateArbitrageAlert({ ...subscription, amountUsd: 1, minimumGrossSpreadArs: 5 }, quotes, new Map(), now);
+  const large = evaluateArbitrageAlert({ ...subscription, amountUsd: 100_000, minimumGrossSpreadArs: 5 }, quotes, new Map(), now);
+  assert.equal(small?.evaluation.triggered, true);
+  assert.equal(large?.evaluation.triggered, true);
+  assert.equal(small?.opportunity.grossSpreadPerUsd, large?.opportunity.grossSpreadPerUsd);
 });
 
 test("configured arbitrage alert does not trigger below threshold or with old retrievals", () => {

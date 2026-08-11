@@ -63,7 +63,7 @@ Import matches list names case-insensitively, preserves item timestamps, skips s
 
 `supabase/migrations/20260807190105_configurable_alert_subscriptions.sql` adds the user-owned `alert_subscriptions` table and its RLS policies. It must be applied after the base alert migration.
 
-`20260811142159_arbitrage_alert_subscriptions.sql` adds user-owned Radar subscriptions. `20260811154500_verified_arbitrage_monitoring.sql` adds a global `any_verified` scope so each user can monitor all comparable routes for one asset without selecting a fixed origin and destination.
+`20260811142159_arbitrage_alert_subscriptions.sql` adds user-owned Radar subscriptions. `20260811154500_verified_arbitrage_monitoring.sql` adds the legacy `any_verified` database scope, now presented as an amount-independent quote-difference monitor: each user configures a minimum ARS-per-USD spread for all comparable quotes of one asset without selecting a fixed origin and destination. The retained `amount_usd` column receives a neutral value for backward compatibility and is not used by rule version 4.
 
 RLS is enabled on every exposed table. Authenticated clients may manage their own preferences, read their own delivered events/deliveries, and update only the `read_at` column on their own events. They receive no insert privilege on events/deliveries and no access to internal rule versions or job runs. Rules and events are written through a server-only Supabase client using `SUPABASE_SECRET_KEY` (preferred) or the legacy `SUPABASE_SERVICE_ROLE_KEY` fallback; neither value may be exposed to client code or prefixed with `NEXT_PUBLIC_`.
 
@@ -90,7 +90,7 @@ In addition, an authenticated user can create deterministic personal alerts from
 
 "Period low/high" is intentionally explicit: it is not an undocumented all-time historical floor or ceiling. Creating an alert from search first adds the normalized Instrument Master identity to the selected account watchlist, then stores the alert subscription. Personal alerts use the same provider, freshness, evidence, deduplication, cadence, and no-order guarantees as automatic rules.
 
-From the Radar summary, a user can also request “any verified opportunity” for USD bank, USDT, or USDC. On every monitor run the engine evaluates all same-asset routes for the configured amount and threshold, selects the best verified result, and alerts only when quotes, source timestamps, costs, limits, transfer capabilities, compatibility, and positive net result all pass. A Reba → Fiwind spread with missing source time, costs, or limits remains a possible gross difference and does not trigger this strict alert. The calculator retains an optional fixed-route monitor, subject to the same verification gate.
+From the Radar summary, a user can request an amount-independent quote-difference alert for USD bank, USDT, or USDC. On every monitor run the engine evaluates same-asset comparisons, selects the largest current gross spread, and alerts when it reaches the configured ARS-per-USD threshold. Both quotes must have been retrieved by CMA within five minutes and must not be stale or unavailable. The notification explicitly states that the spread is gross and that amount, costs, limits, transfer availability, and net result belong in the calculator and final provider verification. The calculator can also create the same threshold alert for one fixed provider comparison.
 
 See `docs/alert-rules-catalog.md` for exact requirements and limitations.
 
