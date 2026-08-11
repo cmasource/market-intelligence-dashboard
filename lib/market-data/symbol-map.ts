@@ -150,6 +150,7 @@ export function getAssetClassForMarketData(symbol: string): MarketDataAssetClass
 
 export function getYahooSymbol(symbol: string): string | null {
   const normalizedSymbol = normalizeSymbol(symbol);
+  if (cryptoSymbols[normalizedSymbol]) return normalizedSymbol;
   const alias = argentinaProviderAliases[normalizedSymbol];
   if (alias && yahooSymbols.has(alias)) return alias;
   return yahooSymbols.has(normalizedSymbol) ? normalizedSymbol : null;

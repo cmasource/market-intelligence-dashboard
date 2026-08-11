@@ -53,7 +53,7 @@ function isForbidden(failure: ProviderFailure) {
 
 function priorityFor(requestedProvider: TradeRadarProviderName, market: ProviderRequest["market"]) {
   if (requestedProvider !== "auto") return [requestedProvider];
-  if (market === "crypto") return ["binance"] satisfies TradeRadarProviderName[];
+  if (market === "crypto") return ["binance", "yahoo", "twelveData"] satisfies TradeRadarProviderName[];
   if (market === "bond") return ["byma"] satisfies TradeRadarProviderName[];
   if (market === "argentina") return ["yahoo", "byma"] satisfies TradeRadarProviderName[];
   if (market === "cedear") return ["yahoo", "twelveData", "alphaVantage", "fmp", "byma"] satisfies TradeRadarProviderName[];

@@ -61,3 +61,37 @@ test("US auto provider returns a clear error when every OHLCV source fails", asy
     );
   });
 });
+
+test("crypto auto provider falls back to public Yahoo OHLCV when Binance is region-blocked", async (context) => {
+  context.mock.method(globalThis, "fetch", async (input: string | URL | Request) => {
+    const url = String(input);
+    if (url.includes("api.binance.com")) return new Response(null, { status: 451 });
+    return Response.json({
+      chart: {
+        result: [{
+          timestamp: [1_700_000_000],
+          indicators: {
+            quote: [{ open: [35_000], high: [36_000], low: [34_500], close: [35_500], volume: [10_000] }],
+          },
+        }],
+        error: null,
+      },
+    });
+  });
+
+  const resolved: ResolvedTradeRadarSymbol = {
+    inputSymbol: "BTC-USD",
+    resolvedSymbol: "BTC-USD",
+    market: "crypto",
+    notes: [],
+  };
+
+  await withoutEnv(["TWELVE_DATA_API_KEY"], async () => {
+    const result = await fetchTradeRadarOhlcv(resolved, "1d", "auto");
+    assert.equal(result.response.provider, "yahoo");
+    assert.equal(result.response.resolvedSymbol, "BTC-USD");
+    assert.equal(result.response.ohlcv.length, 1);
+    const binanceFailure = result.failures.find((failure) => failure.provider === "binance");
+    assert.equal(binanceFailure?.statusCode, 451);
+  });
+});
