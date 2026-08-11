@@ -11,6 +11,8 @@ export const DEFAULT_ALERT_PREFERENCES: AlertPreferences = {
   opportunityAlertsEnabled: true,
   inAppEnabled: true,
   emailEnabled: false,
+  whatsappEnabled: false,
+  whatsappPhoneE164: null,
   monitoredWatchlistIds: null,
 };
 
@@ -47,22 +49,29 @@ export function isInQuietHours(now: Date, preferences: AlertPreferences) {
   return start < end ? current >= start && current < end : current >= start || current < end;
 }
 
-export function shouldCreateInAppAlert(input: {
+export function shouldCreateAutomaticAlert(input: {
   severity: AlertSeverity;
   category: string;
   watchlistId: string;
   preferences: AlertPreferences;
 }) {
   const { preferences } = input;
-  if (!preferences.alertsEnabled || !preferences.inAppEnabled || preferences.frequency === "disabled") return false;
+  if (!preferences.alertsEnabled || preferences.frequency === "disabled") return false;
   if (!isWatchlistMonitored(input.watchlistId, preferences.monitoredWatchlistIds)) return false;
   if (input.category === "opportunity" && !preferences.opportunityAlertsEnabled) return false;
   return meetsMinimumSeverity(input.severity, preferences.minimumSeverity);
 }
 
-export function shouldCreatePersonalInAppAlert(watchlistId: string, preferences: AlertPreferences) {
+export function shouldCreateInAppAlert(input: Parameters<typeof shouldCreateAutomaticAlert>[0]) {
+  return input.preferences.inAppEnabled && shouldCreateAutomaticAlert(input);
+}
+
+export function shouldCreatePersonalAlert(watchlistId: string, preferences: AlertPreferences) {
   return preferences.alertsEnabled
-    && preferences.inAppEnabled
     && preferences.frequency !== "disabled"
     && isWatchlistMonitored(watchlistId, preferences.monitoredWatchlistIds);
+}
+
+export function shouldCreatePersonalInAppAlert(watchlistId: string, preferences: AlertPreferences) {
+  return preferences.inAppEnabled && shouldCreatePersonalAlert(watchlistId, preferences);
 }

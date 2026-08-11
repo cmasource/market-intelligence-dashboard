@@ -21,9 +21,9 @@ Local watchlists -- explicit consent --> account watchlists (Supabase + RLS)
                                              |
                          user-defined alert subscriptions
                                              |
-Vercel Cron --> protected Route Handler --> unique account instruments
+5-minute scheduler --> protected Route Handler --> unique account instruments
                                              |
-                                      Trade Radar OHLCV
+                         current quotes + daily Trade Radar OHLCV
                                              |
                          freshness + provider + sample validation
                                              |
@@ -82,9 +82,9 @@ Active version 1 rules:
 In addition, an authenticated user can create deterministic personal alerts from any supported asset card in a watchlist or from the alert center. The available conditions are:
 
 - crossing above or below a configured price;
-- rising or falling by a configured close-to-close percentage in the latest daily bar;
-- approaching EMA 200 within a configured percentage;
-- approaching the prior 20, 60, 120, or 200-session low or high within a configured percentage.
+- rising or falling by a configured current-session percentage versus the prior close;
+- approaching the daily EMA 200 within a configured percentage;
+- approaching the prior 20, 60, 120, or 200-session daily low or high within a configured percentage.
 
 "Period low/high" is intentionally explicit: it is not an undocumented all-time historical floor or ceiling. Creating an alert from search first adds the normalized Instrument Master identity to the selected account watchlist, then stores the alert subscription. Personal alerts use the same provider, freshness, evidence, deduplication, cadence, and no-order guarantees as automatic rules.
 
@@ -94,7 +94,9 @@ Severity uses informational, low, medium, high, and critical. It combines normal
 
 ## Freshness and sources
 
-Every evaluation requires parseable `observedAt` and `fetchedAt`, `fetchedAt >= observedAt`, a successful non-mock Trade Radar provider response, and at least 220 normalized candles at scheduler level. Daily crypto data is considered stale after 36 hours; other daily markets after 96 hours to account for weekends. Stale, incomplete, or failed-provider inputs produce no alert.
+Automatic-rule evaluation requires parseable `observedAt` and `fetchedAt`, `fetchedAt >= observedAt`, a successful non-mock Trade Radar provider response, and at least 220 normalized daily candles. Daily crypto data is considered stale after 36 hours; other daily markets after 96 hours to account for weekends. Personal rules additionally require a current quote with a provider observation timestamp: end-of-day-only quotes are rejected, real-time observations expire after 15 minutes, and delayed or unspecified observations after 45 minutes. Stale, incomplete, or failed-provider inputs produce no alert.
+
+For price-crossing alerts, `alert_subscription_states` persists the last accepted observed quote. This prevents the first observation from being misreported as a crossing and allows subsequent executions to detect the direction deterministically. EMA 200 and period high/low alerts compare the current quote with daily OHLCV references; the interface and evidence state that distinction explicitly.
 
 The operational source is the provider selected by the existing Trade Radar provider router (for example Yahoo-compatible public data, Binance, or a configured provider). The exact provider and timestamps are persisted with each event and evidence item. Local BYMA quote-only snapshots are not converted into OHLCV history.
 
@@ -115,18 +117,19 @@ Deleting a watchlist sets historical event `watchlist_id` to null instead of del
 
 The repository deliberately ships without an active scheduler until the deployment plan and secrets are known. Choose exactly one strategy; enabling both would duplicate requests even though the database execution lock prevents duplicate processing.
 
-- **Vercel Pro or a plan supporting hourly Cron:** copy `docs/vercel-cron.pro.example.json` to the repository root as `vercel.json`. Configure `CRON_SECRET` in Vercel and keep Supabase Cron disabled.
+- **Vercel Pro or another plan supporting five-minute Cron:** copy `docs/vercel-cron.pro.example.json` to the repository root as `vercel.json`. Configure `CRON_SECRET` in Vercel and keep Supabase Cron disabled.
 - **Vercel Hobby or no suitable Vercel Cron:** keep `vercel.json` absent. Store `cma_alerts_endpoint_url` and `cma_alerts_cron_secret` in Supabase Vault, then run `supabase/snippets/enable_intelligent_alerts_cron.sql`. The secret must equal the application's `CRON_SECRET`. Use the paired disable snippet for rollback.
 
 Both strategies invoke `/api/alerts/evaluate` with `Authorization: Bearer <CRON_SECRET>`; the handler validates it with a constant-time comparison. The same endpoint accepts an authorized POST for controlled manual validation. Never write the endpoint or secret value into a versioned SQL file.
 
-The hourly invocation does not evaluate every asset indiscriminately:
+The five-minute invocation uses a hybrid cadence:
 
-- crypto: hourly, 24/7;
-- Argentina instruments: once on weekdays at 21:00 UTC;
-- US/other supported instruments: once on weekdays at 22:00 UTC.
+- personal crypto alerts: up to every five minutes, 24/7;
+- personal Argentina/CEDEAR alerts: up to every five minutes on weekdays between 12:30 and 21:00 UTC;
+- personal US/other alerts: up to every five minutes on weekdays between 13:00 and 22:00 UTC;
+- automatic technical rules: once per applicable daily evaluation window, preserving their daily OHLCV semantics.
 
-The job uses a database unique lock per execution window, bounded batches, per-instrument error isolation, safe aggregate counters, provider failure isolation, deduplicated user/instrument work, and a 60-second function limit. Fatal setup/query failures mark the job run as failed; isolated instrument failures mark it partial. Later runs safely resume from persisted state.
+The job uses a database unique lock per five-minute execution window, bounded batches, per-instrument error isolation, safe aggregate counters, provider failure isolation, deduplicated user/instrument work, and a 60-second function limit. Fatal setup/query failures mark the job run as failed; isolated instrument failures mark it partial. Later runs safely resume from persisted state.
 
 ## Preferences, quiet hours, and channels
 
@@ -134,7 +137,9 @@ Users choose monitored lists, minimum severity for automatic alerts, immediate/h
 
 In-app is implemented through persisted delivery rows. Immediate items outside quiet hours are marked sent; digest or quiet-hour items remain pending and a later scheduler run releases them. The center and unread badge display only sent in-app deliveries, so delivery preferences apply even when the page is closed.
 
-Email has a channel interface but is unavailable: Supabase Auth email is not a transactional alert provider. The UI cannot enable it, and no email is simulated. WhatsApp is a disabled future channel and no phone number is collected.
+Email delivery uses Resend and the verified email address of the authenticated Supabase account. WhatsApp delivery uses Twilio Programmable Messaging with an approved Meta content template. Both channels are opt-in in account settings, respect delivery frequency and quiet hours, write provider acceptance/failure metadata to `alert_deliveries`, and never expose provider credentials to the browser. WhatsApp additionally requires an explicit E.164 number and consent timestamp; no message is attempted without both.
+
+Resend requests use the alert event ID as an idempotency key. Twilio sends use `ContentSid` rather than free-form text because market alerts normally occur outside WhatsApp's 24-hour customer-service window. A Twilio status callback URL can be configured for provider status events; the stored `sent` state means the provider accepted the request, not that the recipient necessarily read it.
 
 ## User interface and accessibility
 
@@ -155,15 +160,24 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 SUPABASE_SECRET_KEY             server only, preferred
 SUPABASE_SERVICE_ROLE_KEY       server only, legacy fallback
 CRON_SECRET                    server only, random 16+ characters
+RESEND_API_KEY                 server only, provisioned by Resend
+RESEND_FROM_EMAIL              verified sender, for example CMA Alerts <alerts@example.com>
+TWILIO_ACCOUNT_SID             server only
+TWILIO_AUTH_TOKEN              server only
+TWILIO_WHATSAPP_FROM           approved sender in E.164 format
+TWILIO_WHATSAPP_CONTENT_SID    approved alert template with variables 1, 2 and 3
+TWILIO_STATUS_CALLBACK_URL     optional provider-status callback
+NEXT_PUBLIC_SITE_URL           canonical production origin for alert links
 ```
 
 1. Review and apply migrations in timestamp order to the intended Supabase project. With a linked CLI use `supabase db push`; otherwise paste the reviewed migration into the project's SQL Editor.
 2. Confirm the Data API exposes `public`, the migration grants are present, and the Supabase security/performance advisors show no new alert-table issue.
 3. Add the server-only variables to the application environment. Do not put them in browser code, SQL, screenshots, or logs.
-4. Determine the Vercel plan and activate exactly one scheduler strategy described above. The Supabase strategy requires the `pg_cron`, `pg_net`, and Vault capabilities used by the supplied snippet.
-5. Run one authorized controlled evaluation, then verify `alert_job_runs`, rule versions, events, deliveries, and the account UI.
-6. Test two real users: each can see only their own watchlists, preferences, events, and deliveries; neither can insert events/deliveries nor read rule/job internals.
-7. Test the explicit browser-local watchlist import, repeat it to verify idempotency, and confirm the local backup remains intact.
+4. Verify the Resend sender domain. In Twilio/Meta, register the WhatsApp sender and approve a template whose variables are: `1` title, `2` summary, and `3` alert URL. A Marketplace add-on alone does not create or approve those sender identities.
+5. Determine the Vercel plan and activate exactly one scheduler strategy described above. The Supabase strategy requires the `pg_cron`, `pg_net`, and Vault capabilities used by the supplied snippet.
+6. Run one authorized controlled evaluation, then verify `alert_job_runs`, rule versions, events, deliveries, and the account UI. Confirm provider acceptance separately from final delivery/read status.
+7. Test two real users: each can see only their own watchlists, preferences, events, and deliveries; neither can insert events/deliveries nor read rule/job internals.
+8. Test the explicit browser-local watchlist import, repeat it to verify idempotency, and confirm the local backup remains intact.
 
 Safe rollback is to disable the Cron job and remove the navigation exposure while retaining tables/history for investigation. Do not drop alert tables or watchlist columns without a reviewed backup and a separate destructive migration.
 
@@ -171,7 +185,7 @@ Safe rollback is to disable the Cron job and remove the navigation exposure whil
 
 Unit tests cover classification, compatible/incompatible rules, all active categories, opportunity confirmation, freshness, incomplete data, provider health, preferences, quiet hours, deduplication, cooldown, cadence, idempotent import, and static RLS/grant invariants. Playwright covers discoverability, authentication boundaries, configuration messaging, and mobile overflow without requiring real market movements.
 
-At integration time, this worktree had public Supabase browser configuration in the primary worktree but no server secret, `CRON_SECRET`, Supabase CLI project link, or detectable Vercel plan. Therefore no migration, live two-user RLS test, scheduler activation, or real alert insertion was performed. These external checks remain explicitly pending; no such flow is operational merely because this code compiles.
+The intraday state migration and five-minute scheduler templates are versioned but are not applied or activated merely because this code compiles. Production still requires applying the reviewed migrations, confirming server credentials, selecting exactly one scheduler strategy, and completing the live two-user RLS and controlled-delivery checks.
 
 The alert branch was integrated with the then-current `main` changes for Radar de Arbitraje and Argentina reference sources. Shared navigation and translations expose both modules; alert rules remain independent from arbitrage providers and calculations.
 

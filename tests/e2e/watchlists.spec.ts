@@ -56,15 +56,45 @@ test.describe("multiple local watchlists", () => {
     await condition.selectOption("near_ema200");
     await expect(alertDialog.getByLabel(/Distancia máxima a la EMA 200|Maximum distance to EMA 200/)).toHaveValue("1");
     await expect(alertDialog.getByText(/entre 495 y 505|between 495 and 505/)).toBeVisible();
-    await expect(alertDialog.getByText(/19:00.*Argentina/)).toBeVisible();
+    await expect(alertDialog.getByText(/cada 5 minutos.*mercado correspondiente|every 5 minutes.*applicable market session/i)).toBeVisible();
 
     await condition.selectOption("rapid_rise");
-    await expect(alertDialog.getByLabel(/Suba diaria mínima|Minimum daily rise/)).toHaveValue("5");
-    await expect(alertDialog.getByText(/sube 5% o más|rises 5% or more/)).toBeVisible();
+    await expect(alertDialog.getByLabel(/Suba mínima de la rueda|Minimum session rise/)).toHaveValue("5");
+    await expect(alertDialog.getByText(/cotización observada sube 5% o más|observed quote rises 5% or more/i)).toBeVisible();
 
     await condition.selectOption("price_above");
     await expect(alertDialog.getByLabel(/Precio objetivo \(USD\)|Target price \(USD\)/)).toHaveValue("");
     await expect(alertDialog.getByRole("button", { name: /Crear alerta|Create alert/ })).toBeDisabled();
+  });
+
+  test("refreshes provider quotes and distinguishes observation from fetch time", async ({ page }) => {
+    let requests = 0;
+    await page.route("**/api/market-data/quotes", async (route) => {
+      requests += 1;
+      const now = new Date().toISOString();
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ quotes: { MSFT: {
+          symbol: "MSFT", price: 500 + requests, change: 1, changePercent: 0.2,
+          currency: "USD", provider: "test-provider", sourceLabel: "Test provider",
+          isFallback: false, observedAt: now, fetchedAt: now, dataDelay: "delayed",
+        } } }),
+      });
+    });
+
+    await page.goto("/watchlist");
+    await page.getByRole("button", { name: "Agregar activo" }).first().click();
+    const dialog = page.getByRole("dialog", { name: "Agregar activo" });
+    await dialog.getByLabel("Ticker o nombre").fill("MSFT");
+    await dialog.getByRole("button", { name: /MSFT.*Microsoft/i }).first().click();
+    await dialog.getByRole("button", { name: "Cerrar" }).click();
+
+    const row = page.getByTestId("watchlist-asset-row").filter({ hasText: "MSFT" });
+    await expect(row.getByText(/Observado:/)).toBeVisible();
+    await expect(row.getByText(/Consultado:.*Test provider/)).toBeVisible();
+    await expect(row.getByText(/dato demorado/)).toBeVisible();
+    await page.getByRole("button", { name: "Actualizar precios" }).click();
+    await expect.poll(() => requests).toBeGreaterThan(1);
   });
 
   test("watchlists remain usable without horizontal overflow on mobile", async ({ page }) => {

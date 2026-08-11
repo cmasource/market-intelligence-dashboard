@@ -1,12 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getArgentinaQuote } from "@/lib/argentina";
+import { getMarketQuote } from "@/lib/market-data";
 import { analyzeTradeRadar } from "@/lib/technical/trade-radar";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { InAppNotificationChannel } from "./channels";
+import { EmailNotificationChannel, InAppNotificationChannel, WhatsappNotificationChannel } from "./channels";
 import { canReactivate, classifyAlertAssetType, deduplicationKey, evaluateAlertRules } from "./engine";
-import { evaluatePersonalAlert } from "./personal";
-import { DEFAULT_ALERT_PREFERENCES, shouldCreateInAppAlert, shouldCreatePersonalInAppAlert } from "./preferences";
+import { evaluatePersonalAlert, isPersonalQuoteFresh } from "./personal";
+import { DEFAULT_ALERT_PREFERENCES, shouldCreateAutomaticAlert, shouldCreatePersonalAlert } from "./preferences";
 import { alertRuleCatalog } from "./rules";
-import { severityRank, type AlertEvaluation, type AlertPreferences, type PersonalAlertCondition, type PersonalAlertSubscription } from "./types";
+import { severityRank, type AlertEvaluation, type AlertPreferences, type PersonalAlertCondition, type PersonalAlertQuoteContext, type PersonalAlertSubscription } from "./types";
 
 type WatchlistRow = { id: string; user_id: string; name: string };
 type ItemRow = {
@@ -32,6 +34,8 @@ type PreferenceRow = {
   opportunity_alerts_enabled: boolean;
   in_app_enabled: boolean;
   email_enabled: boolean;
+  whatsapp_enabled: boolean;
+  whatsapp_phone_e164: string | null;
   monitored_watchlist_ids: string[] | null;
 };
 type ExistingEvent = {
@@ -50,6 +54,10 @@ type SubscriptionRow = {
   instrument_symbol: string; instrument_name: string; market: string; exchange: string | null; currency: string;
   asset_type: PersonalAlertSubscription["assetType"]; condition: PersonalAlertCondition; target_value: number | null;
   threshold_percent: number | null; lookback_bars: number | null; enabled: boolean; created_at: string; updated_at: string;
+};
+type SubscriptionStateRow = {
+  subscription_id: string; last_price: number | null; change_percent: number | null;
+  observed_at: string | null; fetched_at: string | null; provider: string | null; data_delay: PersonalAlertQuoteContext["dataDelay"] | null;
 };
 
 export type AlertJobSummary = {
@@ -74,6 +82,8 @@ function preferenceFromRow(row?: PreferenceRow): AlertPreferences {
     opportunityAlertsEnabled: row.opportunity_alerts_enabled,
     inAppEnabled: row.in_app_enabled,
     emailEnabled: row.email_enabled,
+    whatsappEnabled: row.whatsapp_enabled,
+    whatsappPhoneE164: row.whatsapp_phone_e164,
     monitoredWatchlistIds: row.monitored_watchlist_ids,
   };
 }
@@ -94,7 +104,8 @@ function subscriptionFromRow(row: SubscriptionRow): PersonalAlertSubscription {
 }
 
 function evaluationWindow(now: Date) {
-  return now.toISOString().slice(0, 13);
+  const bucket = Math.floor(now.getUTCMinutes() / 5) * 5;
+  return `${now.toISOString().slice(0, 13)}:${String(bucket).padStart(2, "0")}`;
 }
 
 export function shouldEvaluateOnThisRun(assetType: string, market: string, now: Date) {
@@ -104,6 +115,15 @@ export function shouldEvaluateOnThisRun(assetType: string, market: string, now: 
   const hour = now.getUTCHours();
   if (market === "argentina") return hour === 21;
   return hour === 22;
+}
+
+export function shouldEvaluatePersonalOnThisRun(assetType: string, market: string, now: Date) {
+  if (assetType === "crypto") return true;
+  const day = now.getUTCDay();
+  if (day === 0 || day === 6) return false;
+  const minutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+  if (market === "argentina" || market === "cedear") return minutes >= 12 * 60 + 30 && minutes <= 21 * 60;
+  return minutes >= 13 * 60 && minutes <= 22 * 60;
 }
 
 async function releaseScheduledDeliveries(supabase: SupabaseClient, now: Date) {
@@ -132,9 +152,60 @@ function marketFromItem(item: ItemRow) {
   return "auto" as const;
 }
 
+async function dispatchScheduledExternalDeliveries(supabase: SupabaseClient, now: Date, preferencesByUser: Map<string, AlertPreferences>) {
+  const pending = await supabase.from("alert_deliveries")
+    .select("alert_event_id,user_id,channel,alert_events(title,summary)")
+    .in("channel", ["email", "whatsapp"]).eq("status", "pending").lte("scheduled_at", now.toISOString()).limit(100);
+  if (pending.error) throw pending.error;
+  const emailChannel = new EmailNotificationChannel(supabase);
+  const whatsappChannel = new WhatsappNotificationChannel(supabase);
+  const recipientEmails = new Map<string, string | null>();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "")
+    ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null);
+  for (const row of pending.data ?? []) {
+    const preferences = preferencesByUser.get(row.user_id) ?? DEFAULT_ALERT_PREFERENCES;
+    const related = Array.isArray(row.alert_events) ? row.alert_events[0] : row.alert_events;
+    const delivery = {
+      alertEventId: row.alert_event_id, userId: row.user_id, preferences, now, scheduledDispatch: true,
+      title: related?.title ?? "CMA Market Intelligence", summary: related?.summary ?? "Se activó una alerta de mercado.",
+      alertUrl: siteUrl ? `${siteUrl}/alerts/${row.alert_event_id}` : undefined,
+    };
+    if (row.channel === "email" && preferences.emailEnabled) {
+      if (!recipientEmails.has(row.user_id)) {
+        const userResult = await supabase.auth.admin.getUserById(row.user_id);
+        recipientEmails.set(row.user_id, userResult.data.user?.email ?? null);
+      }
+      await emailChannel.send({ ...delivery, recipientEmail: recipientEmails.get(row.user_id) });
+    }
+    if (row.channel === "whatsapp" && preferences.whatsappEnabled) {
+      await whatsappChannel.send({ ...delivery, recipientWhatsapp: preferences.whatsappPhoneE164 });
+    }
+  }
+}
+
+async function loadPersonalQuote(item: ItemRow, symbol: string): Promise<Omit<PersonalAlertQuoteContext, "previousObservedPrice">> {
+  const market = marketFromItem(item);
+  if (market === "argentina" || market === "cedear") {
+    const quote = await getArgentinaQuote(symbol);
+    return {
+      price: quote.isRealData ? quote.price : null,
+      changePercent: quote.isRealData ? quote.changePercent ?? null : null,
+      provider: quote.source,
+      observedAt: quote.isRealData ? quote.lastUpdated ?? null : null,
+      fetchedAt: new Date().toISOString(),
+      dataDelay: quote.source === "yahoo" ? "delayed" : "unknown",
+    };
+  }
+  const quote = await getMarketQuote(symbol);
+  return {
+    price: quote.price, changePercent: quote.changePercent, provider: quote.provider,
+    observedAt: quote.observedAt, fetchedAt: quote.fetchedAt, dataDelay: quote.dataDelay,
+  };
+}
+
 export async function runAlertEvaluation(now = new Date(), suppliedClient?: SupabaseClient): Promise<AlertJobSummary & { skipped?: boolean }> {
   const supabase = suppliedClient ?? createAdminClient();
-  const windowKey = `alerts:${now.toISOString().slice(0, 16).replace(/.$/, "0")}`;
+  const windowKey = `alerts:${evaluationWindow(now)}`;
   const lock = await supabase.from("alert_job_runs").insert({ window_key: windowKey, status: "running" }).select("id").single();
   if (lock.error?.code === "23505") return { status: "completed", processedUsers: 0, processedInstruments: 0, createdEvents: 0, updatedEvents: 0, resolvedEvents: 0, errors: 0, skipped: true };
   if (lock.error) throw lock.error;
@@ -143,17 +214,20 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
   let fatalError = false;
   try {
     await Promise.all([syncRuleVersions(supabase), releaseScheduledDeliveries(supabase, now)]);
-    const [watchlistsResult, preferencesResult, subscriptionsResult, activeEventsResult, recentEventsResult] = await Promise.all([
+    const [watchlistsResult, preferencesResult, subscriptionsResult, subscriptionStatesResult, activeEventsResult, recentEventsResult] = await Promise.all([
       supabase.from("watchlists").select("id,user_id,name").order("created_at").limit(500),
-      supabase.from("alert_preferences").select("user_id,alerts_enabled,minimum_severity,frequency,quiet_hours_start,quiet_hours_end,timezone,opportunity_alerts_enabled,in_app_enabled,email_enabled,monitored_watchlist_ids"),
+      supabase.from("alert_preferences").select("user_id,alerts_enabled,minimum_severity,frequency,quiet_hours_start,quiet_hours_end,timezone,opportunity_alerts_enabled,in_app_enabled,email_enabled,whatsapp_enabled,whatsapp_phone_e164,monitored_watchlist_ids"),
       supabase.from("alert_subscriptions").select("id,user_id,watchlist_id,watchlist_item_id,instrument_id,instrument_symbol,instrument_name,market,exchange,currency,asset_type,condition,target_value,threshold_percent,lookback_bars,enabled,created_at,updated_at").eq("enabled", true).limit(2000),
+      supabase.from("alert_subscription_states").select("subscription_id,last_price,change_percent,observed_at,fetched_at,provider,data_delay").limit(2000),
       supabase.from("alert_events").select("id,user_id,instrument_id,rule_id,direction,severity,status,triggered_at,updated_at").eq("status", "active").limit(2000),
       supabase.from("alert_events").select("id,user_id,instrument_id,rule_id,direction,severity,status,triggered_at,updated_at").neq("status", "active").order("triggered_at", { ascending: false }).limit(2000),
     ]);
-    for (const result of [watchlistsResult, preferencesResult, subscriptionsResult, activeEventsResult, recentEventsResult]) if (result.error) throw result.error;
+    for (const result of [watchlistsResult, preferencesResult, subscriptionsResult, subscriptionStatesResult, activeEventsResult, recentEventsResult]) if (result.error) throw result.error;
     const watchlists = (watchlistsResult.data ?? []) as WatchlistRow[];
     const preferences = new Map(((preferencesResult.data ?? []) as PreferenceRow[]).map((row) => [row.user_id, preferenceFromRow(row)]));
+    await dispatchScheduledExternalDeliveries(supabase, now, preferences);
     const activeEvents = new Map(((activeEventsResult.data ?? []) as ExistingEvent[]).map((event) => [eventIdentity(event.user_id, event.instrument_id, event.rule_id, event.direction), event]));
+    const subscriptionStates = new Map(((subscriptionStatesResult.data ?? []) as SubscriptionStateRow[]).map((state) => [state.subscription_id, state]));
     const recentEvents = new Map<string, ExistingEvent>();
     for (const event of (recentEventsResult.data ?? []) as ExistingEvent[]) {
       const key = eventIdentity(event.user_id, event.instrument_id, event.rule_id, event.direction);
@@ -184,7 +258,10 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
       const key = `${item.user_id}:${instrumentId}`;
       if (!uniqueItems.has(key)) uniqueItems.set(key, item);
     }
-    const channel = new InAppNotificationChannel(supabase);
+    const inAppChannel = new InAppNotificationChannel(supabase);
+    const emailChannel = new EmailNotificationChannel(supabase);
+    const whatsappChannel = new WhatsappNotificationChannel(supabase);
+    const recipientEmails = new Map<string, string | null>();
 
     for (const item of uniqueItems.values()) {
       const watchlist = watchlistById.get(item.watchlist_id);
@@ -192,13 +269,17 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
       const preferencesForUser = preferences.get(item.user_id) ?? DEFAULT_ALERT_PREFERENCES;
       const assetType = classifyAlertAssetType(String(item.asset_type ?? item.item.assetType ?? "other"));
       if (["bond", "bill", "corporate_bond", "other"].includes(assetType)) continue;
-      if (!shouldEvaluateOnThisRun(assetType, marketFromItem(item), now)) continue;
       const instrumentId = item.instrument_id ?? String(item.item.instrumentId ?? item.asset_key);
       const symbol = String(item.symbol ?? item.item.symbol ?? "").toUpperCase();
       if (!symbol) continue;
+      const itemMarket = marketFromItem(item);
+      const instrumentSubscriptions = subscriptionsByInstrument.get(`${item.user_id}:${instrumentId}`) ?? [];
+      const automaticDue = shouldEvaluateOnThisRun(assetType, itemMarket, now);
+      const personalDue = instrumentSubscriptions.length > 0 && shouldEvaluatePersonalOnThisRun(assetType, itemMarket, now);
+      if (!automaticDue && !personalDue) continue;
       summary.processedInstruments += 1;
       try {
-        const analysis = await analyzeTradeRadar({ instrumentId, symbol, market: marketFromItem(item), interval: "1d", provider: "auto" });
+        const analysis = await analyzeTradeRadar({ instrumentId, symbol, market: itemMarket, interval: "1d", provider: "auto" });
         const snapshot = {
           instrumentId,
           symbol: analysis.symbol,
@@ -214,20 +295,49 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
           dataDelay: analysis.dataDelay,
           bars: analysis.ohlcv,
         };
-        const automaticEvaluations = evaluateAlertRules(snapshot, now);
-        const personalEvaluations = (subscriptionsByInstrument.get(`${item.user_id}:${instrumentId}`) ?? [])
-          .map((subscription) => ({ evaluation: evaluatePersonalAlert(snapshot, subscription, now), subscription }));
+        const automaticEvaluations = automaticDue ? evaluateAlertRules(snapshot, now) : [];
+        const personalQuote = personalDue ? await loadPersonalQuote(item, symbol) : null;
+        const personalEvaluations = personalQuote ? instrumentSubscriptions.map((subscription) => {
+          const previousState = subscriptionStates.get(subscription.id);
+          const quoteContext: PersonalAlertQuoteContext = {
+            ...personalQuote,
+            previousObservedPrice: previousState?.last_price === null || previousState?.last_price === undefined ? null : Number(previousState.last_price),
+          };
+          return { evaluation: evaluatePersonalAlert(snapshot, subscription, now, quoteContext), subscription, quote: quoteContext };
+        }) : [];
+
+        const quoteForState = personalQuote ? { ...personalQuote, previousObservedPrice: null } : null;
+        if (quoteForState && isPersonalQuoteFresh(quoteForState, now)) {
+          const stateRows = instrumentSubscriptions.map((subscription) => ({
+            subscription_id: subscription.id, user_id: subscription.userId, instrument_id: subscription.instrumentId,
+            last_price: quoteForState.price, change_percent: quoteForState.changePercent, observed_at: quoteForState.observedAt,
+            fetched_at: quoteForState.fetchedAt, provider: quoteForState.provider, data_delay: quoteForState.dataDelay,
+            updated_at: now.toISOString(),
+          }));
+          if (stateRows.length) {
+            const stateUpdate = await supabase.from("alert_subscription_states").upsert(stateRows, { onConflict: "subscription_id" });
+            if (stateUpdate.error) throw stateUpdate.error;
+          }
+        }
+
         const evaluations = [
-          ...automaticEvaluations.map((evaluation) => ({ evaluation, subscription: null })),
-          ...personalEvaluations,
+          ...automaticEvaluations.map((evaluation) => ({
+            evaluation, subscription: null as PersonalAlertSubscription | null,
+            provider: analysis.provider, observedAt: analysis.lastBarTime, fetchedAt: analysis.fetchedAt,
+          })),
+          ...personalEvaluations.map(({ evaluation, subscription, quote }) => ({
+            evaluation, subscription: subscription as PersonalAlertSubscription | null,
+            provider: quote.provider, observedAt: quote.observedAt ?? analysis.lastBarTime, fetchedAt: quote.fetchedAt,
+          })),
         ];
         const triggeredIdentities = new Set<string>();
+        const evaluatedRuleIds = new Set(evaluations.map((entry) => entry.evaluation.ruleId));
 
         for (const candidate of evaluations.filter((entry) => entry.evaluation.triggered)) {
-          const { evaluation, subscription } = candidate;
+          const { evaluation, subscription, provider, observedAt, fetchedAt } = candidate;
           const deliveryAllowed = subscription
-            ? shouldCreatePersonalInAppAlert(subscription.watchlistId, preferencesForUser)
-            : shouldCreateInAppAlert({ severity: evaluation.severity, category: evaluation.category, watchlistId: item.watchlist_id, preferences: preferencesForUser });
+            ? shouldCreatePersonalAlert(subscription.watchlistId, preferencesForUser)
+            : shouldCreateAutomaticAlert({ severity: evaluation.severity, category: evaluation.category, watchlistId: item.watchlist_id, preferences: preferencesForUser });
           if (!deliveryAllowed) continue;
           const identity = eventIdentity(item.user_id, instrumentId, evaluation.ruleId, evaluation.direction);
           triggeredIdentities.add(identity);
@@ -242,9 +352,9 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
               localized_content: localizedContent,
               evidence: evaluation.evidence,
               limitations: evaluation.limitations,
-              provider: analysis.provider,
-              observed_at: analysis.lastBarTime,
-              fetched_at: analysis.fetchedAt,
+              provider,
+              observed_at: observedAt,
+              fetched_at: fetchedAt,
               freshness_status: evaluation.freshnessStatus,
               last_evaluated_at: now.toISOString(),
               updated_at: now.toISOString(),
@@ -274,9 +384,9 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
             localized_content: localizedContent,
             evidence: evaluation.evidence,
             limitations: evaluation.limitations,
-            provider: analysis.provider,
-            observed_at: analysis.lastBarTime,
-            fetched_at: analysis.fetchedAt,
+            provider,
+            observed_at: observedAt,
+            fetched_at: fetchedAt,
             freshness_status: evaluation.freshnessStatus,
             deduplication_key: deduplicationKey({ userId: item.user_id, instrumentId, evaluation, window: evaluationWindow(now) }),
             status: "active",
@@ -284,12 +394,29 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
             last_evaluated_at: now.toISOString(),
           }).select("id").single();
           if (inserted.error) throw inserted.error;
-          await channel.send({ alertEventId: inserted.data.id, userId: item.user_id, preferences: preferencesForUser, now });
+          const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "")
+            ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null);
+          const delivery = {
+            alertEventId: inserted.data.id, userId: item.user_id, preferences: preferencesForUser, now,
+            title: evaluation.title.es, summary: evaluation.summary.es,
+            alertUrl: siteUrl ? `${siteUrl}/alerts/${inserted.data.id}` : undefined,
+          };
+          if (preferencesForUser.inAppEnabled) await inAppChannel.send(delivery);
+          if (preferencesForUser.emailEnabled) {
+            if (!recipientEmails.has(item.user_id)) {
+              const userResult = await supabase.auth.admin.getUserById(item.user_id);
+              recipientEmails.set(item.user_id, userResult.data.user?.email ?? null);
+            }
+            await emailChannel.send({ ...delivery, recipientEmail: recipientEmails.get(item.user_id) });
+          }
+          if (preferencesForUser.whatsappEnabled) {
+            await whatsappChannel.send({ ...delivery, recipientWhatsapp: preferencesForUser.whatsappPhoneE164 });
+          }
           summary.createdEvents += 1;
         }
 
         for (const [identity, existing] of activeEvents) {
-          if (existing.user_id !== item.user_id || existing.instrument_id !== instrumentId || triggeredIdentities.has(identity)) continue;
+          if (existing.user_id !== item.user_id || existing.instrument_id !== instrumentId || !evaluatedRuleIds.has(existing.rule_id) || triggeredIdentities.has(identity)) continue;
           const resolved = await supabase.from("alert_events").update({ status: "resolved", resolved_at: now.toISOString(), last_evaluated_at: now.toISOString(), updated_at: now.toISOString() }).eq("id", existing.id);
           if (resolved.error) throw resolved.error;
           summary.resolvedEvents += 1;

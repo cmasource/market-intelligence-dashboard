@@ -163,7 +163,7 @@ export async function markAllAlertsRead(ids: string[]) {
 }
 
 export async function loadAlertPreferences(userId: string) {
-  const result = await createClient().from("alert_preferences").select("alerts_enabled,minimum_severity,frequency,quiet_hours_start,quiet_hours_end,timezone,opportunity_alerts_enabled,in_app_enabled,email_enabled,monitored_watchlist_ids").eq("user_id", userId).maybeSingle();
+  const result = await createClient().from("alert_preferences").select("alerts_enabled,minimum_severity,frequency,quiet_hours_start,quiet_hours_end,timezone,opportunity_alerts_enabled,in_app_enabled,email_enabled,whatsapp_enabled,whatsapp_phone_e164,monitored_watchlist_ids").eq("user_id", userId).maybeSingle();
   if (result.error) throw result.error;
   if (!result.data) return DEFAULT_ALERT_PREFERENCES;
   return {
@@ -176,6 +176,8 @@ export async function loadAlertPreferences(userId: string) {
     opportunityAlertsEnabled: result.data.opportunity_alerts_enabled,
     inAppEnabled: result.data.in_app_enabled,
     emailEnabled: result.data.email_enabled,
+    whatsappEnabled: result.data.whatsapp_enabled,
+    whatsappPhoneE164: result.data.whatsapp_phone_e164,
     monitoredWatchlistIds: result.data.monitored_watchlist_ids,
   } as AlertPreferences;
 }
@@ -191,8 +193,13 @@ export async function saveAlertPreferences(userId: string, preferences: AlertPre
     timezone: preferences.timezone,
     opportunity_alerts_enabled: preferences.opportunityAlertsEnabled,
     in_app_enabled: preferences.inAppEnabled,
-    email_enabled: false,
-    whatsapp_enabled: false,
+    email_enabled: preferences.emailEnabled,
+    email_consent_at: preferences.emailEnabled ? new Date().toISOString() : null,
+    email_consent_source: preferences.emailEnabled ? "account_alert_settings" : null,
+    whatsapp_enabled: preferences.whatsappEnabled,
+    whatsapp_phone_e164: preferences.whatsappEnabled ? preferences.whatsappPhoneE164 : null,
+    whatsapp_consent_at: preferences.whatsappEnabled ? new Date().toISOString() : null,
+    whatsapp_consent_source: preferences.whatsappEnabled ? "account_alert_settings" : null,
     monitored_watchlist_ids: preferences.monitoredWatchlistIds,
     updated_at: new Date().toISOString(),
   };

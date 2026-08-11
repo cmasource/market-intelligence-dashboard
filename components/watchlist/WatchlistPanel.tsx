@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ListPlus, Pencil, Plus, Trash2 } from "lucide-react";
+import { ListPlus, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useArgentinaQuotes } from "@/lib/hooks/useArgentinaQuotes";
 import { useProviderQuotes } from "@/lib/hooks/useProviderQuotes";
 import { normalizeSymbol } from "@/lib/market-data/symbol-map";
@@ -39,6 +39,7 @@ export function WatchlistPanel() {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sort, setSort] = useState<SortOption>("ticker");
+  const [quoteRefreshKey, setQuoteRefreshKey] = useState(0);
 
   const load = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true);
@@ -70,8 +71,8 @@ export function WatchlistPanel() {
   const items = useMemo(() => activeList ? itemsByList[activeList.id] ?? [] : [], [activeList, itemsByList]);
   const argentinaSymbols = useMemo(() => items.filter(isLocalItem).map((item) => item.bymaSymbol ?? item.symbol), [items]);
   const providerSymbols = useMemo(() => items.filter((item) => !isLocalItem(item)).map((item) => item.providerSymbol ?? item.normalizedSymbol), [items]);
-  const argentinaQuotes = useArgentinaQuotes(argentinaSymbols);
-  const providerQuotes = useProviderQuotes(providerSymbols);
+  const argentinaQuotes = useArgentinaQuotes(argentinaSymbols, quoteRefreshKey);
+  const providerQuotes = useProviderQuotes(providerSymbols, quoteRefreshKey);
 
   const assetTypes = useMemo(() => Array.from(new Set(items.map((item) => item.assetType))).sort(), [items]);
   const visibleItems = useMemo(() => {
@@ -141,10 +142,10 @@ export function WatchlistPanel() {
   function quoteFor(item: WatchlistItem) {
     if (isLocalItem(item)) {
       const quote = argentinaQuotes[item.bymaSymbol ?? item.symbol];
-      return { price: quote?.price, changePercent: quote?.changePercent, currency: quote?.currency, updatedAt: quote?.lastUpdated, loading: quote?.isLoading };
+      return { price: quote?.price, changePercent: quote?.changePercent, currency: quote?.currency, observedAt: quote?.lastUpdated, fetchedAt: null, sourceLabel: quote?.sourceLabel, dataDelay: quote?.source === "yahoo" ? "delayed" as const : "unknown" as const, loading: quote?.isLoading };
     }
     const quote = providerQuotes[normalizeSymbol(item.providerSymbol ?? item.normalizedSymbol)];
-    return { price: quote?.price, changePercent: quote?.changePercent, currency: quote?.currency, updatedAt: quote?.fetchedAt, loading: quote?.isLoading };
+    return { price: quote?.price, changePercent: quote?.changePercent, currency: quote?.currency, observedAt: quote?.observedAt, fetchedAt: quote?.fetchedAt, sourceLabel: quote?.sourceLabel, dataDelay: quote?.dataDelay, loading: quote?.isLoading };
   }
 
   if (!mounted || loading) return <div className="cma-panel p-6 text-sm text-[var(--cma-text-muted)]">Cargando listas locales...</div>;
@@ -192,12 +193,14 @@ export function WatchlistPanel() {
                   <p className="mt-2 text-sm text-[var(--cma-text-secondary)]">{items.length} {items.length === 1 ? "activo" : "activos"} en seguimiento</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setQuoteRefreshKey((value) => value + 1)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--cma-border-soft)] px-3 text-sm text-[var(--cma-text-secondary)]"><RefreshCw size={15} aria-hidden="true" /> Actualizar precios</button>
                   <button type="button" onClick={() => { setEditingId(activeList.id); setEditingName(activeList.name); }} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--cma-border-soft)] px-3 text-sm text-[var(--cma-text-secondary)]"><Pencil size={15} aria-hidden="true" /> Renombrar</button>
                   <button type="button" onClick={() => void deleteList(activeList)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--cma-border-soft)] px-3 text-sm text-[var(--cma-text-secondary)] hover:border-rose-300/40 hover:text-rose-200"><Trash2 size={15} aria-hidden="true" /> Eliminar</button>
                   <button type="button" onClick={() => setAssetDialogOpen(true)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-cyan-300/35 bg-cyan-300/10 px-4 text-sm font-semibold text-cyan-100"><ListPlus size={16} aria-hidden="true" /> Agregar activo</button>
                 </div>
               </div>
             </div>
+            {items.length ? <p className="mt-2 text-right text-xs text-[var(--cma-text-muted)]">Las cotizaciones se actualizan cada 60 segundos mientras esta pestaña está visible.</p> : null}
 
             {items.length ? (
               <div className="mt-4 grid gap-3 rounded-xl border border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] p-4 md:grid-cols-[minmax(180px,1fr)_minmax(150px,.55fr)_minmax(170px,.6fr)]">

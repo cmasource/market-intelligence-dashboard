@@ -4,6 +4,7 @@ import type {
   AlertEvaluation,
   AlertMarketSnapshot,
   PersonalAlertCondition,
+  PersonalAlertQuoteContext,
   PersonalAlertSubscription,
 } from "./types";
 
@@ -23,41 +24,41 @@ function round(value: number, decimals = 2) {
 
 function inactive(snapshot: AlertMarketSnapshot, subscription: PersonalAlertSubscription, now: Date): AlertEvaluation {
   return {
-    ruleId: RULE_ID_BY_CONDITION[subscription.condition],
-    ruleVersion: 1,
+    ruleId: RULE_ID_BY_CONDITION[subscription.condition], ruleVersion: 1,
     category: subscription.condition.includes("rapid") ? "unusual_price_move" : "technical_change",
-    triggered: false,
-    severity: "medium",
-    confidenceScore: 0,
-    direction: "neutral",
+    triggered: false, severity: "medium", confidenceScore: 0, direction: "neutral",
     title: { es: `Alerta configurada para ${snapshot.symbol}`, en: `Configured alert for ${snapshot.symbol}` },
     summary: { es: "La condición configurada no está activa.", en: "The configured condition is not active." },
-    reasons: [],
-    evidence: [],
-    limitations: ["La evaluación usa cierres OHLCV y no ejecuta órdenes."],
-    evaluatedAt: now.toISOString(),
-    freshnessStatus: freshnessFor(snapshot, now),
+    reasons: [], evidence: [], limitations: ["La evaluación usa cotizaciones y cierres OHLCV verificables y no ejecuta órdenes."],
+    evaluatedAt: now.toISOString(), freshnessStatus: freshnessFor(snapshot, now),
   };
 }
 
-function personalEvidence(snapshot: AlertMarketSnapshot, key: string, label: string, value: number, unit?: string) {
-  return { key, label, value: round(value, 4), unit, provider: snapshot.provider, observedAt: snapshot.observedAt };
+function evidence(provider: string, observedAt: string, key: string, label: string, value: number, unit?: string) {
+  return { key, label, value: round(value, 4), unit, provider, observedAt };
+}
+
+export function isPersonalQuoteFresh(quote: PersonalAlertQuoteContext, now: Date) {
+  if (quote.price === null || !quote.observedAt || quote.dataDelay === "eod") return false;
+  const observed = Date.parse(quote.observedAt);
+  if (!Number.isFinite(observed)) return false;
+  const age = now.getTime() - observed;
+  return age >= -5 * 60_000 && age <= (quote.dataDelay === "realtime" ? 15 : 45) * 60_000;
 }
 
 export function evaluatePersonalAlert(
   snapshot: AlertMarketSnapshot,
   subscription: PersonalAlertSubscription,
   now = new Date(),
+  quote?: PersonalAlertQuoteContext,
 ): AlertEvaluation {
   const base = inactive(snapshot, subscription, now);
-  if (base.freshnessStatus !== "fresh" || !snapshot.providerHealthy || snapshot.bars.length < 2) return base;
+  if (base.freshnessStatus !== "fresh" || !snapshot.providerHealthy || snapshot.bars.length < 2 || !quote || !isPersonalQuoteFresh(quote, now)) return base;
 
   const bars = snapshot.bars;
-  const latest = bars.at(-1)!;
-  const previous = bars.at(-2)!;
-  const close = latest.close;
-  const previousClose = previous.close;
-  const changePercent = previousClose > 0 ? ((close / previousClose) - 1) * 100 : 0;
+  const price = quote.price!;
+  const previousObservedPrice = quote.previousObservedPrice;
+  const changePercent = quote.changePercent;
   const target = subscription.targetValue ?? 0;
   const threshold = subscription.thresholdPercent ?? 0;
   const direction = subscription.condition === "price_below" || subscription.condition === "rapid_fall" || subscription.condition === "near_period_low" ? "down" : "up";
@@ -65,15 +66,15 @@ export function evaluatePersonalAlert(
   let referenceValue: number | null = null;
   let referenceLabel = "Referencia";
 
-  if (subscription.condition === "price_above") conditionMet = previousClose < target && close >= target;
-  if (subscription.condition === "price_below") conditionMet = previousClose > target && close <= target;
-  if (subscription.condition === "rapid_rise") conditionMet = changePercent >= threshold;
-  if (subscription.condition === "rapid_fall") conditionMet = changePercent <= -threshold;
+  if (subscription.condition === "price_above") conditionMet = previousObservedPrice !== null && previousObservedPrice < target && price >= target;
+  if (subscription.condition === "price_below") conditionMet = previousObservedPrice !== null && previousObservedPrice > target && price <= target;
+  if (subscription.condition === "rapid_rise") conditionMet = changePercent !== null && changePercent >= threshold;
+  if (subscription.condition === "rapid_fall") conditionMet = changePercent !== null && changePercent <= -threshold;
 
   if (subscription.condition === "near_ema200" && bars.length >= 200) {
     referenceValue = ema(bars.map((bar) => bar.close), 200).at(-1) ?? null;
-    referenceLabel = "EMA 200";
-    conditionMet = referenceValue !== null && Math.abs(close - referenceValue) / referenceValue * 100 <= threshold;
+    referenceLabel = "EMA 200 diaria";
+    conditionMet = referenceValue !== null && Math.abs(price - referenceValue) / referenceValue * 100 <= threshold;
   }
 
   if (subscription.condition === "near_period_low" || subscription.condition === "near_period_high") {
@@ -84,39 +85,34 @@ export function evaluatePersonalAlert(
         ? Math.min(...comparison.map((bar) => bar.low))
         : Math.max(...comparison.map((bar) => bar.high));
       referenceLabel = subscription.condition === "near_period_low" ? `Mínimo de ${lookback} ruedas` : `Máximo de ${lookback} ruedas`;
-      conditionMet = Math.abs(close - referenceValue) / referenceValue * 100 <= threshold;
+      conditionMet = Math.abs(price - referenceValue) / referenceValue * 100 <= threshold;
     }
   }
 
   if (!conditionMet) return base;
 
   const conditionLabel: Record<PersonalAlertCondition, { es: string; en: string }> = {
-    price_above: { es: `alcanzó o superó ${target} ${snapshot.currency}`, en: `reached or exceeded ${target} ${snapshot.currency}` },
-    price_below: { es: `alcanzó o cayó por debajo de ${target} ${snapshot.currency}`, en: `reached or fell below ${target} ${snapshot.currency}` },
-    rapid_rise: { es: `subió ${round(changePercent)}% en la última rueda`, en: `rose ${round(changePercent)}% in the latest bar` },
-    rapid_fall: { es: `cayó ${round(Math.abs(changePercent))}% en la última rueda`, en: `fell ${round(Math.abs(changePercent))}% in the latest bar` },
-    near_ema200: { es: `está a ${round(Math.abs(close - (referenceValue ?? close)) / (referenceValue ?? close) * 100)}% de su EMA 200`, en: `is near its EMA 200` },
-    near_period_low: { es: `está cerca de su mínimo del período`, en: `is near its period low` },
-    near_period_high: { es: `está cerca de su máximo del período`, en: `is near its period high` },
+    price_above: { es: `cruzó o superó ${target} ${snapshot.currency}`, en: `crossed or exceeded ${target} ${snapshot.currency}` },
+    price_below: { es: `cruzó o cayó por debajo de ${target} ${snapshot.currency}`, en: `crossed or fell below ${target} ${snapshot.currency}` },
+    rapid_rise: { es: `sube ${round(changePercent ?? 0)}% en la rueda actual`, en: `is up ${round(changePercent ?? 0)}% in the current session` },
+    rapid_fall: { es: `cae ${round(Math.abs(changePercent ?? 0))}% en la rueda actual`, en: `is down ${round(Math.abs(changePercent ?? 0))}% in the current session` },
+    near_ema200: { es: `está a ${round(Math.abs(price - (referenceValue ?? price)) / (referenceValue ?? price) * 100)}% de su EMA 200 diaria`, en: "is near its daily EMA 200" },
+    near_period_low: { es: "está cerca de su mínimo del período", en: "is near its period low" },
+    near_period_high: { es: "está cerca de su máximo del período", en: "is near its period high" },
   };
   const label = conditionLabel[subscription.condition];
-  const evidence = [
-    personalEvidence(snapshot, "close", "Último cierre", close, snapshot.currency),
-    personalEvidence(snapshot, "previous_close", "Cierre anterior", previousClose, snapshot.currency),
-  ];
-  if (subscription.condition.includes("rapid")) evidence.push(personalEvidence(snapshot, "change", "Variación", changePercent, "%"));
-  if (referenceValue !== null) evidence.push(personalEvidence(snapshot, "reference", referenceLabel, referenceValue, snapshot.currency));
-  if (target > 0) evidence.push(personalEvidence(snapshot, "target", "Precio configurado", target, snapshot.currency));
+  const alertEvidence = [evidence(quote.provider, quote.observedAt!, "price", "Último precio observado", price, snapshot.currency)];
+  if (previousObservedPrice !== null && subscription.condition.startsWith("price_")) alertEvidence.push(evidence(quote.provider, quote.observedAt!, "previous_observed_price", "Precio observado anteriormente", previousObservedPrice, snapshot.currency));
+  if (subscription.condition.includes("rapid") && changePercent !== null) alertEvidence.push(evidence(quote.provider, quote.observedAt!, "session_change", "Variación de la rueda", changePercent, "%"));
+  if (referenceValue !== null) alertEvidence.push(evidence(snapshot.provider, snapshot.observedAt, "reference", referenceLabel, referenceValue, snapshot.currency));
+  if (target > 0) alertEvidence.push(evidence(quote.provider, quote.observedAt!, "target", "Precio configurado", target, snapshot.currency));
 
   return {
-    ...base,
-    triggered: true,
-    confidenceScore: 0.9,
-    direction,
+    ...base, triggered: true, confidenceScore: quote.dataDelay === "realtime" ? 0.94 : 0.88, direction,
     title: { es: `Alerta personal en ${snapshot.symbol}`, en: `Personal alert for ${snapshot.symbol}` },
     summary: { es: `${snapshot.symbol} ${label.es}.`, en: `${snapshot.symbol} ${label.en}.` },
-    reasons: ["Se cumplió la condición configurada por el usuario con datos OHLCV verificables."],
-    evidence,
+    reasons: ["Se cumplió la condición configurada con una cotización reciente y datos OHLCV verificables."],
+    evidence: alertEvidence,
   };
 }
 

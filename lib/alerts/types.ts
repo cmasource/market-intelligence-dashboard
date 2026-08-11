@@ -58,6 +58,16 @@ export type AlertMarketSnapshot = {
   bars: OhlcvBar[];
 };
 
+export type PersonalAlertQuoteContext = {
+  price: number | null;
+  previousObservedPrice: number | null;
+  changePercent: number | null;
+  provider: string;
+  observedAt: string | null;
+  fetchedAt: string;
+  dataDelay: "realtime" | "delayed" | "eod" | "unknown";
+};
+
 export type AlertEvaluation = {
   ruleId: string;
   ruleVersion: number;
@@ -101,6 +111,8 @@ export type AlertPreferences = {
   opportunityAlertsEnabled: boolean;
   inAppEnabled: boolean;
   emailEnabled: boolean;
+  whatsappEnabled: boolean;
+  whatsappPhoneE164: string | null;
   monitoredWatchlistIds: string[] | null;
 };
 

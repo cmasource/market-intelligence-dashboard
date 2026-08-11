@@ -37,7 +37,9 @@ function unavailableQuote(symbol: string, error?: string, providerTrace: Provide
     provider: "unavailable",
     sourceLabel: "No verified quote",
     isFallback: true,
+    observedAt: null,
     fetchedAt: new Date().toISOString(),
+    dataDelay: "unknown",
     ...(error ? { error } : {}),
     providerTrace: [
       ...providerTrace,
@@ -67,7 +69,9 @@ export async function getMarketQuote(symbol: string): Promise<MarketQuoteRespons
       provider: "unavailable",
       sourceLabel: "No verified quote",
       isFallback: true,
+      observedAt: null,
       fetchedAt: new Date().toISOString(),
+      dataDelay: "unknown",
       error: "Symbol is required.",
     };
   }
@@ -115,7 +119,9 @@ export async function getMarketQuote(symbol: string): Promise<MarketQuoteRespons
         provider: marketData.provider,
         sourceLabel: marketData.sourceLabel,
         isFallback: marketData.isFallback,
+        observedAt: marketData.candles.at(-1) ? new Date(marketData.candles.at(-1)!.time * 1000).toISOString() : null,
         fetchedAt: marketData.fetchedAt ?? new Date().toISOString(),
+        dataDelay: marketData.assetClass === "crypto" ? "realtime" : marketData.timeframe === "1D" ? "delayed" : "eod",
         ...(marketData.error ? { error: marketData.error } : {}),
         providerTrace,
       };

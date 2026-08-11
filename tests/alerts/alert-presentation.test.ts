@@ -23,25 +23,25 @@ test("EMA 200 copy explains that the configured value is a maximum distance", ()
   assert.equal(copy.inputLabel, "Distancia máxima a la EMA 200 (%)");
   assert.equal(copy.defaultValue, "1");
   assert.match(copy.example, /entre 495 y 505/);
-  assert.match(describePersonalAlert(subscription(), "es"), /1 % o menos de la EMA 200/);
+  assert.match(describePersonalAlert(subscription(), "es"), /1 % o menos de la EMA 200 diaria/);
 });
 
 test("each threshold type has a distinct input label and sensible default", () => {
   assert.equal(personalAlertConditionCopy("price_above", "es").inputLabel, "Precio objetivo");
   assert.equal(personalAlertConditionCopy("price_above", "es").defaultValue, "");
-  assert.equal(personalAlertConditionCopy("rapid_rise", "es").inputLabel, "Suba diaria mínima (%)");
+  assert.equal(personalAlertConditionCopy("rapid_rise", "es").inputLabel, "Suba mínima de la rueda (%)");
   assert.equal(personalAlertConditionCopy("rapid_rise", "es").defaultValue, "5");
   assert.equal(personalAlertConditionCopy("near_period_low", "es").inputLabel, "Distancia máxima al mínimo (%)");
 });
 
 test("saved alert summaries state the complete trigger instead of an isolated percentage", () => {
-  assert.equal(describePersonalAlert(subscription({ condition: "rapid_fall", thresholdPercent: 4 }), "es"), "El cierre diario cae 4 % o más");
-  assert.equal(describePersonalAlert(subscription({ condition: "price_above", targetValue: 550, thresholdPercent: null }), "es"), "El cierre cruza por encima de 550 USD");
+  assert.equal(describePersonalAlert(subscription({ condition: "rapid_fall", thresholdPercent: 4 }), "es"), "La rueda actual cae 4 % o más");
+  assert.equal(describePersonalAlert(subscription({ condition: "price_above", targetValue: 550, thresholdPercent: null }), "es"), "La cotización cruza por encima de 550 USD");
   assert.match(describePersonalAlert(subscription({ condition: "near_period_low", lookbackBars: 60 }), "es"), /mínimo de 60 ruedas/);
 });
 
 test("evaluation schedule is transparent by market", () => {
-  assert.match(personalAlertSchedule("crypto", "crypto", "es"), /cada hora/);
-  assert.match(personalAlertSchedule("cedear", "cedear", "es"), /18:00/);
-  assert.match(personalAlertSchedule("stock", "us", "es"), /19:00/);
+  assert.match(personalAlertSchedule("crypto", "crypto", "es"), /cada 5 minutos/);
+  assert.match(personalAlertSchedule("cedear", "cedear", "es"), /rueda argentina/);
+  assert.match(personalAlertSchedule("stock", "us", "es"), /mercado correspondiente/);
 });

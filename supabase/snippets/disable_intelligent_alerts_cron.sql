@@ -1,14 +1,13 @@
 -- Safe scheduler rollback. Alert tables and history are retained.
 do $$
 declare
-  existing_job_id bigint;
+  existing_job record;
 begin
-  select jobid into existing_job_id
-  from cron.job
-  where jobname = 'evaluate-intelligent-alerts-hourly';
-
-  if existing_job_id is not null then
-    perform cron.unschedule(existing_job_id);
-  end if;
+  for existing_job in
+    select jobid from cron.job
+    where jobname in ('evaluate-intelligent-alerts-hourly', 'evaluate-intelligent-alerts-five-minutes')
+  loop
+    perform cron.unschedule(existing_job.jobid);
+  end loop;
 end
 $$;

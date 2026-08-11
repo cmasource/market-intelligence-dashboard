@@ -239,7 +239,9 @@ export async function getFmpQuoteSnapshot(symbol: string): Promise<MarketQuoteRe
       provider: "fmp",
       sourceLabel: "FMP provider",
       isFallback: false,
+      observedAt: null,
       fetchedAt: new Date().toISOString(),
+      dataDelay: "unknown",
       error: result.error,
       providerTrace: [
         {
@@ -265,7 +267,9 @@ export async function getFmpQuoteSnapshot(symbol: string): Promise<MarketQuoteRe
       provider: "fmp",
       sourceLabel: "FMP provider",
       isFallback: false,
+      observedAt: null,
       fetchedAt: new Date().toISOString(),
+      dataDelay: "unknown",
       error: "FMP returned an invalid quote response shape.",
       providerTrace: [buildFmpTrace(false, "invalid_response_shape")],
     };
@@ -281,7 +285,9 @@ export async function getFmpQuoteSnapshot(symbol: string): Promise<MarketQuoteRe
       provider: "fmp",
       sourceLabel: "FMP provider",
       isFallback: false,
+      observedAt: null,
       fetchedAt: new Date().toISOString(),
+      dataDelay: "unknown",
       error: "FMP returned an empty quote response.",
       providerTrace: [buildFmpTrace(false, "empty_response")],
     };
@@ -297,7 +303,9 @@ export async function getFmpQuoteSnapshot(symbol: string): Promise<MarketQuoteRe
       provider: "fmp",
       sourceLabel: "FMP provider",
       isFallback: false,
+      observedAt: null,
       fetchedAt: new Date().toISOString(),
+      dataDelay: "unknown",
       error: "FMP returned no usable quote price.",
       providerTrace: [buildFmpTrace(false, "invalid_price")],
     };
@@ -314,7 +322,9 @@ export async function getFmpQuoteSnapshot(symbol: string): Promise<MarketQuoteRe
     provider: "fmp",
     sourceLabel: "FMP provider",
     isFallback: false,
-    fetchedAt: quoteData.timestamp ? new Date(quoteData.timestamp * 1000).toISOString() : new Date().toISOString(),
+    observedAt: quoteData.timestamp ? new Date(quoteData.timestamp * 1000).toISOString() : null,
+    fetchedAt: new Date().toISOString(),
+    dataDelay: "unknown",
     providerTrace: [buildFmpTrace(true)],
   };
 }

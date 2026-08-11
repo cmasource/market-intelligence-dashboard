@@ -14,7 +14,10 @@ type WatchlistCardProps = {
   price?: number | null;
   changePercent?: number | null;
   currency?: string | null;
-  updatedAt?: string | null;
+  observedAt?: string | null;
+  fetchedAt?: string | null;
+  sourceLabel?: string | null;
+  dataDelay?: "realtime" | "delayed" | "eod" | "unknown";
   loading?: boolean;
   onRemove: () => void;
   onMove: (targetId: string) => void;
@@ -29,7 +32,14 @@ function formatPrice(value: number | null | undefined, currency: string) {
   } catch { return value.toLocaleString("es-AR"); }
 }
 
-export function WatchlistCard({ item, lists, activeListId, memberships, price, changePercent, currency, updatedAt, loading, onRemove, onMove, onCopy, onCreateAlert }: WatchlistCardProps) {
+function delayLabel(delay: WatchlistCardProps["dataDelay"]) {
+  if (delay === "realtime") return "tiempo real del proveedor";
+  if (delay === "delayed") return "dato demorado";
+  if (delay === "eod") return "cierre diario";
+  return "demora no informada";
+}
+
+export function WatchlistCard({ item, lists, activeListId, memberships, price, changePercent, currency, observedAt, fetchedAt, sourceLabel, dataDelay, loading, onRemove, onMove, onCopy, onCreateAlert }: WatchlistCardProps) {
   const destinations = lists.filter((list) => list.id !== activeListId);
   const positive = typeof changePercent === "number" && changePercent >= 0;
   const tradeRadarParams = new URLSearchParams({ symbol: item.symbol, interval: "1d", analyze: "1" });
@@ -57,7 +67,8 @@ export function WatchlistCard({ item, lists, activeListId, memberships, price, c
           <span className={`text-sm font-semibold ${typeof changePercent !== "number" ? "text-[var(--cma-text-muted)]" : positive ? "text-[var(--cma-positive)]" : "text-[var(--cma-negative)]"}`}>
             {typeof changePercent === "number" ? formatPercent(changePercent) : "Dato no disponible"}
           </span>
-          <span className="col-span-2 mt-1 text-xs text-[var(--cma-text-muted)]">Actualizado: {updatedAt ? new Date(updatedAt).toLocaleString("es-AR") : "Dato no disponible"}</span>
+          <span className="col-span-2 mt-1 text-xs text-[var(--cma-text-muted)]">Observado: {observedAt ? new Date(observedAt).toLocaleString("es-AR") : "hora no informada"} · {delayLabel(dataDelay)}</span>
+          {fetchedAt ? <span className="col-span-2 text-xs text-[var(--cma-text-muted)]">Consultado: {new Date(fetchedAt).toLocaleString("es-AR")}{sourceLabel ? ` · ${sourceLabel}` : ""}</span> : null}
         </div>
       </div>
 
