@@ -148,8 +148,9 @@ export type PersonalAlertSubscription = {
 export type ArbitrageAlertSubscription = {
   id: string;
   userId: string;
-  sourceProviderId: string;
-  destinationProviderId: string;
+  scope: "route" | "any_verified";
+  sourceProviderId: string | null;
+  destinationProviderId: string | null;
   transferAsset: "USD_BANK" | "USDT" | "USDC";
   amountUsd: number;
   minimumGrossSpreadArs: number;

@@ -2,7 +2,7 @@
 
 The code source of truth is `lib/alerts/rules.ts`; evaluation logic is in `lib/alerts/engine.ts`. All thresholds compare an instrument with its own history. These rules are implemented but have not been historically validated or calibrated for investment outcomes.
 
-The integration with the current `main` branch did not change thresholds, enable new categories, or connect Radar de Arbitraje. Rule evaluation becomes operational only after the Supabase migration, server credentials, one scheduler strategy, and the documented live validations are completed.
+The Radar de Arbitraje integration uses the same delivery, deduplication, cooldown, and lifecycle engine. It remains separate from technical watchlist rules and uses deterministic quote/route verification rather than OHLCV indicators.
 
 | Rule | Version | Status | Supported instruments | Trigger | Cooldown | Main limitation |
 | --- | ---: | --- | --- | --- | ---: | --- |
@@ -14,7 +14,7 @@ The integration with the current `main` branch did not change thresholds, enable
 | `material_news` | 1 | Disabled | Technical universe | Not implemented until an attributable licensed source exists | 720 min | Source unavailable |
 | `bond_event` | 1 | Disabled | Sovereign/CER bonds and bills | Reserved for verified price, cash-flow, yield and liquidity data | 1440 min | Current coverage incomplete/mock |
 | `corporate_bond_event` | 1 | Disabled | Corporate bonds/ONs | Reserved for verified issuer, cash-flow, yield and event data | 1440 min | Source unavailable |
-| `arbitrage_opportunity` | 1 | Disabled placeholder | None | None | 60 min | Outside this phase and disconnected from Radar de Arbitraje |
+| `arbitrage_opportunity` | 3 | Enabled, user-configurable | USD bank, USDT or USDC provider routes | A route exceeds the configured per-unit threshold and passes fresh timestamps, verified quotes, costs, limits, transfer compatibility and positive net-result checks | 60 min | Verification reflects the latest available provider evidence and does not guarantee execution |
 
 ## Personal rules
 

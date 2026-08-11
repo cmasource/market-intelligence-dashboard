@@ -83,6 +83,10 @@ test("separates assets, shows both user-side prices and constrains routes", asyn
   await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/Source time unavailable|Fuente sin hora propia/);
   await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/Retrieved by CMA|Consultada por CMA/);
   await expect(page.getByTestId("best-arbitrage-opportunity")).toContainText(/Possible gross difference|Posible diferencia bruta/);
+  await page.getByTestId("best-arbitrage-opportunity").getByRole("button", { name: /Alert me when there is a verified opportunity|Avisarme cuando haya una oportunidad verificada/ }).click();
+  await expect(page.getByRole("dialog")).toContainText(/Alertarme ante una oportunidad verificada|Alert me about a verified opportunity/);
+  await expect(page.getByRole("dialog")).toContainText(/fresh quotes|cotizaciones frescas/i);
+  await page.getByRole("button", { name: /Cancel|Cancelar/ }).click();
   await expect(page.getByTestId("arbitrage-matrix")).toContainText(/USD bancario|bank USD/i);
   await expect(page.getByTestId("arbitrage-calculator")).toContainText(/Calculadora|calculator/i);
   await expect(page.getByTestId("arbitrage-source-status")).toContainText("Fiwind");
@@ -105,9 +109,9 @@ test("separates assets, shows both user-side prices and constrains routes", asyn
   await calculator.getByLabel(/Destination provider|Proveedor de destino/).selectOption("bna-usd");
   await calculator.getByLabel(/Amount in USD|Monto en USD/).fill("2000");
   await expect(calculator).toContainText(/10[,.]000/);
-  await calculator.getByRole("button", { name: /Create alert for this route|Crear alerta para esta ruta/ }).click();
-  await expect(page.getByRole("dialog")).toContainText(/Create arbitrage alert|Crear alerta de arbitraje/);
-  await expect(page.getByRole("dialog")).toContainText(/gross difference|diferencia bruta/i);
+  await calculator.getByRole("button", { name: /Monitor this route|Monitorear esta ruta/ }).click();
+  await expect(page.getByRole("dialog")).toContainText(/Monitor this route|Monitorear esta ruta/);
+  await expect(page.getByRole("dialog")).toContainText(/verified opportunity|oportunidad verificada/i);
   await page.getByRole("button", { name: /Cancel|Cancelar/ }).click();
 
   await page.getByRole("button", { name: /USDT/ }).click();

@@ -7,6 +7,7 @@ const subscriptionsSql = readFileSync("supabase/migrations/20260807190105_config
 const intradayStateSql = readFileSync("supabase/migrations/20260811131558_intraday_alert_state.sql", "utf8");
 const externalChannelsSql = readFileSync("supabase/migrations/20260811131603_external_alert_channels.sql", "utf8");
 const arbitrageSubscriptionsSql = readFileSync("supabase/migrations/20260811142159_arbitrage_alert_subscriptions.sql", "utf8");
+const verifiedArbitrageMonitoringSql = readFileSync("supabase/migrations/20260811154500_verified_arbitrage_monitoring.sql", "utf8");
 
 test("migration enables RLS and does not grant clients alert creation privileges", () => {
   for (const table of ["alert_preferences", "alert_rule_versions", "alert_events", "alert_deliveries", "alert_job_runs"]) {
@@ -53,4 +54,10 @@ test("arbitrage alert subscriptions are user-owned, constrained and service-read
   assert.match(arbitrageSubscriptionsSql, /using \(\(select auth\.uid\(\)\) = user_id\)/i);
   assert.match(arbitrageSubscriptionsSql, /grant select, insert, update, delete on public\.arbitrage_alert_subscriptions to authenticated/i);
   assert.doesNotMatch(arbitrageSubscriptionsSql, /grant [^;]+ to anon/i);
+});
+
+test("verified arbitrage monitoring supports one global subscription per user and asset", () => {
+  assert.match(verifiedArbitrageMonitoringSql, /add column if not exists scope text not null default 'route'/i);
+  assert.match(verifiedArbitrageMonitoringSql, /scope = 'any_verified'/i);
+  assert.match(verifiedArbitrageMonitoringSql, /unique index if not exists arbitrage_alert_subscriptions_any_verified_unique_idx/i);
 });

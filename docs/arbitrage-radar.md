@@ -46,6 +46,8 @@ retorno neto = resultado neto / capital requerido × 100
 
 Una combinación sólo se considera **oportunidad verificada** si ambas cotizaciones son frescas y verificadas, la ruta y el activo transferido están verificados, depósito y retiro están confirmados, los costos permiten calcular un resultado neto, los límites informados admiten el monto y el resultado neto es positivo. Una diferencia bruta positiva con datos incompletos se clasifica como **ruta potencial**, no como ganancia neta ni arbitraje confirmado.
 
+El resumen principal permite activar “Avisarme cuando haya una oportunidad verificada”. Esta suscripción no queda atada a la ruta visible ni a la selección manual de la calculadora: el monitor revisa todas las rutas del activo cada cinco minutos y avisa por los canales habilitados cuando alguna supera el umbral y cumple todos los controles anteriores. La calculadora conserva un monitor de ruta específica para usuarios que quieran seguir un origen y destino determinados, con la misma exigencia de verificación antes de disparar.
+
 ## 10. Costos
 
 El modelo contempla cargos fijos en ARS, porcentuales, fijos en USD y costos de transferencia. Cada costo se clasifica como confirmado, estimado o desconocido. Si falta información, la UI muestra “Costos no verificados” y sólo comunica una diferencia o ganancia bruta estimada; no afirma una ganancia neta.

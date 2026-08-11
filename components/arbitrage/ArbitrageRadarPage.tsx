@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ArrowRight, CheckCircle2, Clock3, Info, RefreshCw, ShieldAlert } from "lucide-react";
+import { AlertTriangle, ArrowRight, BellRing, CheckCircle2, Clock3, Info, RefreshCw, ShieldAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { buildOpportunityMatrix, calculateArbitrageOpportunity, findBestOpportunity, findBestPotentialDifference, getFreshnessStatus, rankBuyQuotes, rankSellQuotes } from "@/lib/arbitrage";
@@ -51,7 +51,7 @@ export function ArbitrageRadarPage() {
   const [sourceId, setSourceId] = useState("");
   const [destinationId, setDestinationId] = useState("");
   const [onlyFresh, setOnlyFresh] = useState(false);
-  const [alertOpportunity, setAlertOpportunity] = useState<ArbitrageOpportunity | null>(null);
+  const [alertConfig, setAlertConfig] = useState<{ opportunity: ArbitrageOpportunity; scope: "route" | "any_verified" } | null>(null);
 
   const loadQuotes = useCallback(async (forceRefresh: boolean, signal?: AbortSignal) => {
     if (forceRefresh) setRefreshing(true);
@@ -98,6 +98,7 @@ export function ArbitrageRadarPage() {
   const bestComparable = useMemo(() => matrix
     .filter((item) => !item.blockers.includes("same_provider") && !item.blockers.includes("asset_mismatch") && item.buyRate > 0 && item.sellRate > 0)
     .toSorted((left, right) => right.grossSpreadPerUsd - left.grossSpreadPerUsd)[0], [matrix]);
+  const summaryOpportunity = best ?? bestPotential ?? bestComparable;
   const defaults = useMemo(() => getDefaultQuoteSelectionForAsset(quotes, selectedAsset), [quotes, selectedAsset]);
   const selectedSource = buyQuotes.find((quote) => quote.id === sourceId) ?? buyQuotes.find((quote) => quote.id === defaults.sourceId);
   const destinationCandidates = sellQuotes.filter((quote) => quote.providerId !== selectedSource?.providerId);
@@ -161,7 +162,7 @@ export function ArbitrageRadarPage() {
         </section>
 
         <section className="rounded-xl border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] p-4 sm:p-5" data-testid="best-arbitrage-opportunity">
-          <OpportunitySummary opportunity={best ?? bestPotential ?? bestComparable} verified={Boolean(best)} potential={Boolean(bestPotential)} providers={providers} language={language} />
+          <OpportunitySummary opportunity={summaryOpportunity} verified={Boolean(best)} potential={Boolean(bestPotential)} providers={providers} language={language} onCreateAlert={summaryOpportunity ? () => setAlertConfig({ opportunity: summaryOpportunity, scope: "any_verified" }) : undefined} />
         </section>
 
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)]">
@@ -182,7 +183,7 @@ export function ArbitrageRadarPage() {
 
           <aside className="min-w-0 space-y-5">
             <ArbitrageMatrix buyQuotes={buyQuotes} sellQuotes={sellQuotes} opportunities={matrix} providers={providers} language={language} asset={selectedAsset} t={translate} />
-            <ArbitrageCalculator amount={amount} onAmountChange={setAmount} sourceId={selectedSource?.id ?? ""} destinationId={selectedDestination?.id ?? ""} onSourceChange={selectSource} onDestinationChange={setDestinationId} buyQuotes={buyQuotes} sellQuotes={sellQuotes} opportunity={selectedOpportunity} providers={providers} asset={selectedAsset} language={language} t={translate} onCreateAlert={setAlertOpportunity} />
+            <ArbitrageCalculator amount={amount} onAmountChange={setAmount} sourceId={selectedSource?.id ?? ""} destinationId={selectedDestination?.id ?? ""} onSourceChange={selectSource} onDestinationChange={setDestinationId} buyQuotes={buyQuotes} sellQuotes={sellQuotes} opportunity={selectedOpportunity} providers={providers} asset={selectedAsset} language={language} t={translate} onCreateAlert={(opportunity) => setAlertConfig({ opportunity, scope: "route" })} />
           </aside>
         </div>
 
@@ -196,19 +197,20 @@ export function ArbitrageRadarPage() {
           </div>
         </section>
         <ArbitrageAlertDialog
-          open={Boolean(alertOpportunity)}
-          opportunity={alertOpportunity}
-          sourceProvider={alertOpportunity ? providers.get(alertOpportunity.sourceProviderId) : undefined}
-          destinationProvider={alertOpportunity ? providers.get(alertOpportunity.destinationProviderId) : undefined}
+          open={Boolean(alertConfig)}
+          scope={alertConfig?.scope ?? "any_verified"}
+          opportunity={alertConfig?.opportunity ?? null}
+          sourceProvider={alertConfig ? providers.get(alertConfig.opportunity.sourceProviderId) : undefined}
+          destinationProvider={alertConfig ? providers.get(alertConfig.opportunity.destinationProviderId) : undefined}
           asset={selectedAsset}
-          onClose={() => setAlertOpportunity(null)}
+          onClose={() => setAlertConfig(null)}
         />
       </div>
     </AppShell>
   );
 }
 
-function OpportunitySummary({ opportunity, verified, potential, providers, language }: { opportunity?: ArbitrageOpportunity; verified: boolean; potential: boolean; providers: Map<string, FxProvider>; language: "es" | "en" }) {
+function OpportunitySummary({ opportunity, verified, potential, providers, language, onCreateAlert }: { opportunity?: ArbitrageOpportunity; verified: boolean; potential: boolean; providers: Map<string, FxProvider>; language: "es" | "en"; onCreateAlert?: () => void }) {
   const positive = Boolean(opportunity && opportunity.grossSpreadPerUsd > 0);
   const title = verified
     ? (language === "es" ? "Oportunidad verificada" : "Verified opportunity")
@@ -218,7 +220,7 @@ function OpportunitySummary({ opportunity, verified, potential, providers, langu
   if (!opportunity) return <div><p className="text-xs font-semibold uppercase tracking-[0.15em] text-[var(--cma-text-muted)]">{language === "es" ? "Datos insuficientes" : "Insufficient data"}</p><p className="mt-2 text-sm text-[var(--cma-text-muted)]">{language === "es" ? "Se necesitan dos proveedores comparables dentro del mismo activo." : "Two comparable providers for the same asset are required."}</p></div>;
   const source = providers.get(opportunity.sourceProviderId)?.name ?? opportunity.sourceProviderId;
   const destination = providers.get(opportunity.destinationProviderId)?.name ?? opportunity.destinationProviderId;
-  return <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div><p className={`text-xs font-semibold uppercase tracking-[0.15em] ${verified ? "text-emerald-300" : potential ? "text-amber-300" : "text-[var(--cma-text-muted)]"}`}>{title}</p><p className="mt-2 text-sm text-[var(--cma-text-secondary)]">{positive ? (language === "es" ? "La diferencia sigue sujeta a costos, límites y capacidades verificadas." : "The difference remains subject to verified costs, limits and capabilities.") : (language === "es" ? "La mejor combinación comparable no presenta una diferencia positiva." : "The best comparable combination does not show a positive difference.")}</p></div><div className="flex flex-wrap items-center gap-3"><span className="text-xs font-semibold text-[var(--cma-text-primary)]">{source}</span><ArrowRight size={15} aria-hidden="true" className="text-[var(--cma-accent-cyan)]" /><span className="text-xs font-semibold text-[var(--cma-text-primary)]">{destination}</span><span className={`cma-metric rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] px-3 py-2 text-sm font-semibold ${positive ? "text-emerald-300" : "text-rose-300"}`}>{formatArs(opportunity.grossSpreadPerUsd, language, true)} / u.</span>{verified ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-300"><CheckCircle2 size={14} aria-hidden="true" />{formatUsd(opportunity.amountUsd, language)}</span> : null}</div></div>;
+  return <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div><p className={`text-xs font-semibold uppercase tracking-[0.15em] ${verified ? "text-emerald-300" : potential ? "text-amber-300" : "text-[var(--cma-text-muted)]"}`}>{title}</p><p className="mt-2 text-sm text-[var(--cma-text-secondary)]">{positive ? (verified ? (language === "es" ? "Cumple los controles determinísticos de frescura, costos, límites y compatibilidad." : "Passes deterministic freshness, cost, limit, and compatibility checks.") : (language === "es" ? "Es una diferencia bruta de referencia; todavía no cumple todos los controles para llamarla oportunidad verificada." : "This is a reference gross difference; it does not yet pass every control required for a verified opportunity.")) : (language === "es" ? "La mejor combinación comparable no presenta una diferencia positiva." : "The best comparable combination does not show a positive difference.")}</p></div><div className="flex flex-col items-start gap-3 lg:items-end"><div className="flex flex-wrap items-center gap-3"><span className="text-xs font-semibold text-[var(--cma-text-primary)]">{source}</span><ArrowRight size={15} aria-hidden="true" className="text-[var(--cma-accent-cyan)]" /><span className="text-xs font-semibold text-[var(--cma-text-primary)]">{destination}</span><span className={`cma-metric rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] px-3 py-2 text-sm font-semibold ${positive ? "text-emerald-300" : "text-rose-300"}`}>{formatArs(opportunity.grossSpreadPerUsd, language, true)} / u.</span>{verified ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-300"><CheckCircle2 size={14} aria-hidden="true" />{formatUsd(opportunity.amountUsd, language)}</span> : null}</div>{onCreateAlert ? <button type="button" onClick={onCreateAlert} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-cyan-300/35 bg-cyan-300/10 px-4 text-xs font-semibold text-cyan-100 hover:border-cyan-300/60"><BellRing size={15} aria-hidden="true" />{language === "es" ? "Avisarme cuando haya una oportunidad verificada" : "Alert me when there is a verified opportunity"}</button> : null}</div></div>;
 }
 
 function ProviderStatusCard({ provider, quotes, language, t }: { provider: FxProvider; quotes: FxQuote[]; language: "es" | "en"; t: ArbitrageTranslate }) {

@@ -61,7 +61,8 @@ type SubscriptionStateRow = {
   observed_at: string | null; fetched_at: string | null; provider: string | null; data_delay: PersonalAlertQuoteContext["dataDelay"] | null;
 };
 type ArbitrageSubscriptionRow = {
-  id: string; user_id: string; source_provider_id: string; destination_provider_id: string;
+  id: string; user_id: string; scope: ArbitrageAlertSubscription["scope"];
+  source_provider_id: string | null; destination_provider_id: string | null;
   transfer_asset: ArbitrageAlertSubscription["transferAsset"]; amount_usd: number | string;
   minimum_gross_spread_ars: number | string; enabled: boolean; created_at: string; updated_at: string;
 };
@@ -116,7 +117,7 @@ function evaluationWindow(now: Date) {
 
 function arbitrageSubscriptionFromRow(row: ArbitrageSubscriptionRow): ArbitrageAlertSubscription {
   return {
-    id: row.id, userId: row.user_id, sourceProviderId: row.source_provider_id,
+    id: row.id, userId: row.user_id, scope: row.scope, sourceProviderId: row.source_provider_id,
     destinationProviderId: row.destination_provider_id, transferAsset: row.transfer_asset,
     amountUsd: Number(row.amount_usd), minimumGrossSpreadArs: Number(row.minimum_gross_spread_ars),
     enabled: row.enabled, createdAt: row.created_at, updatedAt: row.updated_at,
@@ -233,7 +234,7 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
       supabase.from("watchlists").select("id,user_id,name").order("created_at").limit(500),
       supabase.from("alert_preferences").select("user_id,alerts_enabled,minimum_severity,frequency,quiet_hours_start,quiet_hours_end,timezone,opportunity_alerts_enabled,in_app_enabled,email_enabled,whatsapp_enabled,whatsapp_phone_e164,monitored_watchlist_ids"),
       supabase.from("alert_subscriptions").select("id,user_id,watchlist_id,watchlist_item_id,instrument_id,instrument_symbol,instrument_name,market,exchange,currency,asset_type,condition,target_value,threshold_percent,lookback_bars,enabled,created_at,updated_at").eq("enabled", true).limit(2000),
-      supabase.from("arbitrage_alert_subscriptions").select("id,user_id,source_provider_id,destination_provider_id,transfer_asset,amount_usd,minimum_gross_spread_ars,enabled,created_at,updated_at").eq("enabled", true).limit(1000),
+      supabase.from("arbitrage_alert_subscriptions").select("id,user_id,scope,source_provider_id,destination_provider_id,transfer_asset,amount_usd,minimum_gross_spread_ars,enabled,created_at,updated_at").eq("enabled", true).limit(1000),
       supabase.from("alert_subscription_states").select("subscription_id,last_price,change_percent,observed_at,fetched_at,provider,data_delay").limit(2000),
       supabase.from("alert_events").select("id,user_id,instrument_id,rule_id,direction,severity,status,triggered_at,updated_at").eq("status", "active").limit(2000),
       supabase.from("alert_events").select("id,user_id,instrument_id,rule_id,direction,severity,status,triggered_at,updated_at").neq("status", "active").order("triggered_at", { ascending: false }).limit(2000),
@@ -458,11 +459,18 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
         for (const subscription of arbitrageSubscriptions) {
           summary.processedInstruments += 1;
           try {
-            const evaluated = evaluateArbitrageAlert(subscription, quotePayload.quotes, providerNames, now);
-            if (!evaluated) continue;
             const instrumentId = arbitrageInstrumentId(subscription);
-            const identity = eventIdentity(subscription.userId, instrumentId, evaluated.evaluation.ruleId, evaluated.evaluation.direction);
+            const identity = eventIdentity(subscription.userId, instrumentId, arbitrageRule.id, "up");
             const existing = activeEvents.get(identity);
+            const evaluated = evaluateArbitrageAlert(subscription, quotePayload.quotes, providerNames, now);
+            if (!evaluated) {
+              if (existing) {
+                const resolved = await supabase.from("alert_events").update({ status: "resolved", resolved_at: now.toISOString(), last_evaluated_at: now.toISOString(), updated_at: now.toISOString() }).eq("id", existing.id);
+                if (resolved.error) throw resolved.error;
+                summary.resolvedEvents += 1;
+              }
+              continue;
+            }
             if (!evaluated.evaluation.triggered) {
               if (existing) {
                 const resolved = await supabase.from("alert_events").update({ status: "resolved", resolved_at: now.toISOString(), last_evaluated_at: now.toISOString(), updated_at: now.toISOString() }).eq("id", existing.id);
@@ -480,7 +488,7 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
                 localized_content: localizedContent,
                 evidence: evaluated.evaluation.evidence,
                 limitations: evaluated.evaluation.limitations,
-                provider: `${subscription.sourceProviderId}/${subscription.destinationProviderId}`,
+                provider: `${evaluated.opportunity.sourceProviderId}/${evaluated.opportunity.destinationProviderId}`,
                 observed_at: evaluated.sourceQuote.observedAt ?? evaluated.sourceQuote.fetchedAt,
                 fetched_at: quotePayload.generatedAt,
                 freshness_status: evaluated.evaluation.freshnessStatus,
@@ -494,8 +502,8 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
 
             const previous = recentEvents.get(identity);
             if (!canReactivate(previous?.triggered_at ?? null, arbitrageRule.cooldownMinutes, now)) continue;
-            const sourceName = providerNames.get(subscription.sourceProviderId) ?? subscription.sourceProviderId;
-            const destinationName = providerNames.get(subscription.destinationProviderId) ?? subscription.destinationProviderId;
+            const sourceName = providerNames.get(evaluated.opportunity.sourceProviderId) ?? evaluated.opportunity.sourceProviderId;
+            const destinationName = providerNames.get(evaluated.opportunity.destinationProviderId) ?? evaluated.opportunity.destinationProviderId;
             const inserted = await supabase.from("alert_events").insert({
               user_id: subscription.userId,
               instrument_id: instrumentId,
@@ -514,7 +522,7 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
               localized_content: localizedContent,
               evidence: evaluated.evaluation.evidence,
               limitations: evaluated.evaluation.limitations,
-              provider: `${subscription.sourceProviderId}/${subscription.destinationProviderId}`,
+              provider: `${evaluated.opportunity.sourceProviderId}/${evaluated.opportunity.destinationProviderId}`,
               observed_at: evaluated.sourceQuote.observedAt ?? evaluated.sourceQuote.fetchedAt,
               fetched_at: quotePayload.generatedAt,
               freshness_status: evaluated.evaluation.freshnessStatus,

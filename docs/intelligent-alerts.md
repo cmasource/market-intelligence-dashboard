@@ -4,7 +4,7 @@
 
 This phase adds account-scoped, explainable alerts for instruments saved in CMA Market Intelligence watchlists. It is integrated into the existing App Router application at `/alerts`, `/alerts/[id]`, and `/account/alerts`; it reuses Supabase Auth, Instrument Master identities, Trade Radar OHLCV providers, the shared shell, themes, language context, and watchlist repository.
 
-Alerts are informational. They never place orders, connect brokers, create positions or portfolios, estimate a guaranteed return, or provide personalized advice. Radar de Arbitraje files, providers, routes, tests, and documentation are not used by this module.
+Alerts are informational. They never place orders, connect brokers, create positions or portfolios, estimate a guaranteed return, or provide personalized advice. Radar de Arbitraje contributes a separate deterministic opportunity rule while reusing the same account preferences and delivery channels.
 
 ## Initial diagnosis
 
@@ -63,6 +63,8 @@ Import matches list names case-insensitively, preserves item timestamps, skips s
 
 `supabase/migrations/20260807190105_configurable_alert_subscriptions.sql` adds the user-owned `alert_subscriptions` table and its RLS policies. It must be applied after the base alert migration.
 
+`20260811142159_arbitrage_alert_subscriptions.sql` adds user-owned Radar subscriptions. `20260811154500_verified_arbitrage_monitoring.sql` adds a global `any_verified` scope so each user can monitor all comparable routes for one asset without selecting a fixed origin and destination.
+
 RLS is enabled on every exposed table. Authenticated clients may manage their own preferences, read their own delivered events/deliveries, and update only the `read_at` column on their own events. They receive no insert privilege on events/deliveries and no access to internal rule versions or job runs. Rules and events are written through a server-only Supabase client using `SUPABASE_SECRET_KEY` (preferred) or the legacy `SUPABASE_SERVICE_ROLE_KEY` fallback; neither value may be exposed to client code or prefixed with `NEXT_PUBLIC_`.
 
 No `profiles` table is required. Authorization uses the validated Auth identity and row ownership, never user-editable metadata.
@@ -88,6 +90,8 @@ In addition, an authenticated user can create deterministic personal alerts from
 
 "Period low/high" is intentionally explicit: it is not an undocumented all-time historical floor or ceiling. Creating an alert from search first adds the normalized Instrument Master identity to the selected account watchlist, then stores the alert subscription. Personal alerts use the same provider, freshness, evidence, deduplication, cadence, and no-order guarantees as automatic rules.
 
+From the Radar summary, a user can also request “any verified opportunity” for USD bank, USDT, or USDC. On every monitor run the engine evaluates all same-asset routes for the configured amount and threshold, selects the best verified result, and alerts only when quotes, source timestamps, costs, limits, transfer capabilities, compatibility, and positive net result all pass. A Reba → Fiwind spread with missing source time, costs, or limits remains a possible gross difference and does not trigger this strict alert. The calculator retains an optional fixed-route monitor, subject to the same verification gate.
+
 See `docs/alert-rules-catalog.md` for exact requirements and limitations.
 
 Severity uses informational, low, medium, high, and critical. It combines normalized magnitude, independent confirmations, usable volume, freshness, and data quality. Critical requires a confidence score of at least 0.94 and should be rare. Confidence is an evidence-quality priority score, not a probability of profit.
@@ -105,7 +109,6 @@ Disabled categories:
 - bonds and bills: current prices/cash flows/yields are not sufficiently real and complete;
 - corporate bonds: issuer/cash-flow/credit-event source unavailable;
 - material news: no validated licensed material-news contract;
-- arbitrage opportunity: future placeholder only and intentionally disconnected from Radar de Arbitraje.
 
 ## Deduplication, cooldown, and lifecycle
 

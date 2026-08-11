@@ -80,8 +80,9 @@ export async function deletePersonalAlertSubscription(id: string) {
 type ArbitrageSubscriptionRow = {
   id: string;
   user_id: string;
-  source_provider_id: string;
-  destination_provider_id: string;
+  scope: ArbitrageAlertSubscription["scope"];
+  source_provider_id: string | null;
+  destination_provider_id: string | null;
   transfer_asset: ArbitrageAlertSubscription["transferAsset"];
   amount_usd: number | string;
   minimum_gross_spread_ars: number | string;
@@ -90,12 +91,13 @@ type ArbitrageSubscriptionRow = {
   updated_at: string;
 };
 
-const arbitrageSubscriptionColumns = "id,user_id,source_provider_id,destination_provider_id,transfer_asset,amount_usd,minimum_gross_spread_ars,enabled,created_at,updated_at";
+const arbitrageSubscriptionColumns = "id,user_id,scope,source_provider_id,destination_provider_id,transfer_asset,amount_usd,minimum_gross_spread_ars,enabled,created_at,updated_at";
 
 function arbitrageSubscriptionFromRow(row: ArbitrageSubscriptionRow): ArbitrageAlertSubscription {
   return {
     id: row.id,
     userId: row.user_id,
+    scope: row.scope,
     sourceProviderId: row.source_provider_id,
     destinationProviderId: row.destination_provider_id,
     transferAsset: row.transfer_asset,
@@ -115,25 +117,43 @@ export async function getArbitrageAlertSubscriptions() {
 
 export async function saveArbitrageAlertSubscription(input: {
   userId: string;
-  sourceProviderId: string;
-  destinationProviderId: string;
+  scope: ArbitrageAlertSubscription["scope"];
+  sourceProviderId?: string | null;
+  destinationProviderId?: string | null;
   transferAsset: ArbitrageAlertSubscription["transferAsset"];
   amountUsd: number;
   minimumGrossSpreadArs: number;
 }) {
   const payload = {
     user_id: input.userId,
-    source_provider_id: input.sourceProviderId,
-    destination_provider_id: input.destinationProviderId,
+    scope: input.scope,
+    source_provider_id: input.scope === "route" ? input.sourceProviderId ?? null : null,
+    destination_provider_id: input.scope === "route" ? input.destinationProviderId ?? null : null,
     transfer_asset: input.transferAsset,
     amount_usd: input.amountUsd,
     minimum_gross_spread_ars: input.minimumGrossSpreadArs,
     enabled: true,
     updated_at: new Date().toISOString(),
   };
-  const result = await createClient().from("arbitrage_alert_subscriptions")
-    .upsert(payload, { onConflict: "user_id,source_provider_id,destination_provider_id,transfer_asset" })
-    .select(arbitrageSubscriptionColumns).single();
+  const client = createClient();
+  let result;
+  if (input.scope === "any_verified") {
+    const existing = await client.from("arbitrage_alert_subscriptions")
+      .select("id")
+      .eq("user_id", input.userId)
+      .eq("scope", "any_verified")
+      .eq("transfer_asset", input.transferAsset)
+      .maybeSingle();
+    if (existing.error) throw existing.error;
+    result = existing.data
+      ? await client.from("arbitrage_alert_subscriptions").update(payload).eq("id", existing.data.id).select(arbitrageSubscriptionColumns).single()
+      : await client.from("arbitrage_alert_subscriptions").insert(payload).select(arbitrageSubscriptionColumns).single();
+  } else {
+    if (!payload.source_provider_id || !payload.destination_provider_id) throw new Error("A route alert requires both providers.");
+    result = await client.from("arbitrage_alert_subscriptions")
+      .upsert(payload, { onConflict: "user_id,source_provider_id,destination_provider_id,transfer_asset" })
+      .select(arbitrageSubscriptionColumns).single();
+  }
   if (result.error) throw result.error;
   window.dispatchEvent(new Event(ALERT_SUBSCRIPTIONS_UPDATED_EVENT));
   return arbitrageSubscriptionFromRow(result.data as ArbitrageSubscriptionRow);

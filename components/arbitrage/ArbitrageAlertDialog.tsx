@@ -12,6 +12,7 @@ import { formatArs } from "./format";
 
 type Props = {
   open: boolean;
+  scope: "route" | "any_verified";
   opportunity: ArbitrageOpportunity | null;
   sourceProvider?: FxProvider;
   destinationProvider?: FxProvider;
@@ -19,7 +20,7 @@ type Props = {
   onClose: () => void;
 };
 
-export function ArbitrageAlertDialog({ open, opportunity, sourceProvider, destinationProvider, asset, onClose }: Props) {
+export function ArbitrageAlertDialog({ open, scope, opportunity, sourceProvider, destinationProvider, asset, onClose }: Props) {
   const { language } = useLanguage();
   const [amount, setAmount] = useState("");
   const [minimumSpread, setMinimumSpread] = useState("");
@@ -30,10 +31,10 @@ export function ArbitrageAlertDialog({ open, opportunity, sourceProvider, destin
     if (!open || !opportunity) return;
     queueMicrotask(() => {
       setAmount(String(opportunity.amountUsd));
-      setMinimumSpread(String(Math.max(0.01, Math.round(opportunity.grossSpreadPerUsd * 100) / 100)));
+      setMinimumSpread(scope === "any_verified" ? "0.01" : String(Math.max(0.01, Math.round(opportunity.grossSpreadPerUsd * 100) / 100)));
       setMessage(null);
     });
-  }, [open, opportunity]);
+  }, [open, opportunity, scope]);
 
   if (!opportunity) return null;
   const amountValue = Number(amount.replace(",", "."));
@@ -52,8 +53,9 @@ export function ArbitrageAlertDialog({ open, opportunity, sourceProvider, destin
       if (!data.user) throw new Error(language === "es" ? "Iniciá sesión para guardar esta alerta." : "Sign in to save this alert.");
       await saveArbitrageAlertSubscription({
         userId: data.user.id,
-        sourceProviderId: opportunity.sourceProviderId,
-        destinationProviderId: opportunity.destinationProviderId,
+        scope,
+        sourceProviderId: scope === "route" ? opportunity.sourceProviderId : null,
+        destinationProviderId: scope === "route" ? opportunity.destinationProviderId : null,
         transferAsset: asset,
         amountUsd: amountValue,
         minimumGrossSpreadArs: spreadValue,
@@ -61,8 +63,8 @@ export function ArbitrageAlertDialog({ open, opportunity, sourceProvider, destin
       setMessage({
         type: "success",
         text: language === "es"
-          ? `Alerta configurada para ${sourceName} → ${destinationName}.`
-          : `Alert configured for ${sourceName} → ${destinationName}.`,
+          ? scope === "any_verified" ? `El Radar monitoreará cualquier oportunidad verificada en ${asset === "USD_BANK" ? "USD bancario" : asset}.` : `Alerta configurada para ${sourceName} → ${destinationName}.`
+          : scope === "any_verified" ? `The Radar will monitor any verified opportunity in ${asset === "USD_BANK" ? "bank USD" : asset}.` : `Alert configured for ${sourceName} → ${destinationName}.`,
       });
     } catch (error) {
       setMessage({ type: "error", text: error instanceof Error ? error.message : (language === "es" ? "No se pudo guardar la alerta." : "The alert could not be saved.") });
@@ -75,13 +77,13 @@ export function ArbitrageAlertDialog({ open, opportunity, sourceProvider, destin
     <AccessibleDialog
       open={open}
       onClose={onClose}
-      title={language === "es" ? "Crear alerta de arbitraje" : "Create arbitrage alert"}
-      description={language === "es" ? "Monitoreá una diferencia bruta entre dos proveedores. El sistema no ejecuta operaciones." : "Monitor a gross price difference between two providers. The system never executes transactions."}
+      title={language === "es" ? (scope === "any_verified" ? "Alertarme ante una oportunidad verificada" : "Monitorear esta ruta") : (scope === "any_verified" ? "Alert me about a verified opportunity" : "Monitor this route")}
+      description={language === "es" ? (scope === "any_verified" ? "El Radar revisará todas las rutas de este activo y avisará sólo cuando una cumpla todos los controles." : "Esta ruta se activará sólo si pasa a ser una oportunidad verificada.") : (scope === "any_verified" ? "The Radar will check every route for this asset and alert only when one passes every control." : "This route will trigger only if it becomes a verified opportunity.")}
     >
       <div className="rounded-xl border border-cyan-300/20 bg-cyan-300/5 p-4">
         <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-200">{asset === "USD_BANK" ? (language === "es" ? "USD bancario" : "Bank USD") : asset}</p>
-        <p className="mt-2 flex items-center gap-2 text-sm font-semibold"><span>{sourceName}</span><span aria-hidden="true">→</span><span>{destinationName}</span></p>
-        <p className="mt-2 text-xs text-[var(--cma-text-secondary)]">{language === "es" ? "Diferencia actual" : "Current difference"}: {formatArs(opportunity.grossSpreadPerUsd, language, true)} {language === "es" ? "por unidad" : "per unit"}.</p>
+        <p className="mt-2 flex items-center gap-2 text-sm font-semibold">{scope === "any_verified" ? (language === "es" ? "Todas las rutas comparables" : "All comparable routes") : <><span>{sourceName}</span><span aria-hidden="true">→</span><span>{destinationName}</span></>}</p>
+        <p className="mt-2 text-xs text-[var(--cma-text-secondary)]">{scope === "any_verified" ? (language === "es" ? "La ruta que se muestra ahora es sólo una referencia; el monitor elegirá automáticamente la mejor que resulte verificada." : "The route shown now is only a reference; the monitor will automatically select the best verified route.") : <>{language === "es" ? "Diferencia actual" : "Current difference"}: {formatArs(opportunity.grossSpreadPerUsd, language, true)} {language === "es" ? "por unidad" : "per unit"}.</>}</p>
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -97,8 +99,8 @@ export function ArbitrageAlertDialog({ open, opportunity, sourceProvider, destin
       <p className="mt-2 text-xs leading-5 text-[var(--cma-text-muted)]">{language === "es" ? "Ejemplo: 1,50 significa que se activa cuando la venta supera la compra por al menos ARS 1,50 por cada USD." : "Example: 1.50 triggers when the sell quote exceeds the buy quote by at least ARS 1.50 per USD."}</p>
 
       <div className="mt-4 space-y-2 rounded-xl border border-amber-300/20 bg-amber-300/5 p-4 text-xs leading-5 text-[var(--cma-text-secondary)]">
-        <p className="flex gap-2"><ShieldAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0 text-amber-200" />{language === "es" ? "La alerta informa una diferencia bruta. Costos, límites, disponibilidad y tiempos pueden eliminarla." : "The alert reports a gross difference. Costs, limits, availability and timing can eliminate it."}</p>
-        {hasUnverifiedTime ? <p className="flex gap-2"><Info aria-hidden="true" size={16} className="mt-0.5 shrink-0 text-sky-200" />{language === "es" ? "Alguna fuente no informa hora propia. La alerta mostrará la hora exacta en que CMA consultó esa cotización." : "At least one source does not report its own timestamp. The alert will show the exact time CMA retrieved that quote."}</p> : null}
+        <p className="flex gap-2"><ShieldAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0 text-amber-200" />{language === "es" ? "Sólo se activa con cotizaciones frescas, costos y límites verificados, ruta compatible y resultado neto estimado positivo." : "It triggers only with fresh quotes, verified costs and limits, a compatible route, and a positive estimated net result."}</p>
+        {scope === "route" && hasUnverifiedTime ? <p className="flex gap-2"><Info aria-hidden="true" size={16} className="mt-0.5 shrink-0 text-sky-200" />{language === "es" ? "Esta ruta todavía no tiene una hora propia verificable y no activará la alerta hasta cumplir ese control." : "This route does not yet have a verifiable source timestamp and will not trigger until it passes that control."}</p> : null}
         <p className="flex gap-2"><Mail aria-hidden="true" size={16} className="mt-0.5 shrink-0 text-cyan-200" />{language === "es" ? "Para recibirla por email, activá Email en Preferencias de alertas." : "To receive it by email, enable Email in Alert preferences."} <Link href="/account/alerts" className="font-semibold text-cyan-200 underline">{language === "es" ? "Abrir preferencias" : "Open preferences"}</Link></p>
       </div>
 
