@@ -17,11 +17,10 @@ type ArbitrageMatrixProps = {
 
 function routeStatus(opportunity: ArbitrageOpportunity, language: Language) {
   if (opportunity.freshnessStatus === "stale") return { icon: Clock3, label: language === "es" ? "Cotización desactualizada" : "Stale quote", tone: "text-amber-300" };
-  if (opportunity.freshnessStatus === "unverifiable") return { icon: CircleHelp, label: language === "es" ? "Frescura no verificable" : "Unverifiable freshness", tone: "text-amber-300" };
-  if (opportunity.blockers.includes("transfer_capability_unverified")) return { icon: CircleHelp, label: language === "es" ? "Capacidad no verificada" : "Unverified capability", tone: "text-sky-300" };
   if (!opportunity.isCompatible) return { icon: Ban, label: language === "es" ? "Ruta no operable" : "Route not operable", tone: "text-[var(--cma-text-muted)]" };
   if (opportunity.classification === "verified_opportunity") return { icon: CheckCircle2, label: language === "es" ? "Oportunidad verificada" : "Verified opportunity", tone: "text-emerald-300" };
   if (opportunity.classification === "potential_gross_difference") return { icon: AlertTriangle, label: language === "es" ? "Posible diferencia bruta" : "Possible gross difference", tone: "text-amber-300" };
+  if (opportunity.blockers.includes("transfer_capability_unverified")) return { icon: CircleHelp, label: language === "es" ? "Capacidad no verificada" : "Unverified capability", tone: "text-sky-300" };
   return { icon: AlertTriangle, label: language === "es" ? "Sin diferencia positiva" : "No positive difference", tone: "text-rose-300" };
 }
 

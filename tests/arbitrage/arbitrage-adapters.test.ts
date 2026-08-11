@@ -5,7 +5,7 @@ import { normalizeComparaDolarUsdPayload } from "../../lib/arbitrage/adapters/co
 import { normalizeCriptoYaPayloads } from "../../lib/arbitrage/adapters/criptoya";
 import { errorResult } from "../../lib/arbitrage/adapters/shared";
 import { normalizePlusPayload } from "../../lib/arbitrage/adapters/plus";
-import { getFreshnessStatus } from "../../lib/arbitrage/freshness";
+import { getFreshnessStatus, getRetrievalFreshnessStatus } from "../../lib/arbitrage/freshness";
 import { getArbitrageProvider } from "../../lib/arbitrage/provider-registry";
 
 const fetchedAt = "2026-08-04T20:10:00.000Z";
@@ -130,6 +130,9 @@ test("ComparaDólar preserves the user perspective and never invents observation
   assert.equal(bank?.userSellsUsdAt, 1490.25);
   assert.equal(bank?.observedAt, undefined);
   assert.equal(getFreshnessStatus(bank!), "unverifiable");
+  assert.equal(getRetrievalFreshnessStatus(bank!, new Date("2026-08-04T20:14:59.000Z")), "recent");
+  assert.equal(getRetrievalFreshnessStatus(bank!, new Date("2026-08-04T20:15:01.000Z")), "delayed");
+  assert.equal(getRetrievalFreshnessStatus(bank!, new Date("2026-08-04T20:20:01.000Z")), "stale");
   assert.equal(bank?.verification.quote, "reference_only");
   assert.equal(bank?.sourcePollingIntervalSeconds, 300);
 

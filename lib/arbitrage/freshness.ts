@@ -1,6 +1,7 @@
 import type { FreshnessStatus, FxQuote, QuoteStatus } from "./types";
 
 type FreshnessPolicy = { freshSeconds: number; warningSeconds: number };
+export type RetrievalFreshnessStatus = "recent" | "delayed" | "stale";
 
 const DEFAULT_POLICY: FreshnessPolicy = { freshSeconds: 120, warningSeconds: 300 };
 const POLICIES: Record<string, FreshnessPolicy> = {
@@ -17,6 +18,19 @@ export function quoteAgeSeconds(quote: FxQuote, now = new Date()) {
   const observed = new Date(quote.observedAt).getTime();
   if (!Number.isFinite(observed)) return Number.POSITIVE_INFINITY;
   return Math.max(0, Math.floor((now.getTime() - observed) / 1000));
+}
+
+export function retrievalAgeSeconds(quote: FxQuote, now = new Date()) {
+  const fetched = new Date(quote.fetchedAt).getTime();
+  if (!Number.isFinite(fetched)) return Number.POSITIVE_INFINITY;
+  return Math.max(0, Math.floor((now.getTime() - fetched) / 1000));
+}
+
+export function getRetrievalFreshnessStatus(quote: FxQuote, now = new Date()): RetrievalFreshnessStatus {
+  const age = retrievalAgeSeconds(quote, now);
+  if (age <= 5 * 60) return "recent";
+  if (age <= 10 * 60) return "delayed";
+  return "stale";
 }
 
 export function getFreshnessStatus(quote: FxQuote, now = new Date()): FreshnessStatus {

@@ -80,9 +80,10 @@ test("separates assets, shows both user-side prices and constrains routes", asyn
   await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/Vendés USD a|You sell USD at/);
   await expect(page.getByTestId("arbitrage-quote-cards")).toContainText("Fiwind");
   await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/USD → USDT → ARS/);
-  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/Source time unavailable|Fuente sin hora propia/);
-  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/Retrieved by CMA|Consultada por CMA/);
+  await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/CMA check|Consulta CMA/);
+  await expect(page.getByTestId("arbitrage-quote-cards")).not.toContainText(/Source time unavailable|Fuente sin hora propia/);
   await expect(page.getByTestId("best-arbitrage-opportunity")).toContainText(/Possible gross difference|Posible diferencia bruta/);
+  await expect(page.getByTestId("arbitrage-matrix")).not.toContainText(/Unverifiable freshness|Frescura no verificable/);
   await page.getByTestId("best-arbitrage-opportunity").getByRole("button", { name: /Alert me when there is a verified opportunity|Avisarme cuando haya una oportunidad verificada/ }).click();
   await expect(page.getByRole("dialog")).toContainText(/Alertarme ante una oportunidad verificada|Alert me about a verified opportunity/);
   await expect(page.getByRole("dialog")).toContainText(/fresh quotes|cotizaciones frescas/i);

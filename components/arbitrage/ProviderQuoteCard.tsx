@@ -1,5 +1,5 @@
 import { Clock3, ExternalLink, Info, ShieldCheck, Trophy } from "lucide-react";
-import { getFreshnessStatus } from "@/lib/arbitrage/freshness";
+import { getFreshnessStatus, getRetrievalFreshnessStatus, type RetrievalFreshnessStatus } from "@/lib/arbitrage/freshness";
 import { getInstrumentLabel, getQuoteStatusLabel, getVerificationLabel, type ArbitrageTranslate } from "@/lib/arbitrage/labels";
 import type { FxProvider, FxQuote, TransferAsset } from "@/lib/arbitrage/types";
 import type { Language } from "@/lib/i18n/types";
@@ -22,7 +22,9 @@ const assetLabels: Record<TransferAsset, string> = {
   USDC: "USDC",
 };
 
-function freshnessClasses(status: ReturnType<typeof getFreshnessStatus>) {
+function freshnessClasses(status: ReturnType<typeof getFreshnessStatus> | RetrievalFreshnessStatus) {
+  if (status === "recent") return "border-emerald-400/20 bg-emerald-400/5 text-emerald-300";
+  if (status === "delayed") return "border-sky-400/20 bg-sky-400/5 text-sky-300";
   if (status === "fresh") return "border-emerald-400/25 bg-emerald-400/10 text-emerald-300";
   if (status === "stale") return "border-rose-400/25 bg-rose-400/10 text-rose-300";
   if (status === "unverifiable") return "border-amber-400/25 bg-amber-400/10 text-amber-300";
@@ -31,12 +33,16 @@ function freshnessClasses(status: ReturnType<typeof getFreshnessStatus>) {
 
 export function ProviderQuoteCard({ quote, provider, asset, isBestBuy, isBestSell, language, t }: ProviderQuoteCardProps) {
   const freshness = getFreshnessStatus(quote);
+  const retrievalFreshness = getRetrievalFreshnessStatus(quote);
   const providerName = provider?.name ?? quote.providerId;
   const referenceOnly = quote.verification.quote === "reference_only";
   const observedLabel = quote.observedAt ? formatAge(quote.observedAt, language) : undefined;
   const fetchedLabel = formatAge(quote.fetchedAt, language);
+  const displayedFreshness = freshness === "unverifiable" ? retrievalFreshness : freshness;
   const freshnessLabel = freshness === "unverifiable"
-    ? (language === "es" ? "Fuente sin hora propia" : "Source time unavailable")
+    ? retrievalFreshness === "stale"
+      ? (language === "es" ? "Consulta CMA demorada" : "CMA check delayed")
+      : (language === "es" ? `Consulta CMA ${fetchedLabel}` : `CMA check ${fetchedLabel}`)
     : getQuoteStatusLabel(quote.status, t);
   const isCompositeFiwindRoute = quote.providerId === "fiwind" && quote.instrument === "crypto_usd_route";
 
@@ -50,7 +56,7 @@ export function ProviderQuoteCard({ quote, provider, asset, isBestBuy, isBestSel
             <p className="mt-0.5 text-xs text-[var(--cma-text-muted)]">{getInstrumentLabel(quote.instrument, t)} · {assetLabels[asset]}</p>
           </div>
         </div>
-        <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-semibold ${freshnessClasses(freshness)}`}>
+        <span title={!quote.observedAt ? (language === "es" ? "La fuente no publica una hora propia; se muestra la hora de consulta de CMA." : "The source does not publish its own timestamp; CMA retrieval time is shown.") : undefined} className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-semibold ${freshnessClasses(displayedFreshness)}`}>
           <Clock3 size={11} aria-hidden="true" />
           {freshnessLabel}
         </span>
@@ -86,11 +92,8 @@ export function ProviderQuoteCard({ quote, provider, asset, isBestBuy, isBestSel
 
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] text-[var(--cma-text-muted)]">
         <span className="inline-flex items-center gap-1"><Info size={11} aria-hidden="true" />{getVerificationLabel(quote.verification.quote, t)}</span>
-        {quote.observedAt
-          ? <span title={formatTimestamp(quote.observedAt, language)}>{language === "es" ? "Hora de la fuente" : "Source time"}: {observedLabel}</span>
-          : <span>{language === "es" ? "La fuente no informa hora propia" : "The source does not report its own time"}</span>}
-        <span title={formatTimestamp(quote.fetchedAt, language)} className="font-medium text-[var(--cma-text-secondary)]">{language === "es" ? "Consultada por CMA" : "Retrieved by CMA"}: {fetchedLabel}</span>
-        {!quote.observedAt && quote.sourcePollingIntervalSeconds ? <span>{language === "es" ? `Actualización estimada de la fuente: cada ${Math.round(quote.sourcePollingIntervalSeconds / 60)} min` : `Estimated source update: every ${Math.round(quote.sourcePollingIntervalSeconds / 60)} min`}</span> : null}
+        {quote.observedAt ? <span title={formatTimestamp(quote.observedAt, language)}>{language === "es" ? "Hora de la fuente" : "Source time"}: {observedLabel}</span> : null}
+        <span title={formatTimestamp(quote.fetchedAt, language)} className="font-medium text-[var(--cma-text-secondary)]">{language === "es" ? "Última consulta CMA" : "Latest CMA check"}: {fetchedLabel}</span>
         {quote.quotedAmountUsd ? <span>{language === "es" ? "Volumen" : "Volume"}: {formatUsd(quote.quotedAmountUsd, language)}</span> : null}
         {referenceOnly ? <span className="inline-flex items-center gap-1 text-sky-300"><ShieldCheck size={11} aria-hidden="true" />{language === "es" ? "No confirma una ruta operable" : "Does not confirm an operable route"}</span> : null}
         {quote.sourceUrl ? <a href={quote.sourceUrl} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex min-h-8 items-center gap-1 font-semibold text-[var(--cma-accent-cyan)] hover:underline"><ExternalLink size={11} aria-hidden="true" />{t("arbitrageOpenSource")}</a> : null}
