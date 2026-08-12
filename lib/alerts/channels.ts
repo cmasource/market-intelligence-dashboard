@@ -133,34 +133,48 @@ export class WhatsappNotificationChannel implements NotificationChannel {
       await saveDelivery(this.supabase, request, this.name, "pending", scheduledAt);
       return { status: "pending", scheduledAt };
     }
-    const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
-    const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
-    const from = process.env.TWILIO_WHATSAPP_FROM?.trim();
-    const contentSid = process.env.TWILIO_WHATSAPP_CONTENT_SID?.trim();
-    if (!accountSid || !authToken || !from || !contentSid || !request.recipientWhatsapp) {
-      const errorCode = !request.recipientWhatsapp ? "whatsapp_recipient_unavailable" : "twilio_whatsapp_not_configured";
+    const accessToken = process.env.META_WHATSAPP_ACCESS_TOKEN?.trim();
+    const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim();
+    const templateName = process.env.META_WHATSAPP_TEMPLATE_NAME?.trim() || "cma_market_alert_v1";
+    const templateLanguage = process.env.META_WHATSAPP_TEMPLATE_LANGUAGE?.trim() || "es_AR";
+    const graphVersion = process.env.META_WHATSAPP_GRAPH_VERSION?.trim() || "v25.0";
+    if (!accessToken || !phoneNumberId || !request.recipientWhatsapp) {
+      const errorCode = !request.recipientWhatsapp ? "whatsapp_recipient_unavailable" : "meta_whatsapp_not_configured";
       await saveDelivery(this.supabase, request, this.name, "cancelled", scheduledAt, { errorCode });
       return { status: "cancelled", scheduledAt, errorCode };
     }
 
     try {
-      const body = new URLSearchParams({
-        From: from.startsWith("whatsapp:") ? from : `whatsapp:${from}`,
-        To: request.recipientWhatsapp.startsWith("whatsapp:") ? request.recipientWhatsapp : `whatsapp:${request.recipientWhatsapp}`,
-        ContentSid: contentSid,
-        ContentVariables: JSON.stringify({ "1": request.title ?? "CMA Market Intelligence", "2": request.summary ?? "Market alert triggered", "3": request.alertUrl ?? "" }),
+      const recipient = request.recipientWhatsapp.replace(/^whatsapp:/, "").replace(/\D/g, "");
+      const response = await fetch(`https://graph.facebook.com/${encodeURIComponent(graphVersion)}/${encodeURIComponent(phoneNumberId)}/messages`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: recipient,
+          type: "template",
+          template: {
+            name: templateName,
+            language: { code: templateLanguage },
+            components: [{
+              type: "body",
+              parameters: [
+                { type: "text", text: request.title ?? "CMA Market Intelligence" },
+                { type: "text", text: request.summary ?? "Se activó una alerta de mercado." },
+                { type: "text", text: request.alertUrl ?? "" },
+              ],
+            }],
+          },
+        }),
       });
-      const callback = process.env.TWILIO_STATUS_CALLBACK_URL?.trim();
-      if (callback) body.set("StatusCallback", callback);
-      const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(accountSid)}/Messages.json`, {
-        method: "POST", headers: { Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString("base64")}`, "Content-Type": "application/x-www-form-urlencoded" }, body,
-      });
-      const payload = await response.json().catch(() => ({})) as { sid?: string; status?: string; code?: number };
-      if (!response.ok || !payload.sid) throw new Error(payload.code ? `twilio_${payload.code}` : `twilio_http_${response.status}`);
-      await saveDelivery(this.supabase, request, this.name, "sent", scheduledAt, { providerMessageId: payload.sid, providerStatus: payload.status ?? "queued" });
+      const payload = await response.json().catch(() => ({})) as { messages?: Array<{ id?: string; message_status?: string }>; error?: { code?: number } };
+      const message = payload.messages?.[0];
+      if (!response.ok || !message?.id) throw new Error(payload.error?.code ? `meta_whatsapp_${payload.error.code}` : `meta_whatsapp_http_${response.status}`);
+      await saveDelivery(this.supabase, request, this.name, "sent", scheduledAt, { providerMessageId: message.id, providerStatus: message.message_status ?? "accepted" });
       return { status: "sent", scheduledAt };
     } catch (error) {
-      const errorCode = safeErrorCode(error instanceof Error ? error.message : null, "twilio_request_failed");
+      const errorCode = safeErrorCode(error instanceof Error ? error.message : null, "meta_whatsapp_request_failed");
       await saveDelivery(this.supabase, request, this.name, "failed", scheduledAt, { errorCode });
       return { status: "failed", scheduledAt, errorCode };
     }

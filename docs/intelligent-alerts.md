@@ -140,9 +140,9 @@ Users choose monitored lists, minimum severity for automatic alerts, immediate/h
 
 In-app is implemented through persisted delivery rows. Immediate items outside quiet hours are marked sent; digest or quiet-hour items remain pending and a later scheduler run releases them. The center and unread badge display only sent in-app deliveries, so delivery preferences apply even when the page is closed.
 
-Email delivery uses Resend and the verified email address of the authenticated Supabase account. WhatsApp delivery uses Twilio Programmable Messaging with an approved Meta content template. Both channels are opt-in in account settings, respect delivery frequency and quiet hours, write provider acceptance/failure metadata to `alert_deliveries`, and never expose provider credentials to the browser. WhatsApp additionally requires an explicit E.164 number and consent timestamp; no message is attempted without both.
+Email delivery uses Resend and the verified email address of the authenticated Supabase account. WhatsApp delivery uses Meta's WhatsApp Cloud API with the approved `cma_market_alert_v1` template. Both channels are opt-in in account settings, respect delivery frequency and quiet hours, write provider acceptance/failure metadata to `alert_deliveries`, and never expose provider credentials to the browser. WhatsApp additionally requires an explicit E.164 number and consent timestamp; no message is attempted without both.
 
-Resend requests use the alert event ID as an idempotency key. Twilio sends use `ContentSid` rather than free-form text because market alerts normally occur outside WhatsApp's 24-hour customer-service window. A Twilio status callback URL can be configured for provider status events; the stored `sent` state means the provider accepted the request, not that the recipient necessarily read it.
+Resend requests use the alert event ID as an idempotency key. Meta sends use the approved template rather than free-form text because market alerts normally occur outside WhatsApp's 24-hour customer-service window. The stored `sent` state means Meta accepted the request, not that the recipient necessarily received or read it.
 
 ## User interface and accessibility
 
@@ -165,18 +165,18 @@ SUPABASE_SERVICE_ROLE_KEY       server only, legacy fallback
 CRON_SECRET                    server only, random 16+ characters
 RESEND_API_KEY                 server only, provisioned by Resend
 RESEND_FROM_EMAIL              verified sender, for example CMA Alerts <alerts@example.com>
-TWILIO_ACCOUNT_SID             server only
-TWILIO_AUTH_TOKEN              server only
-TWILIO_WHATSAPP_FROM           approved sender in E.164 format
-TWILIO_WHATSAPP_CONTENT_SID    approved alert template with variables 1, 2 and 3
-TWILIO_STATUS_CALLBACK_URL     optional provider-status callback
+META_WHATSAPP_ACCESS_TOKEN     permanent system-user token, server only
+META_WHATSAPP_PHONE_NUMBER_ID  Phone Number ID shown in Meta WhatsApp setup
+META_WHATSAPP_TEMPLATE_NAME    approved template name; cma_market_alert_v1
+META_WHATSAPP_TEMPLATE_LANGUAGE approved language code; es_AR
+META_WHATSAPP_GRAPH_VERSION    optional Graph API version; defaults to v25.0
 NEXT_PUBLIC_SITE_URL           canonical production origin for alert links
 ```
 
 1. Review and apply migrations in timestamp order to the intended Supabase project. With a linked CLI use `supabase db push`; otherwise paste the reviewed migration into the project's SQL Editor.
 2. Confirm the Data API exposes `public`, the migration grants are present, and the Supabase security/performance advisors show no new alert-table issue.
 3. Add the server-only variables to the application environment. Do not put them in browser code, SQL, screenshots, or logs.
-4. Verify the Resend sender domain. In Twilio/Meta, register the WhatsApp sender and approve a template whose variables are: `1` title, `2` summary, and `3` alert URL. A Marketplace add-on alone does not create or approve those sender identities.
+4. Verify the Resend sender domain. In Meta, register the WhatsApp sender and approve a template whose body variables are: `1` title, `2` summary, and `3` alert URL. Configure a permanent system-user token with WhatsApp messaging permission; the temporary setup token expires and is not suitable for production.
 5. Determine the Vercel plan and activate exactly one scheduler strategy described above. The Supabase strategy requires the `pg_cron`, `pg_net`, and Vault capabilities used by the supplied snippet.
 6. Run one authorized controlled evaluation, then verify `alert_job_runs`, rule versions, events, deliveries, and the account UI. Confirm provider acceptance separately from final delivery/read status.
 7. Test two real users: each can see only their own watchlists, preferences, events, and deliveries; neither can insert events/deliveries nor read rule/job internals.

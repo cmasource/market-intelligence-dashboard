@@ -42,28 +42,44 @@ test("Resend delivery uses a deterministic idempotency key and records provider 
     if (previousFrom === undefined) delete process.env.RESEND_FROM_EMAIL; else process.env.RESEND_FROM_EMAIL = previousFrom;
   }
 });
-test("Twilio WhatsApp uses an approved content template and E.164 channel prefixes", async () => {
+test("Meta WhatsApp Cloud API uses the approved template and normalized recipient", async () => {
   const previousFetch = globalThis.fetch;
-  const previous = { sid: process.env.TWILIO_ACCOUNT_SID, token: process.env.TWILIO_AUTH_TOKEN, from: process.env.TWILIO_WHATSAPP_FROM, content: process.env.TWILIO_WHATSAPP_CONTENT_SID };
+  const previous = {
+    token: process.env.META_WHATSAPP_ACCESS_TOKEN,
+    phone: process.env.META_WHATSAPP_PHONE_NUMBER_ID,
+    template: process.env.META_WHATSAPP_TEMPLATE_NAME,
+    language: process.env.META_WHATSAPP_TEMPLATE_LANGUAGE,
+    version: process.env.META_WHATSAPP_GRAPH_VERSION,
+  };
   const { client, writes } = databaseRecorder();
-  let form = "";
-  process.env.TWILIO_ACCOUNT_SID = "ACtest";
-  process.env.TWILIO_AUTH_TOKEN = "secret";
-  process.env.TWILIO_WHATSAPP_FROM = "+14155238886";
-  process.env.TWILIO_WHATSAPP_CONTENT_SID = "HXtest";
-  globalThis.fetch = async (_input, init) => { form = String(init?.body); return new Response(JSON.stringify({ sid: "MMtest", status: "queued" }), { status: 201 }); };
+  let endpoint = "";
+  let body: Record<string, unknown> = {};
+  process.env.META_WHATSAPP_ACCESS_TOKEN = "meta-test-token";
+  process.env.META_WHATSAPP_PHONE_NUMBER_ID = "123456789";
+  process.env.META_WHATSAPP_TEMPLATE_NAME = "cma_market_alert_v1";
+  process.env.META_WHATSAPP_TEMPLATE_LANGUAGE = "es_AR";
+  process.env.META_WHATSAPP_GRAPH_VERSION = "v25.0";
+  globalThis.fetch = async (input, init) => {
+    endpoint = String(input);
+    body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    return new Response(JSON.stringify({ messages: [{ id: "wamid.test", message_status: "accepted" }] }), { status: 200 });
+  };
   try {
     const result = await new WhatsappNotificationChannel(client).send({ ...request, recipientWhatsapp: "+5491112345678" });
     assert.equal(result.status, "sent");
-    const values = new URLSearchParams(form);
-    assert.equal(values.get("From"), "whatsapp:+14155238886");
-    assert.equal(values.get("To"), "whatsapp:+5491112345678");
-    assert.equal(values.get("ContentSid"), "HXtest");
-    assert.equal(writes.at(-1)?.provider_message_id, "MMtest");
+    assert.equal(endpoint, "https://graph.facebook.com/v25.0/123456789/messages");
+    assert.equal(body.messaging_product, "whatsapp");
+    assert.equal(body.to, "5491112345678");
+    const template = body.template as { name: string; language: { code: string }; components: Array<{ parameters: Array<{ text: string }> }> };
+    assert.equal(template.name, "cma_market_alert_v1");
+    assert.equal(template.language.code, "es_AR");
+    assert.deepEqual(template.components[0]?.parameters.map((parameter) => parameter.text), [request.title, request.summary, request.alertUrl]);
+    assert.equal(writes.at(-1)?.provider_message_id, "wamid.test");
+    assert.equal(writes.at(-1)?.provider_status, "accepted");
   } finally {
     globalThis.fetch = previousFetch;
     for (const [key, value] of Object.entries(previous)) {
-      const name = ({ sid: "TWILIO_ACCOUNT_SID", token: "TWILIO_AUTH_TOKEN", from: "TWILIO_WHATSAPP_FROM", content: "TWILIO_WHATSAPP_CONTENT_SID" } as const)[key as keyof typeof previous];
+      const name = ({ token: "META_WHATSAPP_ACCESS_TOKEN", phone: "META_WHATSAPP_PHONE_NUMBER_ID", template: "META_WHATSAPP_TEMPLATE_NAME", language: "META_WHATSAPP_TEMPLATE_LANGUAGE", version: "META_WHATSAPP_GRAPH_VERSION" } as const)[key as keyof typeof previous];
       if (value === undefined) delete process.env[name]; else process.env[name] = value;
     }
   }
