@@ -6,6 +6,7 @@ const demoRoutes = [
   "/screener",
   "/data-audit",
   "/glossary",
+  "/alerts/guide",
   "/methodology",
   "/argentina",
   "/crypto",

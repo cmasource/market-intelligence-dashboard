@@ -31,6 +31,9 @@ test("Resend delivery uses a deterministic idempotency key and records provider 
     const result = await new EmailNotificationChannel(client).send({ ...request, recipientEmail: "user@example.com" });
     assert.equal(result.status, "sent");
     assert.equal(new Headers(captured?.headers).get("Idempotency-Key"), "cma-alert-event-1");
+    const body = JSON.parse(String(captured?.body)) as { html: string };
+    assert.match(body.html, /https:\/\/example\.com\/alerts\/guide/);
+    assert.match(body.html, /Entender esta alerta/);
     assert.equal(writes.at(-1)?.provider_message_id, "email-1");
     assert.equal(writes.at(-1)?.provider_status, "accepted");
   } finally {

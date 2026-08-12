@@ -67,6 +67,11 @@ function escapeHtml(value: string) {
   return value.replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]!);
 }
 
+function alertGuideUrl(alertUrl?: string) {
+  if (!alertUrl) return null;
+  try { return new URL("/alerts/guide", alertUrl).toString(); } catch { return null; }
+}
+
 export class InAppNotificationChannel implements NotificationChannel {
   readonly name = "in_app" as const;
   constructor(private readonly supabase: SupabaseClient) {}
@@ -103,7 +108,7 @@ export class EmailNotificationChannel implements NotificationChannel {
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "Idempotency-Key": `cma-alert-${request.alertEventId}` },
         body: JSON.stringify({
           from, to: [request.recipientEmail], subject: request.title ?? "CMA Market Intelligence alert",
-          html: `<div style="font-family:Arial,sans-serif;max-width:620px"><h1 style="font-size:22px">${escapeHtml(request.title ?? "CMA Market Intelligence")}</h1><p>${escapeHtml(request.summary ?? "A configured market alert was triggered.")}</p>${request.alertUrl ? `<p><a href="${escapeHtml(request.alertUrl)}">Open alert details</a></p>` : ""}<p style="color:#64748b;font-size:12px">Informational alert. It is not personalized financial advice and does not execute orders.</p></div>`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:620px"><h1 style="font-size:22px">${escapeHtml(request.title ?? "CMA Market Intelligence")}</h1><p>${escapeHtml(request.summary ?? "A configured market alert was triggered.")}</p>${request.alertUrl ? `<p><a href="${escapeHtml(request.alertUrl)}">Abrir detalle / Open alert details</a></p>` : ""}${alertGuideUrl(request.alertUrl) ? `<p><a href="${escapeHtml(alertGuideUrl(request.alertUrl)!)}">Entender esta alerta / Understand this alert</a></p>` : ""}<p style="color:#64748b;font-size:12px">Alerta informativa. No constituye asesoramiento financiero personalizado ni ejecuta órdenes. / Informational alert. It is not personalized financial advice and does not execute orders.</p></div>`,
         }),
       });
       const payload = await response.json().catch(() => ({})) as { id?: string; name?: string };
