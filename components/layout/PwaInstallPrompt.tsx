@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Info, Share, Smartphone, X } from "lucide-react";
+import { Download, Info, MoreVertical, Share, Smartphone, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 
@@ -15,6 +15,14 @@ function isIosDevice() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
+function isAndroidDevice() {
+  return /Android/i.test(navigator.userAgent);
+}
+
+function detectIosSafari() {
+  return !/CriOS|FxiOS|EdgiOS|OPiOS|GSA|Instagram|FBAN|FBAV|WhatsApp/i.test(navigator.userAgent);
+}
+
 function isStandalone() {
   return window.matchMedia("(display-mode: standalone)").matches || ("standalone" in navigator && Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
 }
@@ -23,7 +31,8 @@ export function PwaInstallPrompt() {
   const { language } = useLanguage();
   const isSpanish = language === "es";
   const [installEvent, setInstallEvent] = useState<InstallPromptEvent | null>(null);
-  const [promptMode, setPromptMode] = useState<"ios" | "android" | null>(null);
+  const [promptMode, setPromptMode] = useState<"ios" | "android" | "android-manual" | null>(null);
+  const [isSafariBrowser, setIsSafariBrowser] = useState(true);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -36,6 +45,7 @@ export function PwaInstallPrompt() {
     const ios = isIosDevice();
     if (ios) {
       const timer = window.setTimeout(() => {
+        setIsSafariBrowser(detectIosSafari());
         setPromptMode("ios");
         setVisible(true);
       }, 900);
@@ -55,7 +65,17 @@ export function PwaInstallPrompt() {
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
+    const androidGuideTimer = isAndroidDevice()
+      ? window.setTimeout(() => {
+          setPromptMode((current) => {
+            if (current) return current;
+            setVisible(true);
+            return "android-manual";
+          });
+        }, 1400)
+      : undefined;
     return () => {
+      if (androidGuideTimer) window.clearTimeout(androidGuideTimer);
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
@@ -99,12 +119,22 @@ export function PwaInstallPrompt() {
 
       {promptMode === "ios" ? (
         <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.04] p-3 text-xs leading-5 text-slate-300">
-          <p className="flex items-start gap-2 font-medium text-white"><Info size={15} className="mt-0.5 shrink-0 text-cyan-200" aria-hidden="true" />{isSpanish ? "En Safari para iPhone:" : "In Safari on iPhone:"}</p>
-          <ol className="mt-2 list-decimal space-y-1 pl-5">
-            <li className="flex items-center gap-1.5">{isSpanish ? "Toca" : "Tap"} <Share size={13} aria-hidden="true" /> {isSpanish ? "Compartir." : "Share."}</li>
-            <li>{isSpanish ? "Elige Agregar a inicio." : "Choose Add to Home Screen."}</li>
-            <li>{isSpanish ? "Confirma con Agregar." : "Confirm with Add."}</li>
-          </ol>
+          <p className="flex items-start gap-2 font-medium text-white"><Info size={15} className="mt-0.5 shrink-0 text-cyan-200" aria-hidden="true" />{isSafariBrowser ? (isSpanish ? "En Safari para iPhone:" : "In Safari on iPhone:") : (isSpanish ? "Primero abre esta pagina en Safari:" : "First open this page in Safari:")}</p>
+          {isSafariBrowser ? (
+            <ol className="mt-2 list-decimal space-y-1 pl-5">
+              <li className="flex items-center gap-1.5">{isSpanish ? "Toca" : "Tap"} <Share size={13} aria-hidden="true" /> {isSpanish ? "Compartir." : "Share."}</li>
+              <li>{isSpanish ? "Elige Agregar a inicio." : "Choose Add to Home Screen."}</li>
+              <li>{isSpanish ? "Confirma con Agregar." : "Confirm with Add."}</li>
+            </ol>
+          ) : (
+            <p className="mt-2">{isSpanish ? "Usa Compartir y elige Abrir en Safari. Luego toca Compartir, Agregar a inicio y confirma." : "Use Share and choose Open in Safari. Then tap Share, Add to Home Screen, and confirm."}</p>
+          )}
+        </div>
+      ) : promptMode === "android-manual" ? (
+        <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.04] p-3 text-xs leading-5 text-slate-300">
+          <p className="flex items-start gap-2 font-medium text-white"><Info size={15} className="mt-0.5 shrink-0 text-cyan-200" aria-hidden="true" />{isSpanish ? "En Chrome para Android:" : "In Chrome for Android:"}</p>
+          <p className="mt-2">{isSpanish ? "Abre el menu de tres puntos y elige Instalar aplicacion o Agregar a pantalla de inicio." : "Open the three-dot menu and choose Install app or Add to Home screen."}</p>
+          <MoreVertical size={16} className="mt-2 text-cyan-200" aria-hidden="true" />
         </div>
       ) : (
         <button type="button" onClick={() => void install()} className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200">
