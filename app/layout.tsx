@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { PwaInstallPrompt } from "@/components/layout/PwaInstallPrompt";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 import { ThemeProvider } from "@/lib/theme/theme-provider";
 import "./globals.css";
@@ -12,9 +13,15 @@ export const metadata: Metadata = {
   creator: "CMA Consulting",
   publisher: "CMA Consulting",
   icons: {
-    icon: "/icon.png",
+    icon: "/brand/cma-app-icon-192.png",
     shortcut: "/favicon.ico",
-    apple: "/apple-icon.png",
+    apple: "/brand/cma-app-icon-apple-180.png",
+  },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "CMA Markets",
+    statusBarStyle: "black-translucent",
   },
   robots: {
     index: false,
@@ -41,6 +48,14 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+  themeColor: "#0b0f14",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -48,14 +63,17 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="es"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
       className="h-full antialiased"
     >
       <body className="min-h-full">
         <ThemeProvider>
-          <LanguageProvider>{children}</LanguageProvider>
+          <LanguageProvider>
+            <PwaInstallPrompt />
+            {children}
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

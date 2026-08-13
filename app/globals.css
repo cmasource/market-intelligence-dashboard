@@ -65,6 +65,10 @@ body {
   font-family: var(--font-cma-sans);
 }
 
+.cma-pwa-install-panel {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
 :root[data-theme="light"] .text-white,
 :root[data-theme="light"] .text-slate-100,
 :root[data-theme="light"] .text-slate-200 {
