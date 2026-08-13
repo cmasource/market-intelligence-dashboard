@@ -56,7 +56,10 @@ export function MarketTicker() {
 
     async function loadTicker() {
       try {
-        const response = await fetch("/api/market-ticker", { signal: controller.signal });
+        const response = await fetch("/api/market-ticker", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
         if (!response.ok) throw new Error(`Ticker API returned HTTP ${response.status}.`);
         const data = (await response.json()) as TickerResponse;
         if (!controller.signal.aborted) setItems(data.items);
@@ -69,10 +72,17 @@ export function MarketTicker() {
 
     void loadTicker();
     const interval = window.setInterval(loadTicker, 60_000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") void loadTicker();
+    };
+    window.addEventListener("focus", loadTicker);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       controller.abort();
       window.clearInterval(interval);
+      window.removeEventListener("focus", loadTicker);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 

@@ -89,6 +89,12 @@ test.describe("CMA Markets public smoke tests", () => {
     await expect(page.getByText("Inteligencia financiera para entender el mercado antes de tomar una decisión.", { exact: true })).toBeVisible();
   });
 
+  test("PWA metadata exposes the high-contrast Apple icon and safe status bar", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute("href", "/brand/cma-app-icon-apple-v2-180.png");
+    await expect(page.locator('meta[name="apple-mobile-web-app-status-bar-style"]')).toHaveAttribute("content", "black");
+  });
+
   test("authentication foundation exposes public entry points and protects account", async ({ page }) => {
     test.setTimeout(60_000);
     await page.goto("/auth/login?next=%2Faccount", { waitUntil: "domcontentloaded" });
@@ -309,6 +315,13 @@ test.describe("CMA Markets public smoke tests", () => {
   });
 
   test("market and analysis APIs keep stable public contracts and hide secrets", async ({ request }) => {
+    const tickerResponse = await request.get("/api/market-ticker");
+    expect(tickerResponse.ok()).toBeTruthy();
+    expect(tickerResponse.headers()["cache-control"]).toContain("s-maxage=30");
+    const ticker = await tickerResponse.json();
+    expect(new Date(ticker.fetchedAt).getTime()).toBeGreaterThan(Date.now() - 120_000);
+    expect(ticker.items.map((item: { id: string }) => item.id)).toEqual(expect.arrayContaining(["merval", "sp500", "nasdaq"]));
+
     const quoteResponse = await request.get("/api/market-data/quote/AAPL");
     expect(quoteResponse.ok()).toBeTruthy();
     const quote = await quoteResponse.json();

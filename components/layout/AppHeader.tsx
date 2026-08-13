@@ -9,7 +9,7 @@ type AppHeaderProps = {
 
 export function AppHeader({ onOpenMobileNav }: AppHeaderProps) {
   return (
-    <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-3 border-b border-[var(--cma-border-soft)] bg-[color-mix(in_srgb,var(--cma-bg-base)_94%,transparent)] px-3 backdrop-blur-xl sm:px-4">
+    <header className="cma-app-header sticky top-0 z-20 flex shrink-0 items-center gap-3 border-b border-[var(--cma-border-soft)] bg-[color-mix(in_srgb,var(--cma-bg-base)_94%,transparent)] px-3 backdrop-blur-xl sm:px-4">
       <button
         type="button"
         onClick={onOpenMobileNav}

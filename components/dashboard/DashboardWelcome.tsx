@@ -19,6 +19,11 @@ type TickerItem = {
   currency: string;
 };
 
+type TickerResponse = {
+  items?: TickerItem[];
+  fetchedAt?: string;
+};
+
 const preferredMetrics = ["merval", "sp500", "usd-bolsa", "nasdaq"];
 
 function formatMetric(item: TickerItem, language: "en" | "es") {
@@ -32,14 +37,41 @@ export function DashboardWelcome({ assets }: DashboardWelcomeProps) {
   const { language } = useLanguage();
   const isSpanish = language === "es";
   const [items, setItems] = useState<TickerItem[]>([]);
+  const [fetchedAt, setFetchedAt] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/market-ticker", { signal: controller.signal })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((payload: { items?: TickerItem[] } | null) => setItems(payload?.items ?? []))
-      .catch(() => setItems([]));
-    return () => controller.abort();
+
+    async function loadMetrics() {
+      try {
+        const response = await fetch("/api/market-ticker", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const payload = response.ok ? (await response.json()) as TickerResponse : null;
+        if (!controller.signal.aborted) {
+          setItems(payload?.items ?? []);
+          setFetchedAt(payload?.fetchedAt ?? null);
+        }
+      } catch {
+        if (!controller.signal.aborted) setItems([]);
+      }
+    }
+
+    void loadMetrics();
+    const interval = window.setInterval(loadMetrics, 60_000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") void loadMetrics();
+    };
+    window.addEventListener("focus", loadMetrics);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      controller.abort();
+      window.clearInterval(interval);
+      window.removeEventListener("focus", loadMetrics);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   const metrics = useMemo(() => {
@@ -87,7 +119,16 @@ export function DashboardWelcome({ assets }: DashboardWelcomeProps) {
               aria-label={isSpanish ? "Datos con actualización continua" : "Continuously updated data"}
             >
               <Clock3 size={13} aria-hidden="true" />
-              <span className="hidden sm:inline">{isSpanish ? "Actualización continua" : "Continuous updates"}</span>
+              <span className="hidden sm:inline">
+                {fetchedAt
+                  ? `${isSpanish ? "Actualizado" : "Updated"} ${new Intl.DateTimeFormat(isSpanish ? "es-AR" : "en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: false,
+                      timeZone: "America/Argentina/Buenos_Aires",
+                    }).format(new Date(fetchedAt))}`
+                  : isSpanish ? "Actualizando" : "Updating"}
+              </span>
             </span>
           </div>
           <div className="mt-3 grid grid-cols-2 xl:block" aria-live="polite">

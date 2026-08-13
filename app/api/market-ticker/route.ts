@@ -1,5 +1,8 @@
 import { getArgentinaDollarReferences } from "@/lib/market-data/argentina-references";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type TickerItem = {
   id: string;
   label: string;
@@ -38,7 +41,7 @@ function okItem(item: Omit<TickerItem, "status">): TickerItem {
 async function getYahooIndexItem(input: { id: string; label: string; symbol: string }): Promise<TickerItem> {
   const response = await fetch(
     `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(input.symbol)}?range=5d&interval=1d`,
-    { next: { revalidate: 60 } },
+    { next: { revalidate: 30 }, signal: AbortSignal.timeout(7_000) },
   );
   if (!response.ok) throw new Error(`Yahoo chart returned HTTP ${response.status}.`);
 
@@ -99,7 +102,7 @@ export async function GET() {
     },
     {
       headers: {
-        "Cache-Control": "s-maxage=60, stale-while-revalidate=300",
+        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=15",
       },
     },
   );
