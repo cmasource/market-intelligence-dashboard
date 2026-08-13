@@ -3,7 +3,7 @@ import { getArgentinaQuote } from "@/lib/argentina";
 import { getMarketQuote } from "@/lib/market-data";
 import { analyzeTradeRadar } from "@/lib/technical/trade-radar";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { EmailNotificationChannel, InAppNotificationChannel, WhatsappNotificationChannel } from "./channels";
+import { EmailNotificationChannel, InAppNotificationChannel } from "./channels";
 import { arbitrageInstrumentId, evaluateArbitrageAlert } from "./arbitrage";
 import { canReactivate, classifyAlertAssetType, deduplicationKey, evaluateAlertRules } from "./engine";
 import { evaluatePersonalAlert, isPersonalQuoteFresh } from "./personal";
@@ -171,10 +171,9 @@ function marketFromItem(item: ItemRow) {
 async function dispatchScheduledExternalDeliveries(supabase: SupabaseClient, now: Date, preferencesByUser: Map<string, AlertPreferences>) {
   const pending = await supabase.from("alert_deliveries")
     .select("alert_event_id,user_id,channel,alert_events(title,summary)")
-    .in("channel", ["email", "whatsapp"]).eq("status", "pending").lte("scheduled_at", now.toISOString()).limit(100);
+    .eq("channel", "email").eq("status", "pending").lte("scheduled_at", now.toISOString()).limit(100);
   if (pending.error) throw pending.error;
   const emailChannel = new EmailNotificationChannel(supabase);
-  const whatsappChannel = new WhatsappNotificationChannel(supabase);
   const recipientEmails = new Map<string, string | null>();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "")
     ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null);
@@ -192,9 +191,6 @@ async function dispatchScheduledExternalDeliveries(supabase: SupabaseClient, now
         recipientEmails.set(row.user_id, userResult.data.user?.email ?? null);
       }
       await emailChannel.send({ ...delivery, recipientEmail: recipientEmails.get(row.user_id) });
-    }
-    if (row.channel === "whatsapp" && preferences.whatsappEnabled) {
-      await whatsappChannel.send({ ...delivery, recipientWhatsapp: preferences.whatsappPhoneE164 });
     }
   }
 }
@@ -284,7 +280,6 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
     }
     const inAppChannel = new InAppNotificationChannel(supabase);
     const emailChannel = new EmailNotificationChannel(supabase);
-    const whatsappChannel = new WhatsappNotificationChannel(supabase);
     const recipientEmails = new Map<string, string | null>();
 
     for (const item of uniqueItems.values()) {
@@ -433,9 +428,6 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
             }
             await emailChannel.send({ ...delivery, recipientEmail: recipientEmails.get(item.user_id) });
           }
-          if (preferencesForUser.whatsappEnabled) {
-            await whatsappChannel.send({ ...delivery, recipientWhatsapp: preferencesForUser.whatsappPhoneE164 });
-          }
           summary.createdEvents += 1;
         }
 
@@ -552,9 +544,6 @@ export async function runAlertEvaluation(now = new Date(), suppliedClient?: Supa
                 recipientEmails.set(subscription.userId, userResult.data.user?.email ?? null);
               }
               await emailChannel.send({ ...delivery, recipientEmail: recipientEmails.get(subscription.userId) });
-            }
-            if (preferencesForUser.whatsappEnabled) {
-              await whatsappChannel.send({ ...delivery, recipientWhatsapp: preferencesForUser.whatsappPhoneE164 });
             }
             summary.createdEvents += 1;
           } catch {

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   describePersonalAlert,
@@ -44,4 +45,12 @@ test("evaluation schedule is transparent by market", () => {
   assert.match(personalAlertSchedule("crypto", "crypto", "es"), /cada 5 minutos/);
   assert.match(personalAlertSchedule("cedear", "cedear", "es"), /rueda argentina/);
   assert.match(personalAlertSchedule("stock", "us", "es"), /mercado correspondiente/);
+});
+
+test("alert preferences expose only web and email delivery channels", () => {
+  const source = readFileSync("components/alerts/AlertPreferencesForm.tsx", "utf8");
+  assert.match(source, /Notificaciones en la web/);
+  assert.match(source, /Email/);
+  assert.doesNotMatch(source, />WhatsApp</);
+  assert.match(source, /whatsappEnabled: false, whatsappPhoneE164: null/);
 });
