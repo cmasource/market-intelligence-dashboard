@@ -1,5 +1,6 @@
 import { instrumentUniverse } from "./universe";
 import type { InstrumentRelationType, InstrumentUniverseItem, RelatedInstrument } from "./types";
+import { getAssetHref } from "@/lib/instruments/assetHref";
 
 export const INSTRUMENT_UNIVERSE: InstrumentUniverseItem[] = instrumentUniverse;
 
@@ -46,23 +47,36 @@ export function getInstrumentBySymbol(symbol: string) {
   return INSTRUMENT_UNIVERSE.find((instrument) => instrument.symbol === normalized) ?? null;
 }
 
-export function getRelatedInstruments(symbol: string): RelatedInstrument[] {
-  const instrument = getInstrumentBySymbol(symbol);
-  if (!instrument) return [];
+export function getUniverseInstrument(params: { symbol: string; instrumentId?: string }) {
+  if (params.instrumentId) {
+    const byId = INSTRUMENT_UNIVERSE.find((instrument) => instrument.instrumentId === params.instrumentId);
+    if (byId) return byId;
+  }
+  return getInstrumentBySymbol(params.symbol);
+}
 
-  return instrument.relatedSymbols
-    .map((relatedSymbol) => getInstrumentBySymbol(relatedSymbol))
-    .filter((item): item is InstrumentUniverseItem => Boolean(item))
+export function getRelatedInstruments(symbol: string, instrumentId?: string): RelatedInstrument[] {
+  const instrument = getUniverseInstrument({ symbol, instrumentId });
+  if (!instrument) return [];
+  const identitySymbols = new Set(instrument.relatedSymbols.map(normalizeSymbol));
+  if (instrument.underlyingSymbol) identitySymbols.add(normalizeSymbol(instrument.underlyingSymbol));
+
+  return INSTRUMENT_UNIVERSE
+    .filter((item) => item.instrumentId === instrument.instrumentId
+      || identitySymbols.has(normalizeSymbol(item.symbol))
+      || Boolean(item.underlyingSymbol && identitySymbols.has(normalizeSymbol(item.underlyingSymbol))))
     .map((item) => {
       const relationType = item.relationType ?? "unknown";
+      const relatedInstrumentId = item.instrumentId ?? `${item.category}:${item.symbol}`;
       return {
+        instrumentId: relatedInstrumentId,
         symbol: item.symbol,
         displayName: item.displayName,
         category: item.category,
         relationType,
         currency: item.quoteCurrency ?? item.currency,
         market: item.market,
-        href: `/asset/${encodeURIComponent(item.symbol)}`,
+        href: getAssetHref(item.symbol, item.instrumentId),
         label: getInstrumentRelationshipLabel(relationType),
         labelEs: getInstrumentRelationshipLabel(relationType, "es"),
         labelEn: getInstrumentRelationshipLabel(relationType, "en"),
@@ -71,16 +85,18 @@ export function getRelatedInstruments(symbol: string): RelatedInstrument[] {
     });
 }
 
-export function getPrimaryInstrument(symbol: string) {
-  const instrument = getInstrumentBySymbol(symbol);
+export function getPrimaryInstrument(symbol: string, instrumentId?: string) {
+  const instrument = getUniverseInstrument({ symbol, instrumentId });
   if (!instrument) return null;
-  return getInstrumentBySymbol(instrument.primarySymbol ?? instrument.symbol);
+  const primarySymbol = instrument.underlyingSymbol ?? instrument.primarySymbol ?? instrument.symbol;
+  return INSTRUMENT_UNIVERSE.find((candidate) => candidate.symbol === primarySymbol && candidate.country === "US")
+    ?? getInstrumentBySymbol(primarySymbol);
 }
 
 export function isPrimaryInstrument(symbol: string) {
   return getInstrumentBySymbol(symbol)?.isPrimary ?? false;
 }
 
-export function hasRelatedInstruments(symbol: string) {
-  return getRelatedInstruments(symbol).length > 1;
+export function hasRelatedInstruments(symbol: string, instrumentId?: string) {
+  return getRelatedInstruments(symbol, instrumentId).length > 1;
 }

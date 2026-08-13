@@ -9,6 +9,7 @@ import { useArgentinaQuotes } from "@/lib/hooks/useArgentinaQuotes";
 import { useProviderQuotes } from "@/lib/hooks/useProviderQuotes";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { searchInstrumentUniverse, type InstrumentUniverseItem } from "@/lib/instrument-universe";
+import { getAssetHref } from "@/lib/instruments/assetHref";
 import { isProviderQuoteSupported } from "@/lib/market-data/provider-symbols";
 import type { Asset } from "@/types/asset";
 
@@ -221,7 +222,7 @@ export function AssetSearch({ assets, variant = "default" }: AssetSearchProps) {
                 <p className="pt-2 text-xs uppercase tracking-[0.16em] text-slate-500">{group}</p>
               ) : null}
               <Link
-                href={`/asset/${encodeURIComponent(instrument.symbol)}`}
+                href={getAssetHref(instrument.symbol, instrument.instrumentId)}
                 onClick={() => saveRecentSymbol(instrument.symbol)}
                 className={`group grid gap-3 rounded-md border p-3 transition sm:grid-cols-[minmax(0,1fr)_auto] ${resultTone(instrument)}`}
               >

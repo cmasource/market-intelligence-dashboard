@@ -12,7 +12,7 @@ type AssetAnalysisContextValue = {
 
 const AssetAnalysisContext = createContext<AssetAnalysisContextValue | null>(null);
 
-export function AssetAnalysisProvider({ symbol, enabled = true, children }: { symbol: string; enabled?: boolean; children: ReactNode }) {
+export function AssetAnalysisProvider({ symbol, instrumentId, enabled = true, children }: { symbol: string; instrumentId?: string; enabled?: boolean; children: ReactNode }) {
   const { language } = useLanguage();
   const [bundle, setBundle] = useState<AssetAnalysisBundle | null>(null);
   const [loading, setLoading] = useState(enabled);
@@ -30,8 +30,10 @@ export function AssetAnalysisProvider({ symbol, enabled = true, children }: { sy
       setError(null);
 
       try {
+        const searchParams = new URLSearchParams({ language });
+        if (instrumentId) searchParams.set("instrumentId", instrumentId);
         const response = await fetch(
-          `/api/analysis/asset/${encodeURIComponent(symbol)}?language=${language}`,
+          `/api/analysis/asset/${encodeURIComponent(symbol)}?${searchParams.toString()}`,
           { signal: controller.signal },
         );
         if (!response.ok) throw new Error(`Asset analysis API returned HTTP ${response.status}.`);
@@ -48,7 +50,7 @@ export function AssetAnalysisProvider({ symbol, enabled = true, children }: { sy
 
     void load();
     return () => controller.abort();
-  }, [enabled, language, symbol]);
+  }, [enabled, instrumentId, language, symbol]);
 
   const value = useMemo(() => ({ bundle, loading, error }), [bundle, error, loading]);
 

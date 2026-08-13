@@ -71,7 +71,7 @@ export function MarketTicker() {
     }
 
     void loadTicker();
-    const interval = window.setInterval(loadTicker, 60_000);
+    const interval = window.setInterval(loadTicker, 30_000);
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") void loadTicker();
     };

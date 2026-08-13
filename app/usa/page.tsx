@@ -14,6 +14,7 @@ import { useLanguage } from "@/lib/i18n/useLanguage";
 import { instrumentUniverse, type InstrumentUniverseItem } from "@/lib/instrument-universe";
 import type { TechnicalAnalysisResponse } from "@/lib/analysis/types";
 import { nextSortState, sortTableRows, type SortState } from "@/lib/ui/sortable-table";
+import { getAssetHref } from "@/lib/instruments/assetHref";
 
 type View = "overview" | "stocks" | "indicators" | "cedearUnderlyings" | "etfs";
 const pageSize = 10;
@@ -57,22 +58,7 @@ export default function UsaPage() {
       return true;
     });
   }, []);
-  const allStocks = useMemo(() => {
-    const bySymbol = new Map<string, InstrumentUniverseItem>();
-    cedearUnderlyings.forEach((item) => {
-      const symbol = item.underlyingSymbol ?? item.symbol;
-      bySymbol.set(symbol, {
-        ...item,
-        symbol,
-        category: "equity",
-        country: "US",
-        displayName: item.displayName.replace(/\s+CEDEAR$/i, ""),
-        primarySymbol: item.primarySymbol ?? symbol,
-      });
-    });
-    stocks.forEach((item) => bySymbol.set(item.symbol, item));
-    return Array.from(bySymbol.values()).sort((left, right) => left.symbol.localeCompare(right.symbol));
-  }, [cedearUnderlyings, stocks]);
+  const allStocks = stocks;
   const selected = useMemo(() => {
     const source = view === "etfs" ? etfs : view === "cedearUnderlyings" ? cedearUnderlyings : allStocks;
     const normalized = query.trim().toLowerCase();
@@ -157,7 +143,7 @@ export default function UsaPage() {
                   const analysis = analyses[analysisSymbol];
                   const score = analysis?.technicalScore;
                   const showsIndicators = ["indicators", "cedearUnderlyings"].includes(view);
-                  return <tr key={`${instrument.symbol}-${analysisSymbol}`} className="border-t border-white/10 hover:bg-cyan-300/[0.045]"><td className="px-4 py-3"><span className="flex items-center gap-3"><AssetLogo symbol={analysisSymbol} name={instrument.displayName} type={instrument.category} size="sm" /><span><span className="block font-semibold text-white">{analysisSymbol}</span><span className="block max-w-64 truncate text-xs text-slate-400">{instrument.displayName}</span></span></span></td><td className="px-4 py-3 font-medium text-slate-100">{typeof quote?.price === "number" ? formatCurrencyValue(quote.price, quote.currency, language) : "-"}</td><td className={`px-4 py-3 font-semibold ${typeof quote?.changePercent === "number" ? quote.changePercent >= 0 ? "text-emerald-300" : "text-rose-300" : "text-slate-500"}`}>{typeof quote?.changePercent === "number" ? formatPercent(quote.changePercent) : "-"}</td>{showsIndicators ? <><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${tone(score)}`}>{analysis === undefined ? "..." : score ?? "-"}</span></td><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${rsiTone(analysis?.snapshot.rsi14)}`}>{analysis === undefined ? "..." : analysis?.snapshot.rsi14?.toFixed(1) ?? "-"}</span></td><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${macdTone(analysis)}`}>{analysis === undefined ? "..." : analysis?.snapshot.macd?.toFixed(2) ?? "-"}</span></td><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${tone(score)}`}>{analysis === undefined ? "..." : typeof score === "number" ? score >= 65 ? (isSpanish ? "Compra" : "Buy") : score <= 35 ? (isSpanish ? "Venta" : "Sell") : (isSpanish ? "Esperar" : "Wait") : (isSpanish ? "Sin analisis" : "No analysis")}</span></td></> : null}<td className="px-4 py-3 text-right"><Link href={`/asset/${encodeURIComponent(analysisSymbol)}`} className="font-semibold text-cyan-200 hover:text-white">{isSpanish ? "Abrir" : "Open"}</Link></td></tr>;
+                  return <tr key={instrument.instrumentId ?? `${instrument.category}:${instrument.symbol}`} className="border-t border-white/10 hover:bg-cyan-300/[0.045]"><td className="px-4 py-3"><span className="flex items-center gap-3"><AssetLogo symbol={analysisSymbol} name={instrument.displayName} type={instrument.category} size="sm" /><span><span className="block font-semibold text-white">{analysisSymbol}</span><span className="block max-w-64 truncate text-xs text-slate-400">{instrument.displayName}</span></span></span></td><td className="px-4 py-3 font-medium text-slate-100">{typeof quote?.price === "number" ? formatCurrencyValue(quote.price, quote.currency, language) : "-"}</td><td className={`px-4 py-3 font-semibold ${typeof quote?.changePercent === "number" ? quote.changePercent >= 0 ? "text-emerald-300" : "text-rose-300" : "text-slate-500"}`}>{typeof quote?.changePercent === "number" ? formatPercent(quote.changePercent) : "-"}</td>{showsIndicators ? <><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${tone(score)}`}>{analysis === undefined ? "..." : score ?? "-"}</span></td><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${rsiTone(analysis?.snapshot.rsi14)}`}>{analysis === undefined ? "..." : analysis?.snapshot.rsi14?.toFixed(1) ?? "-"}</span></td><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${macdTone(analysis)}`}>{analysis === undefined ? "..." : analysis?.snapshot.macd?.toFixed(2) ?? "-"}</span></td><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${tone(score)}`}>{analysis === undefined ? "..." : typeof score === "number" ? score >= 65 ? (isSpanish ? "Compra" : "Buy") : score <= 35 ? (isSpanish ? "Venta" : "Sell") : (isSpanish ? "Esperar" : "Wait") : (isSpanish ? "Sin analisis" : "No analysis")}</span></td></> : null}<td className="px-4 py-3 text-right"><Link href={getAssetHref(instrument.symbol, instrument.instrumentId)} className="font-semibold text-cyan-200 hover:text-white">{isSpanish ? "Abrir" : "Open"}</Link></td></tr>;
                 })}</tbody>
               </table>
             </div>

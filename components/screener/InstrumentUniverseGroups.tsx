@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { formatDisplayCurrency } from "@/lib/formatters";
 import { getInstrumentUniverseGroups } from "@/lib/instrument-universe";
+import { getAssetHref } from "@/lib/instruments/assetHref";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { mockAssets } from "@/lib/mock-data";
 import { sectionAccents, type SectionAccent } from "@/lib/ui/section-accents";
@@ -141,7 +142,7 @@ export function InstrumentUniverseGroups({ argentinaOnly = false }: { argentinaO
                         </span>
                         {hasAssetPage ? (
                           <Link
-                            href={`/asset/${encodeURIComponent(instrument.symbol)}`}
+                            href={getAssetHref(instrument.symbol, instrument.instrumentId)}
                             className="rounded-lg border border-cyan-300/30 px-3 py-1.5 text-xs font-medium text-cyan-100 transition hover:bg-cyan-300/10"
                           >
                             {instrument.category === "cedear"

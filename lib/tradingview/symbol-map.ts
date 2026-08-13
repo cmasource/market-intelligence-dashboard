@@ -72,8 +72,16 @@ const verifiedTradingViewSymbols: Record<string, string> = {
   "BCH-USD": "BINANCE:BCHUSDT",
 };
 
-export function getTradingViewSymbol(symbol: string): TradingViewSymbolMapping {
+export function getTradingViewSymbol(symbol: string, instrumentId?: string): TradingViewSymbolMapping {
   const internalSymbol = symbol.trim().toUpperCase();
+  const instrument = resolveInstrument({ symbol: internalSymbol, instrumentId })?.instrument;
+  if (instrument?.tradingViewSymbol) {
+    return {
+      internalSymbol,
+      tradingViewSymbol: instrument.tradingViewSymbol,
+      verified: true,
+    };
+  }
   const tradingViewSymbol = verifiedTradingViewSymbols[internalSymbol];
 
   if (tradingViewSymbol) {
@@ -90,3 +98,4 @@ export function getTradingViewSymbol(symbol: string): TradingViewSymbolMapping {
     verified: false,
   };
 }
+import { resolveInstrument } from "@/lib/instruments/resolveInstrument";

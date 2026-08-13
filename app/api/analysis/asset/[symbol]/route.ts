@@ -6,11 +6,13 @@ export async function GET(
 ) {
   const { symbol: rawSymbol } = await context.params;
   const symbol = decodeURIComponent(rawSymbol ?? "").trim().toUpperCase();
-  const language = new URL(request.url).searchParams.get("language") === "es" ? "es" : "en";
+  const searchParams = new URL(request.url).searchParams;
+  const language = searchParams.get("language") === "es" ? "es" : "en";
+  const instrumentId = searchParams.get("instrumentId") ?? undefined;
 
   if (!symbol) return Response.json({ error: "Symbol is required." }, { status: 400 });
 
-  const analysis = await getAssetAnalysisBundle(symbol, language);
+  const analysis = await getAssetAnalysisBundle(symbol, language, instrumentId);
   return Response.json(analysis, {
     headers: {
       "Cache-Control": "s-maxage=60, stale-while-revalidate=300",

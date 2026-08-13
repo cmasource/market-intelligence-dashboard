@@ -1,4 +1,5 @@
 import type { FundamentalsAssetClass } from "./types";
+import { resolveInstrument } from "@/lib/instruments/resolveInstrument";
 
 const yahooSupported = new Set([
   "AAPL",
@@ -86,6 +87,7 @@ export function normalizeFundamentalsSymbol(symbol: string): string {
 
 export function getFundamentalsAssetClass(symbol: string): FundamentalsAssetClass {
   const normalizedSymbol = normalizeFundamentalsSymbol(symbol);
+  const instrument = resolveInstrument({ symbol: normalizedSymbol })?.instrument;
 
   if (stockSymbols.has(normalizedSymbol)) return "stock";
   if (etfSymbols.has(normalizedSymbol)) return "etf";
@@ -93,6 +95,8 @@ export function getFundamentalsAssetClass(symbol: string): FundamentalsAssetClas
   if (argentinaEquitySymbols.has(normalizedSymbol)) return "argentine_equity";
   if (cryptoSymbols.has(normalizedSymbol)) return "crypto";
   if (bondSymbols.has(normalizedSymbol)) return "bond";
+  if (instrument?.assetClass === "etf" || instrument?.assetClass === "cedear_etf") return "etf";
+  if (instrument?.assetClass === "stock" || instrument?.assetClass === "adr" || instrument?.assetClass === "cedear") return "stock";
 
   return "unknown";
 }
@@ -101,7 +105,13 @@ export function getYahooFundamentalsSymbol(symbol: string): string | null {
   const normalizedSymbol = normalizeFundamentalsSymbol(symbol);
   const alias = fundamentalsAliases[normalizedSymbol];
   if (alias && yahooSupported.has(alias)) return alias;
-  return yahooSupported.has(normalizedSymbol) ? normalizedSymbol : null;
+  if (yahooSupported.has(normalizedSymbol)) return normalizedSymbol;
+  const resolution =
+    resolveInstrument({ instrumentId: `stock:${normalizedSymbol}` }) ??
+    resolveInstrument({ symbol: normalizedSymbol });
+  const instrument = resolution?.instrument;
+  if (!instrument?.dataCapabilities.some((capability) => capability === "fundamentals_full" || capability === "fundamentals_underlying")) return null;
+  return instrument.underlyingSymbol ?? instrument.providerSymbol ?? instrument.symbol;
 }
 
 export function isFundamentalsRealDataSupported(symbol: string): boolean {

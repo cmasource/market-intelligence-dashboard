@@ -7,22 +7,23 @@ import {
 } from "@/lib/instrument-universe";
 import { formatDisplayCurrency } from "@/lib/formatters";
 import { useLanguage } from "@/lib/i18n/useLanguage";
+import { getAssetHref } from "@/lib/instruments/assetHref";
 
 type RelatedInstrumentsCardProps = {
   symbol: string;
+  instrumentId?: string;
 };
 
-export function RelatedInstrumentsCard({ symbol }: RelatedInstrumentsCardProps) {
+export function RelatedInstrumentsCard({ symbol, instrumentId }: RelatedInstrumentsCardProps) {
   const { language } = useLanguage();
-  const relatedInstruments = getRelatedInstruments(symbol);
-  const primaryInstrument = getPrimaryInstrument(symbol);
-  const normalizedSymbol = symbol.toUpperCase();
+  const relatedInstruments = getRelatedInstruments(symbol, instrumentId);
+  const primaryInstrument = getPrimaryInstrument(symbol, instrumentId);
   const primaryHref =
-    primaryInstrument && primaryInstrument.symbol !== normalizedSymbol
-      ? `/asset/${encodeURIComponent(primaryInstrument.symbol)}`
+    primaryInstrument && primaryInstrument.instrumentId !== instrumentId
+      ? getAssetHref(primaryInstrument.symbol, primaryInstrument.instrumentId)
       : null;
 
-  if (!hasRelatedInstruments(symbol)) return null;
+  if (!hasRelatedInstruments(symbol, instrumentId)) return null;
 
   const isSpanish = language === "es";
 
@@ -50,7 +51,7 @@ export function RelatedInstrumentsCard({ symbol }: RelatedInstrumentsCardProps) 
 
       <div className="mt-4 flex flex-wrap gap-3">
         {relatedInstruments.map((instrument) => {
-          const isCurrent = instrument.symbol === normalizedSymbol;
+          const isCurrent = instrument.instrumentId === instrumentId;
           const label = language === "es" ? instrument.labelEs : instrument.labelEn;
           const className = isCurrent
             ? "rounded-lg border border-cyan-200/60 bg-cyan-300/15 px-4 py-3 text-sm shadow-lg shadow-cyan-950/20"
@@ -72,14 +73,14 @@ export function RelatedInstrumentsCard({ symbol }: RelatedInstrumentsCardProps) 
 
           if (isCurrent) {
             return (
-              <div key={instrument.symbol} aria-current="page" className={className}>
+              <div key={instrument.instrumentId} aria-current="page" className={className}>
                 {content}
               </div>
             );
           }
 
           return (
-            <a key={instrument.symbol} href={instrument.href} className={className}>
+            <a key={instrument.instrumentId} href={instrument.href} className={className}>
               {content}
             </a>
           );

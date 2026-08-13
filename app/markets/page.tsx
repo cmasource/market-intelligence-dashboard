@@ -5,6 +5,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { CommodityBoard } from "@/components/market/CommodityBoard";
 import { MarketHeatmap } from "@/components/market/MarketHeatmap";
 import { getInstrumentUniverseGroups, instrumentUniverse } from "@/lib/instrument-universe";
+import { getAssetHref } from "@/lib/instruments/assetHref";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { sectionAccents, type SectionAccent } from "@/lib/ui/section-accents";
 
@@ -81,7 +82,7 @@ export default function MarketsPage() {
                 {group.instruments.slice(0, 18).map((instrument) => (
                   <Link
                     key={`${group.id}-${instrument.symbol}-${instrument.category}`}
-                    href={`/asset/${encodeURIComponent(instrument.symbol)}`}
+                    href={getAssetHref(instrument.symbol, instrument.instrumentId)}
                     className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-slate-300 transition hover:border-cyan-300/40 hover:bg-cyan-300/10 hover:text-white"
                   >
                     {instrument.symbol}

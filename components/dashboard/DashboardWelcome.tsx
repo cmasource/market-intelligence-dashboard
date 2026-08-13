@@ -59,7 +59,7 @@ export function DashboardWelcome({ assets }: DashboardWelcomeProps) {
     }
 
     void loadMetrics();
-    const interval = window.setInterval(loadMetrics, 60_000);
+    const interval = window.setInterval(loadMetrics, 30_000);
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") void loadMetrics();
     };
