@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { AuthNavigation } from "@/components/auth/AuthNavigation";
 import { useLanguage } from "@/lib/i18n/useLanguage";
-import { getWatchlistCountAsync, WATCHLIST_UPDATED_EVENT } from "@/lib/watchlist";
+import { getWatchlistCountAsync, setWatchlistUser, WATCHLIST_UPDATED_EVENT } from "@/lib/watchlist";
 import { ALERTS_UPDATED_EVENT, getUnreadAlertCount } from "@/lib/alerts/client";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/client";
@@ -65,6 +65,8 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
   const { language, t } = useLanguage();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [authResolved, setAuthResolved] = useState(false);
   const [watchlistCount, setWatchlistCount] = useState(0);
   const [alertCount, setAlertCount] = useState(0);
   const [reportsOpen, setReportsOpen] = useState(pathname.startsWith("/reports"));
@@ -74,31 +76,60 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
   }, []);
 
   useEffect(() => {
-    if (!getSupabaseConfig()) return;
-    const sync = () => {
-      void createClient().auth.getSession().then(({ data }) => {
-        if (!data.session) {
-          setAlertCount(0);
-          return;
-        }
-        void getUnreadAlertCount().then(setAlertCount).catch(() => setAlertCount(0));
+    if (!getSupabaseConfig()) {
+      setWatchlistUser(null);
+      queueMicrotask(() => {
+        setAuthenticated(false);
+        setAuthResolved(true);
       });
+      return;
+    }
+
+    const supabase = createClient();
+    const applyUser = (userId: string | null) => {
+      setWatchlistUser(userId);
+      setAuthenticated(Boolean(userId));
+      setAuthResolved(true);
+      if (!userId) {
+        setAlertCount(0);
+        setWatchlistCount(0);
+        return;
+      }
+      void getUnreadAlertCount().then(setAlertCount).catch(() => setAlertCount(0));
+      void getWatchlistCountAsync().then(setWatchlistCount).catch(() => setWatchlistCount(0));
     };
-    sync();
-    window.addEventListener(ALERTS_UPDATED_EVENT, sync);
-    return () => window.removeEventListener(ALERTS_UPDATED_EVENT, sync);
+
+    void supabase.auth.getUser().then(({ data }) => applyUser(data.user?.id ?? null));
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => applyUser(session?.user?.id ?? null));
+    return () => {
+      data.subscription.unsubscribe();
+      setWatchlistUser(null);
+    };
   }, []);
 
   useEffect(() => {
-    const sync = () => { void getWatchlistCountAsync().then(setWatchlistCount); };
-    sync();
+    const sync = () => {
+      if (!authResolved || !authenticated) {
+        setWatchlistCount(0);
+        return;
+      }
+      void getWatchlistCountAsync().then(setWatchlistCount).catch(() => setWatchlistCount(0));
+    };
+    queueMicrotask(sync);
     window.addEventListener(WATCHLIST_UPDATED_EVENT, sync);
     window.addEventListener("storage", sync);
     return () => {
       window.removeEventListener(WATCHLIST_UPDATED_EVENT, sync);
       window.removeEventListener("storage", sync);
     };
-  }, []);
+  }, [authenticated, authResolved]);
+
+  useEffect(() => {
+    if (!authenticated) return;
+    const sync = () => { void getUnreadAlertCount().then(setAlertCount).catch(() => setAlertCount(0)); };
+    window.addEventListener(ALERTS_UPDATED_EVENT, sync);
+    return () => window.removeEventListener(ALERTS_UPDATED_EVENT, sync);
+  }, [authenticated]);
 
   function toggleCollapsed() {
     setCollapsed((previous) => {
@@ -184,7 +215,7 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
                   <span className="min-w-0 flex-1 truncate font-medium">
                     {t(item.labelKey)}
                     {item.labelKey === "navWatchlist" && watchlistCount > 0 ? (
-                      <span className="ml-1.5 rounded-full border border-[var(--cma-border-soft)] px-1.5 py-0.5 text-[10px] text-[var(--cma-text-muted)]">
+                      <span data-testid="watchlist-count" className="ml-1.5 rounded-full border border-[var(--cma-border-soft)] px-1.5 py-0.5 text-[10px] text-[var(--cma-text-muted)]">
                         {watchlistCount}
                       </span>
                     ) : null}
@@ -199,7 +230,7 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
         </nav>
 
         <div className="shrink-0 space-y-2 border-t border-[var(--cma-border-soft)] p-3">
-          <AuthNavigation collapsed={collapsed} onNavigate={onCloseMobile} />
+          <AuthNavigation authenticated={authenticated} collapsed={collapsed} onNavigate={onCloseMobile} />
           {!collapsed ? (
             <div className="flex flex-col gap-2">
               <AppearanceToggle />
