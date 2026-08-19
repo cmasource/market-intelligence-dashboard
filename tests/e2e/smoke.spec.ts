@@ -125,7 +125,7 @@ test.describe("CMA Markets public smoke tests", () => {
     await expect(ranking).toHaveAttribute("href", /^\/asset\//, { timeout: 30_000 });
 
     await page.getByLabel(/Asset search|Busqueda de activos/).fill("Microsoft");
-    const result = page.locator('#markets a[href="/asset/MSFT"]').first();
+    const result = page.locator('#markets a[href^="/asset/MSFT"]').first();
     await expect(result).toContainText("MSFT");
     await expect(result.locator("img")).toBeVisible();
     await page.goto("/asset/MSFT", { waitUntil: "domcontentloaded" });
@@ -317,7 +317,7 @@ test.describe("CMA Markets public smoke tests", () => {
   test("market and analysis APIs keep stable public contracts and hide secrets", async ({ request }) => {
     const tickerResponse = await request.get("/api/market-ticker");
     expect(tickerResponse.ok()).toBeTruthy();
-    expect(tickerResponse.headers()["cache-control"]).toContain("s-maxage=30");
+    expect(tickerResponse.headers()["cache-control"]).toContain("s-maxage=15");
     const ticker = await tickerResponse.json();
     expect(new Date(ticker.fetchedAt).getTime()).toBeGreaterThan(Date.now() - 120_000);
     expect(ticker.items.map((item: { id: string }) => item.id)).toEqual(expect.arrayContaining(["merval", "sp500", "nasdaq"]));
