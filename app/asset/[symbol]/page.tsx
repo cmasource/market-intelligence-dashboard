@@ -16,7 +16,6 @@ import { InteractiveAssetChart } from "@/components/charts/InteractiveAssetChart
 import { TradingViewAdvancedChart } from "@/components/charts/TradingViewAdvancedChart";
 import { AppShell } from "@/components/layout/AppShell";
 import { Badge } from "@/components/ui/Badge";
-import { isCedearSymbol } from "@/lib/cedears";
 import { assetFromInstrument } from "@/lib/assets/asset-from-instrument";
 import { resolveInstrument } from "@/lib/instruments/resolveInstrument";
 import { findAsset, mockAssets } from "@/lib/mock-data";
@@ -30,13 +29,21 @@ export function generateStaticParams() {
 
 export default async function AssetDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ symbol: string }>;
+  searchParams: Promise<{ instrumentId?: string | string[] }>;
 }) {
   const { symbol } = await params;
+  const rawInstrumentId = (await searchParams).instrumentId;
+  const instrumentId = Array.isArray(rawInstrumentId) ? rawInstrumentId[0] : rawInstrumentId;
   const normalizedSymbol = decodeURIComponent(symbol);
-  const instrumentResolution = resolveInstrument({ symbol: normalizedSymbol });
-  const asset = findAsset(normalizedSymbol) ?? (instrumentResolution ? assetFromInstrument(instrumentResolution.instrument) : null);
+  const instrumentResolution = resolveInstrument({ symbol: normalizedSymbol, instrumentId });
+  const resolvedAsset = instrumentResolution ? assetFromInstrument(instrumentResolution.instrument) : null;
+  const mockAsset = findAsset(normalizedSymbol);
+  const asset = mockAsset && (!resolvedAsset || (mockAsset.type === resolvedAsset.type && mockAsset.currency === resolvedAsset.currency))
+    ? mockAsset
+    : resolvedAsset;
 
   if (!asset) {
     return (
@@ -46,19 +53,20 @@ export default async function AssetDetailPage({
     );
   }
 
-  const tradingViewMapping = getTradingViewSymbol(asset.symbol);
+  const resolvedInstrumentId = instrumentResolution?.instrument.id;
+  const tradingViewMapping = getTradingViewSymbol(asset.symbol, resolvedInstrumentId);
   const isFixedIncome = ["sovereign_bond", "cer_bond", "corporate_bond", "letra"].includes(asset.type);
 
   return (
     <AppShell width="asset">
       <AssetQuoteProvider symbol={asset.symbol} isArgentina={Boolean(asset.argentinaContext)}>
-      <AssetAnalysisProvider symbol={asset.symbol} enabled={!isFixedIncome}>
+      <AssetAnalysisProvider symbol={asset.symbol} instrumentId={resolvedInstrumentId} enabled={!isFixedIncome}>
       <div className="space-y-6">
         <AssetHeader asset={asset} />
         {!isFixedIncome ? <InvestmentDecisionPanel asset={asset} /> : null}
         {!isFixedIncome ? <ResearchTearsheetCard asset={asset} /> : null}
         {tradingViewMapping.verified ? (
-          <TradingViewAdvancedChart symbol={asset.symbol} height={620} />
+          <TradingViewAdvancedChart symbol={asset.symbol} instrumentId={resolvedInstrumentId} height={620} />
         ) : (
           <section className="cma-panel-elevated p-4 sm:p-5" data-testid="price-action-section">
             <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -95,11 +103,11 @@ export default async function AssetDetailPage({
               fallbackFundamentalScore={asset.fundamentalScore}
               currency={asset.currency}
             /> : null}
-            {isCedearSymbol(asset.symbol) ? <CedearAnalyticsCard symbol={asset.symbol} /> : null}
+            {asset.type === "cedear" ? <CedearAnalyticsCard symbol={asset.symbol} /> : null}
           </aside>
         </div>
         <AssetSecondaryDetails symbol={asset.symbol} />
-        <RelatedInstrumentsCard symbol={asset.symbol} />
+        <RelatedInstrumentsCard symbol={asset.symbol} instrumentId={resolvedInstrumentId} />
         <AssetDisclaimer />
       </div>
       </AssetAnalysisProvider>

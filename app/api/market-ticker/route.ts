@@ -1,4 +1,8 @@
 import { getArgentinaDollarReferences } from "@/lib/market-data/argentina-references";
+import { normalizeMarketIndexSnapshot } from "@/lib/market-data/market-index-normalizer";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type TickerItem = {
   id: string;
@@ -16,9 +20,12 @@ type YahooChartResponse = {
     result?: Array<{
       meta?: {
         regularMarketPrice?: number;
-        chartPreviousClose?: number;
-        regularMarketChangePercent?: number;
+        regularMarketTime?: number;
         currency?: string;
+      };
+      timestamp?: number[];
+      indicators?: {
+        quote?: Array<{ close?: Array<number | null> }>;
       };
     }>;
   };
@@ -38,29 +45,28 @@ function okItem(item: Omit<TickerItem, "status">): TickerItem {
 async function getYahooIndexItem(input: { id: string; label: string; symbol: string }): Promise<TickerItem> {
   const response = await fetch(
     `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(input.symbol)}?range=5d&interval=1d`,
-    { next: { revalidate: 60 } },
+    { cache: "no-store", signal: AbortSignal.timeout(7_000) },
   );
   if (!response.ok) throw new Error(`Yahoo chart returned HTTP ${response.status}.`);
 
   const json = (await response.json()) as YahooChartResponse;
-  const meta = json.chart?.result?.[0]?.meta;
-  const value = meta?.regularMarketPrice ?? null;
-  const previousClose = meta?.chartPreviousClose ?? null;
-  const changePercent =
-    typeof meta?.regularMarketChangePercent === "number"
-      ? meta.regularMarketChangePercent
-      : typeof value === "number" && typeof previousClose === "number" && previousClose > 0
-        ? ((value - previousClose) / previousClose) * 100
-        : null;
+  const result = json.chart?.result?.[0];
+  const normalized = normalizeMarketIndexSnapshot({
+    regularMarketPrice: result?.meta?.regularMarketPrice,
+    regularMarketTime: result?.meta?.regularMarketTime,
+    currency: result?.meta?.currency,
+    timestamps: result?.timestamp,
+    closes: result?.indicators?.quote?.[0]?.close,
+  });
 
   return okItem({
     id: input.id,
     label: input.label,
-    value,
-    changePercent,
-    currency: meta?.currency ?? "USD",
-    source: "Yahoo compatible",
-    updatedAt: new Date().toISOString(),
+    value: normalized.value,
+    changePercent: normalized.changePercent,
+    currency: normalized.currency,
+    source: "Yahoo Finance",
+    updatedAt: normalized.updatedAt,
   });
 }
 
@@ -80,7 +86,7 @@ export async function GET() {
             value: null,
             changePercent: null,
             currency: "USD",
-            source: "Yahoo compatible",
+            source: "Yahoo Finance",
             updatedAt: null,
           }),
         ],
@@ -94,12 +100,12 @@ export async function GET() {
     {
       items,
       fetchedAt: new Date().toISOString(),
-      sources: [...dollarSources, "Yahoo compatible"],
+      sources: [...dollarSources, "Yahoo Finance"],
       sourceStatus: dollarResult.sources,
     },
     {
       headers: {
-        "Cache-Control": "s-maxage=60, stale-while-revalidate=300",
+        "Cache-Control": "public, s-maxage=15, stale-while-revalidate=10",
       },
     },
   );

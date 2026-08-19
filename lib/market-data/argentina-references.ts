@@ -154,7 +154,7 @@ export function mergeDollarReferences(criptoYa: Candidate[], dolarApi: Candidate
 async function readJson(url: string, revalidate: number) {
   const response = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "CMA-Market-Intelligence/1.0 (+public-market-references)" },
-    next: { revalidate },
+    ...(revalidate > 0 ? { next: { revalidate } } : { cache: "no-store" as const }),
     signal: AbortSignal.timeout(7_000),
   });
   if (!response.ok) throw new Error(`Reference source returned HTTP ${response.status}`);
@@ -167,8 +167,8 @@ async function readJson(url: string, revalidate: number) {
 
 export async function getArgentinaDollarReferences(now = new Date()) {
   const [criptoYaResult, dolarApiResult] = await Promise.allSettled([
-    readJson(`${CRIPTOYA_BASE_URL}/dolar`, 60),
-    readJson(DOLAR_API_URL, 300),
+    readJson(`${CRIPTOYA_BASE_URL}/dolar`, 30),
+    readJson(DOLAR_API_URL, 30),
   ]);
   const criptoYa = criptoYaResult.status === "fulfilled" ? normalizeCriptoYaDollarPayload(criptoYaResult.value) : [];
   const dolarApi = dolarApiResult.status === "fulfilled" ? normalizeDolarApiPayload(dolarApiResult.value) : [];

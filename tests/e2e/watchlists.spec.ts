@@ -104,4 +104,18 @@ test.describe("multiple local watchlists", () => {
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBeTruthy();
     await expect(page.getByLabel("Seleccionar lista")).toBeVisible();
   });
+
+  test("does not present anonymous local assets as an account count", async ({ page }) => {
+    await page.goto("/watchlist");
+    await page.getByRole("button", { name: "Agregar activo" }).first().click();
+    const dialog = page.getByRole("dialog", { name: "Agregar activo" });
+    await dialog.getByLabel("Ticker o nombre").fill("Microsoft");
+    await dialog.getByRole("button", { name: /MSFT.*Microsoft/i }).first().click();
+    await dialog.getByRole("button", { name: "Cerrar" }).click();
+
+    const watchlistLink = page.locator('nav a[href="/watchlist"]');
+    await expect(watchlistLink).toBeVisible();
+    await expect(watchlistLink.getByTestId("watchlist-count")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /Iniciar sesi|Sign in/ })).toBeVisible();
+  });
 });

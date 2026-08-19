@@ -15,13 +15,13 @@ export const metadata: Metadata = {
   icons: {
     icon: "/brand/cma-app-icon-192.png",
     shortcut: "/favicon.ico",
-    apple: "/brand/cma-app-icon-apple-180.png",
+    apple: "/brand/cma-app-icon-apple-v2-180.png",
   },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     title: "CMA Markets",
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "black",
   },
   robots: {
     index: false,

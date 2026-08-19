@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AssetLogo } from "@/components/assets/AssetLogo";
 import type { CedearAnalytics } from "@/lib/cedears";
 import { useLanguage } from "@/lib/i18n/useLanguage";
+import { getAssetHref } from "@/lib/instruments/assetHref";
 
 type CedearMarketGridProps = {
   fallbackItems: Array<{
@@ -78,7 +79,7 @@ export function CedearMarketGrid({ fallbackItems }: CedearMarketGridProps) {
       {visibleItems.map((cedear) => (
         <Link
           key={cedear.localSymbol}
-          href={`/asset/${encodeURIComponent(cedear.localSymbol)}`}
+          href={getAssetHref(cedear.localSymbol, `cedear:${cedear.localSymbol}`)}
           className="min-w-0 rounded-lg border border-white/10 bg-slate-950/45 p-3 transition hover:border-violet-300/40 hover:bg-violet-300/10"
         >
           <div className="flex items-start justify-between gap-3">

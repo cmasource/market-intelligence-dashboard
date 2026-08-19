@@ -17,6 +17,7 @@ import {
   type InstrumentUniverseFilters,
 } from "@/lib/instrument-universe";
 import type { InstrumentUniverseItem } from "@/lib/instrument-universe";
+import { getAssetHref } from "@/lib/instruments/assetHref";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { useTheme } from "@/lib/theme/useTheme";
 
@@ -260,7 +261,7 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
               <div className="mt-5 flex flex-wrap gap-2">
                 {hasAssetPage ? (
                   <Link
-                    href={`/asset/${encodeURIComponent(instrument.symbol)}`}
+                    href={getAssetHref(instrument.symbol, instrument.instrumentId)}
                     className="inline-flex rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-300/15 hover:text-white"
                   >
                     {instrument.category === "cedear"

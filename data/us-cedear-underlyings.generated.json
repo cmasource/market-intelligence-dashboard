@@ -1,0 +1,2585 @@
+{
+  "generatedAt": "2026-08-13T15:32:07.740Z",
+  "sources": [
+    "https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt",
+    "https://www.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt"
+  ],
+  "instruments": [
+    {
+      "symbol": "AAL",
+      "name": "American Airlines Group, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:AAL"
+    },
+    {
+      "symbol": "AAP",
+      "name": "Advance Auto Parts Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:AAP"
+    },
+    {
+      "symbol": "AAPL",
+      "name": "Apple Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:AAPL"
+    },
+    {
+      "symbol": "ABBV",
+      "name": "AbbVie Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:ABBV"
+    },
+    {
+      "symbol": "ABEV",
+      "name": "Ambev S.A.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:ABEV"
+    },
+    {
+      "symbol": "ABNB",
+      "name": "Airbnb, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:ABNB"
+    },
+    {
+      "symbol": "ABT",
+      "name": "Abbott Laboratories",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:ABT"
+    },
+    {
+      "symbol": "ACN",
+      "name": "Accenture plc Class A",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:ACN"
+    },
+    {
+      "symbol": "ACWI",
+      "name": "iShares MSCI ACWI ETF",
+      "exchange": "NASDAQ",
+      "assetClass": "etf",
+      "tradingViewSymbol": "NASDAQ:ACWI"
+    },
+    {
+      "symbol": "ADBE",
+      "name": "Adobe Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:ADBE"
+    },
+    {
+      "symbol": "ADI",
+      "name": "Analog Devices, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:ADI"
+    },
+    {
+      "symbol": "ADP",
+      "name": "Automatic Data Processing, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:ADP"
+    },
+    {
+      "symbol": "AEG",
+      "name": "Aegon Ltd. New York Registry Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:AEG"
+    },
+    {
+      "symbol": "AEM",
+      "name": "Agnico Eagle Mines Limited",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:AEM"
+    },
+    {
+      "symbol": "AGRO",
+      "name": "Adecoagro S.A. Common Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:AGRO"
+    },
+    {
+      "symbol": "AI",
+      "name": "C3.ai, Inc. Class A",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:AI"
+    },
+    {
+      "symbol": "AIG",
+      "name": "American International Group, Inc. New",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:AIG"
+    },
+    {
+      "symbol": "AKO-B",
+      "name": "Embotelladora Andina S.A.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:AKO.B"
+    },
+    {
+      "symbol": "ALAB",
+      "name": "Astera Labs, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:ALAB"
+    },
+    {
+      "symbol": "AMAT",
+      "name": "Applied Materials, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:AMAT"
+    },
+    {
+      "symbol": "AMD",
+      "name": "Advanced Micro Devices, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:AMD"
+    },
+    {
+      "symbol": "AMGN",
+      "name": "Amgen Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:AMGN"
+    },
+    {
+      "symbol": "AMX",
+      "name": "America Movil, S.A.B. de C.V.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:AMX"
+    },
+    {
+      "symbol": "AMZN",
+      "name": "Amazon.com, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:AMZN"
+    },
+    {
+      "symbol": "ANET",
+      "name": "Arista Networks, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:ANET"
+    },
+    {
+      "symbol": "ANF",
+      "name": "Abercrombie & Fitch Company",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:ANF"
+    },
+    {
+      "symbol": "ARCO",
+      "name": "Arcos Dorados Holdings Inc. Class A Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:ARCO"
+    },
+    {
+      "symbol": "ARKK",
+      "name": "ARK Innovation ETF",
+      "exchange": "Cboe BZX",
+      "assetClass": "etf",
+      "tradingViewSymbol": "BATS:ARKK"
+    },
+    {
+      "symbol": "ARM",
+      "name": "Arm Holdings plc -",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:ARM"
+    },
+    {
+      "symbol": "ASML",
+      "name": "ASML Holding N.V. - New York Registry Shares",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:ASML"
+    },
+    {
+      "symbol": "ASR",
+      "name": "Grupo Aeroportuario del Sureste, S.A. de C.V.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:ASR"
+    },
+    {
+      "symbol": "ASTS",
+      "name": "AST SpaceMobile, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:ASTS"
+    },
+    {
+      "symbol": "AVGO",
+      "name": "Broadcom Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:AVGO"
+    },
+    {
+      "symbol": "AVY",
+      "name": "Avery Dennison Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:AVY"
+    },
+    {
+      "symbol": "AXP",
+      "name": "American Express Company",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:AXP"
+    },
+    {
+      "symbol": "AZN",
+      "name": "AstraZeneca PLC",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:AZN"
+    },
+    {
+      "symbol": "B",
+      "name": "Barrick Mining Corporation Common Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:B"
+    },
+    {
+      "symbol": "BA",
+      "name": "Boeing Company (The)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:BA"
+    },
+    {
+      "symbol": "BABA",
+      "name": "Alibaba Group Holding Limited",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:BABA"
+    },
+    {
+      "symbol": "BAK",
+      "name": "Braskem SA ADR",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:BAK"
+    },
+    {
+      "symbol": "BB",
+      "name": "BlackBerry Limited",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:BB"
+    },
+    {
+      "symbol": "BBVA",
+      "name": "Banco Bilbao Vizcaya Argentaria S.A.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:BBVA"
+    },
+    {
+      "symbol": "BCS",
+      "name": "Barclays PLC",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:BCS"
+    },
+    {
+      "symbol": "BG",
+      "name": "Bunge Limited Common Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:BG"
+    },
+    {
+      "symbol": "BHP",
+      "name": "BHP Group Limited",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:BHP"
+    },
+    {
+      "symbol": "BIDU",
+      "name": "Baidu, Inc. -",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:BIDU"
+    },
+    {
+      "symbol": "BIIB",
+      "name": "Biogen Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:BIIB"
+    },
+    {
+      "symbol": "BKNG",
+      "name": "Booking Holdings Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:BKNG"
+    },
+    {
+      "symbol": "BKR",
+      "name": "Baker Hughes Company",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:BKR"
+    },
+    {
+      "symbol": "BMNR",
+      "name": "BitMine Immersion Technologies, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:BMNR"
+    },
+    {
+      "symbol": "BMY",
+      "name": "Bristol-Myers Squibb Company",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:BMY"
+    },
+    {
+      "symbol": "BNY",
+      "name": "The Bank of New York Mellon Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:BNY"
+    },
+    {
+      "symbol": "BP",
+      "name": "BP p.l.c.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:BP"
+    },
+    {
+      "symbol": "BRK-B",
+      "name": "Berkshire Hathaway Inc. New",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:BRK.B"
+    },
+    {
+      "symbol": "BSBR",
+      "name": "Banco Santander Brasil SA",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:BSBR"
+    },
+    {
+      "symbol": "BX",
+      "name": "Blackstone Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:BX"
+    },
+    {
+      "symbol": "C",
+      "name": "Citigroup, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:C"
+    },
+    {
+      "symbol": "CAAP",
+      "name": "Corporacion America Airports SA Common Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:CAAP"
+    },
+    {
+      "symbol": "CAH",
+      "name": "Cardinal Health, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:CAH"
+    },
+    {
+      "symbol": "CAR",
+      "name": "Avis Budget Group, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:CAR"
+    },
+    {
+      "symbol": "CAT",
+      "name": "Caterpillar, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:CAT"
+    },
+    {
+      "symbol": "CC",
+      "name": "Chemours Company (The)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:CC"
+    },
+    {
+      "symbol": "CCJ",
+      "name": "Cameco Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:CCJ"
+    },
+    {
+      "symbol": "CCL",
+      "name": "Carnival Corporation Ltd. Common Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:CCL"
+    },
+    {
+      "symbol": "CDE",
+      "name": "Coeur Mining, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:CDE"
+    },
+    {
+      "symbol": "CEG",
+      "name": "Constellation Energy Corporation",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:CEG"
+    },
+    {
+      "symbol": "CIBR",
+      "name": "First Trust NASDAQ Cybersecurity ETF",
+      "exchange": "NASDAQ",
+      "assetClass": "etf",
+      "tradingViewSymbol": "NASDAQ:CIBR"
+    },
+    {
+      "symbol": "CL",
+      "name": "Colgate-Palmolive Company",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:CL"
+    },
+    {
+      "symbol": "CLS",
+      "name": "Celestica, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:CLS"
+    },
+    {
+      "symbol": "COIN",
+      "name": "Coinbase Global, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:COIN"
+    },
+    {
+      "symbol": "COP",
+      "name": "ConocoPhillips",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:COP"
+    },
+    {
+      "symbol": "COPX",
+      "name": "Global X Copper Miners ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:COPX"
+    },
+    {
+      "symbol": "COST",
+      "name": "Costco Wholesale Corporation",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:COST"
+    },
+    {
+      "symbol": "CRM",
+      "name": "Salesforce, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:CRM"
+    },
+    {
+      "symbol": "CRWD",
+      "name": "CrowdStrike Holdings, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:CRWD"
+    },
+    {
+      "symbol": "CRWV",
+      "name": "CoreWeave, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:CRWV"
+    },
+    {
+      "symbol": "CSCO",
+      "name": "Cisco Systems, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:CSCO"
+    },
+    {
+      "symbol": "CVS",
+      "name": "CVS Health Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:CVS"
+    },
+    {
+      "symbol": "CVX",
+      "name": "Chevron Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:CVX"
+    },
+    {
+      "symbol": "CX",
+      "name": "Cemex, S.A.B. de C.V. Sponsored ADR",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:CX"
+    },
+    {
+      "symbol": "DAL",
+      "name": "Delta Air Lines, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:DAL"
+    },
+    {
+      "symbol": "DD",
+      "name": "DuPont de Nemours, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:DD"
+    },
+    {
+      "symbol": "DE",
+      "name": "Deere & Company",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:DE"
+    },
+    {
+      "symbol": "DECK",
+      "name": "Deckers Outdoor Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:DECK"
+    },
+    {
+      "symbol": "DEO",
+      "name": "Diageo plc",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:DEO"
+    },
+    {
+      "symbol": "DHR",
+      "name": "Danaher Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:DHR"
+    },
+    {
+      "symbol": "DIA",
+      "name": "State Street SPDR Dow Jones Industrial Average ETF Trust",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:DIA"
+    },
+    {
+      "symbol": "DIS",
+      "name": "Walt Disney Company (The)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:DIS"
+    },
+    {
+      "symbol": "DOCU",
+      "name": "DocuSign, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:DOCU"
+    },
+    {
+      "symbol": "DOW",
+      "name": "Dow Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:DOW"
+    },
+    {
+      "symbol": "E",
+      "name": "ENI S.p.A.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:E"
+    },
+    {
+      "symbol": "EBAY",
+      "name": "eBay Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:EBAY"
+    },
+    {
+      "symbol": "EC",
+      "name": "Ecopetrol S.A.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:EC"
+    },
+    {
+      "symbol": "ECL",
+      "name": "Ecolab Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:ECL"
+    },
+    {
+      "symbol": "EEM",
+      "name": "iShares MSCI Emerging Index Fund",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:EEM"
+    },
+    {
+      "symbol": "EFA",
+      "name": "iShares MSCI EAFE ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:EFA"
+    },
+    {
+      "symbol": "EFX",
+      "name": "Equifax, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:EFX"
+    },
+    {
+      "symbol": "ELPC",
+      "name": "Companhia Paranaense de Energia (COPEL)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:ELPC"
+    },
+    {
+      "symbol": "EMBJ",
+      "name": "Embraer S.A.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:EMBJ"
+    },
+    {
+      "symbol": "EQNR",
+      "name": "Equinor ASA",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:EQNR"
+    },
+    {
+      "symbol": "ERIC",
+      "name": "Ericsson -",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:ERIC"
+    },
+    {
+      "symbol": "ESGU",
+      "name": "iShares ESG Aware MSCI USA ETF",
+      "exchange": "NASDAQ",
+      "assetClass": "etf",
+      "tradingViewSymbol": "NASDAQ:ESGU"
+    },
+    {
+      "symbol": "ETHA",
+      "name": "iShares Ethereum Trust ETF",
+      "exchange": "NASDAQ",
+      "assetClass": "etf",
+      "tradingViewSymbol": "NASDAQ:ETHA"
+    },
+    {
+      "symbol": "ETSY",
+      "name": "Etsy, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:ETSY"
+    },
+    {
+      "symbol": "EWJ",
+      "name": "iShares MSCI Japan Index Fund",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:EWJ"
+    },
+    {
+      "symbol": "EWY",
+      "name": "iShares MSCI South Korea ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:EWY"
+    },
+    {
+      "symbol": "EWZ",
+      "name": "iShares MSCI Brazil ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:EWZ"
+    },
+    {
+      "symbol": "F",
+      "name": "Ford Motor Company",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:F"
+    },
+    {
+      "symbol": "FC",
+      "name": "Franklin Covey Company",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:FC"
+    },
+    {
+      "symbol": "FCX",
+      "name": "Freeport-McMoRan, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:FCX"
+    },
+    {
+      "symbol": "FDX",
+      "name": "FedEx Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:FDX"
+    },
+    {
+      "symbol": "FISV",
+      "name": "Fiserv, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:FISV"
+    },
+    {
+      "symbol": "FMX",
+      "name": "Fomento Economico Mexicano S.A.B. de C.V.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:FMX"
+    },
+    {
+      "symbol": "FSLR",
+      "name": "First Solar, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:FSLR"
+    },
+    {
+      "symbol": "FXI",
+      "name": "iShares China Large-Cap ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:FXI"
+    },
+    {
+      "symbol": "GDX",
+      "name": "VanEck Gold Miners ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:GDX"
+    },
+    {
+      "symbol": "GE",
+      "name": "GE Aerospace",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:GE"
+    },
+    {
+      "symbol": "GFI",
+      "name": "Gold Fields Limited",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:GFI"
+    },
+    {
+      "symbol": "GGB",
+      "name": "Gerdau S.A.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:GGB"
+    },
+    {
+      "symbol": "GILD",
+      "name": "Gilead Sciences, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:GILD"
+    },
+    {
+      "symbol": "GLD",
+      "name": "SPDR Gold Shares",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:GLD"
+    },
+    {
+      "symbol": "GLNG",
+      "name": "Golar LNG Limited - Common Shares",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:GLNG"
+    },
+    {
+      "symbol": "GLOB",
+      "name": "Globant S.A. Common Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:GLOB"
+    },
+    {
+      "symbol": "GLW",
+      "name": "Corning Incorporated",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:GLW"
+    },
+    {
+      "symbol": "GM",
+      "name": "General Motors Company",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:GM"
+    },
+    {
+      "symbol": "GOOGL",
+      "name": "Alphabet Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:GOOGL"
+    },
+    {
+      "symbol": "GPRK",
+      "name": "Geopark Ltd Common Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:GPRK"
+    },
+    {
+      "symbol": "GRMN",
+      "name": "Garmin Ltd.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:GRMN"
+    },
+    {
+      "symbol": "GS",
+      "name": "Goldman Sachs Group, Inc. (The)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:GS"
+    },
+    {
+      "symbol": "GSK",
+      "name": "GSK plc",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:GSK"
+    },
+    {
+      "symbol": "GT",
+      "name": "The Goodyear Tire & Rubber Company",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:GT"
+    },
+    {
+      "symbol": "HAL",
+      "name": "Halliburton Company",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:HAL"
+    },
+    {
+      "symbol": "HD",
+      "name": "Home Depot, Inc. (The)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:HD"
+    },
+    {
+      "symbol": "HDB",
+      "name": "HDFC Bank Limited",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:HDB"
+    },
+    {
+      "symbol": "HIMS",
+      "name": "Hims & Hers Health, Inc. Class A",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:HIMS"
+    },
+    {
+      "symbol": "HL",
+      "name": "Hecla Mining Company",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:HL"
+    },
+    {
+      "symbol": "HMC",
+      "name": "Honda Motor Company, Ltd.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:HMC"
+    },
+    {
+      "symbol": "HMY",
+      "name": "Harmony Gold Mining Company Limited",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:HMY"
+    },
+    {
+      "symbol": "HOG",
+      "name": "Harley-Davidson, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:HOG"
+    },
+    {
+      "symbol": "HON",
+      "name": "Honeywell International Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:HON"
+    },
+    {
+      "symbol": "HOOD",
+      "name": "Robinhood Markets, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:HOOD"
+    },
+    {
+      "symbol": "HPQ",
+      "name": "HP Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:HPQ"
+    },
+    {
+      "symbol": "HSBC",
+      "name": "HSBC Holdings, plc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:HSBC"
+    },
+    {
+      "symbol": "HSY",
+      "name": "The Hershey Company",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:HSY"
+    },
+    {
+      "symbol": "HUT",
+      "name": "Hut 8 Corp.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:HUT"
+    },
+    {
+      "symbol": "HWM",
+      "name": "Howmet Aerospace Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:HWM"
+    },
+    {
+      "symbol": "IBB",
+      "name": "iShares Biotechnology ETF",
+      "exchange": "NASDAQ",
+      "assetClass": "etf",
+      "tradingViewSymbol": "NASDAQ:IBB"
+    },
+    {
+      "symbol": "IBIT",
+      "name": "iShares Bitcoin Trust ETF",
+      "exchange": "NASDAQ",
+      "assetClass": "etf",
+      "tradingViewSymbol": "NASDAQ:IBIT"
+    },
+    {
+      "symbol": "IBM",
+      "name": "International Business Machines Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:IBM"
+    },
+    {
+      "symbol": "IBN",
+      "name": "ICICI Bank Limited",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:IBN"
+    },
+    {
+      "symbol": "ICLN",
+      "name": "iShares Global Clean Energy ETF",
+      "exchange": "NASDAQ",
+      "assetClass": "etf",
+      "tradingViewSymbol": "NASDAQ:ICLN"
+    },
+    {
+      "symbol": "IEMG",
+      "name": "iShares Core MSCI Emerging Markets ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:IEMG"
+    },
+    {
+      "symbol": "IEUR",
+      "name": "iShares Core MSCI Europe ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:IEUR"
+    },
+    {
+      "symbol": "IFF",
+      "name": "International Flavors & Fragrances, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:IFF"
+    },
+    {
+      "symbol": "IJH",
+      "name": "iShares Core S&P Mid-Cap ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:IJH"
+    },
+    {
+      "symbol": "ILF",
+      "name": "iShares Latin America 40 ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:ILF"
+    },
+    {
+      "symbol": "INFY",
+      "name": "Infosys Limited",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:INFY"
+    },
+    {
+      "symbol": "ING",
+      "name": "ING Group, N.V.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:ING"
+    },
+    {
+      "symbol": "INTC",
+      "name": "Intel Corporation",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:INTC"
+    },
+    {
+      "symbol": "IP",
+      "name": "International Paper Company",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:IP"
+    },
+    {
+      "symbol": "IREN",
+      "name": "IREN Limited -",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:IREN"
+    },
+    {
+      "symbol": "ISRG",
+      "name": "Intuitive Surgical, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:ISRG"
+    },
+    {
+      "symbol": "ITA",
+      "name": "iShares U.S. Aerospace & Defense ETF",
+      "exchange": "Cboe BZX",
+      "assetClass": "etf",
+      "tradingViewSymbol": "BATS:ITA"
+    },
+    {
+      "symbol": "ITUB",
+      "name": "Itau Unibanco Banco Holding SA",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:ITUB"
+    },
+    {
+      "symbol": "IVE",
+      "name": "iShares S&P 500 Value ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:IVE"
+    },
+    {
+      "symbol": "IVV",
+      "name": "iShares Core S&P 500 ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:IVV"
+    },
+    {
+      "symbol": "IVW",
+      "name": "iShares S&P 500 Growth ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:IVW"
+    },
+    {
+      "symbol": "IWM",
+      "name": "iShares Russell 2000 Index Fund",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:IWM"
+    },
+    {
+      "symbol": "JCI",
+      "name": "Johnson Controls International plc Ordinary Share",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:JCI"
+    },
+    {
+      "symbol": "JD",
+      "name": "JD.com, Inc. -",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:JD"
+    },
+    {
+      "symbol": "JMIA",
+      "name": "Jumia Technologies AG",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:JMIA"
+    },
+    {
+      "symbol": "JNJ",
+      "name": "Johnson & Johnson",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:JNJ"
+    },
+    {
+      "symbol": "JOYY",
+      "name": "JOYY Inc. -",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:JOYY"
+    },
+    {
+      "symbol": "JPM",
+      "name": "JP Morgan Chase & Co.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:JPM"
+    },
+    {
+      "symbol": "KB",
+      "name": "KB Financial Group Inc",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:KB"
+    },
+    {
+      "symbol": "KEEL",
+      "name": "Keel Infrastructure Corp.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:KEEL"
+    },
+    {
+      "symbol": "KEP",
+      "name": "Korea Electric Power Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:KEP"
+    },
+    {
+      "symbol": "KGC",
+      "name": "Kinross Gold Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:KGC"
+    },
+    {
+      "symbol": "KMB",
+      "name": "Kimberly-Clark Corporation",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:KMB"
+    },
+    {
+      "symbol": "KO",
+      "name": "Coca-Cola Company (The)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:KO"
+    },
+    {
+      "symbol": "KOF",
+      "name": "Coca Cola Femsa S.A.B. de C.V.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:KOF"
+    },
+    {
+      "symbol": "LAC",
+      "name": "Lithium Americas Corp. Common Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:LAC"
+    },
+    {
+      "symbol": "LAR",
+      "name": "Lithium Argentina AG Common Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:LAR"
+    },
+    {
+      "symbol": "LLY",
+      "name": "Eli Lilly and Company",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:LLY"
+    },
+    {
+      "symbol": "LMT",
+      "name": "Lockheed Martin Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:LMT"
+    },
+    {
+      "symbol": "LND",
+      "name": "Brasilagro Brazilian Agric Real Estate Co Sponsored ADR (Brazil)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:LND"
+    },
+    {
+      "symbol": "LRCX",
+      "name": "Lam Research Corporation",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:LRCX"
+    },
+    {
+      "symbol": "LVS",
+      "name": "Las Vegas Sands Corp.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:LVS"
+    },
+    {
+      "symbol": "LYG",
+      "name": "Lloyds Banking Group Plc",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:LYG"
+    },
+    {
+      "symbol": "MA",
+      "name": "Mastercard Incorporated",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:MA"
+    },
+    {
+      "symbol": "MCD",
+      "name": "McDonald's Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:MCD"
+    },
+    {
+      "symbol": "MDLZ",
+      "name": "Mondelez International, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:MDLZ"
+    },
+    {
+      "symbol": "MDT",
+      "name": "Medtronic plc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:MDT"
+    },
+    {
+      "symbol": "MELI",
+      "name": "MercadoLibre, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:MELI"
+    },
+    {
+      "symbol": "META",
+      "name": "Meta Platforms, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:META"
+    },
+    {
+      "symbol": "MFG",
+      "name": "Mizuho Financial Group, Inc. Sponosred ADR (Japan)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:MFG"
+    },
+    {
+      "symbol": "MMM",
+      "name": "3M Company",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:MMM"
+    },
+    {
+      "symbol": "MO",
+      "name": "Altria Group, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:MO"
+    },
+    {
+      "symbol": "MOS",
+      "name": "Mosaic Company (The)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:MOS"
+    },
+    {
+      "symbol": "MP",
+      "name": "MP Materials Corp.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:MP"
+    },
+    {
+      "symbol": "MRK",
+      "name": "Merck & Company, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:MRK"
+    },
+    {
+      "symbol": "MRNA",
+      "name": "Moderna, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:MRNA"
+    },
+    {
+      "symbol": "MRSH",
+      "name": "Marsh",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:MRSH"
+    },
+    {
+      "symbol": "MRVL",
+      "name": "Marvell Technology, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:MRVL"
+    },
+    {
+      "symbol": "MSFT",
+      "name": "Microsoft Corporation",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:MSFT"
+    },
+    {
+      "symbol": "MSI",
+      "name": "Motorola Solutions, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:MSI"
+    },
+    {
+      "symbol": "MSTR",
+      "name": "Strategy Inc",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:MSTR"
+    },
+    {
+      "symbol": "MU",
+      "name": "Micron Technology, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:MU"
+    },
+    {
+      "symbol": "MUFG",
+      "name": "Mitsubishi UFJ Financial Group, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:MUFG"
+    },
+    {
+      "symbol": "MUX",
+      "name": "McEwen Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:MUX"
+    },
+    {
+      "symbol": "NBIS",
+      "name": "Nebius Group N.V.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:NBIS"
+    },
+    {
+      "symbol": "NEE",
+      "name": "NextEra Energy, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:NEE"
+    },
+    {
+      "symbol": "NEM",
+      "name": "Newmont Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:NEM"
+    },
+    {
+      "symbol": "NFLX",
+      "name": "Netflix, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:NFLX"
+    },
+    {
+      "symbol": "NG",
+      "name": "Novagold Resources Inc.",
+      "exchange": "NYSE American",
+      "assetClass": "stock",
+      "tradingViewSymbol": "AMEX:NG"
+    },
+    {
+      "symbol": "NGG",
+      "name": "National Grid Transco, PLC National Grid PLC (NEW)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:NGG"
+    },
+    {
+      "symbol": "NIO",
+      "name": "NIO Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:NIO"
+    },
+    {
+      "symbol": "NKE",
+      "name": "Nike, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:NKE"
+    },
+    {
+      "symbol": "NMR",
+      "name": "Nomura Holdings Inc ADR",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:NMR"
+    },
+    {
+      "symbol": "NOK",
+      "name": "Nokia Corporation Sponsored",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:NOK"
+    },
+    {
+      "symbol": "NOW",
+      "name": "ServiceNow, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:NOW"
+    },
+    {
+      "symbol": "NTES",
+      "name": "NetEase, Inc. -",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:NTES"
+    },
+    {
+      "symbol": "NU",
+      "name": "Nu Holdings Ltd. Class A",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:NU"
+    },
+    {
+      "symbol": "NUE",
+      "name": "Nucor Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:NUE"
+    },
+    {
+      "symbol": "NVDA",
+      "name": "NVIDIA Corporation",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:NVDA"
+    },
+    {
+      "symbol": "NVO",
+      "name": "Novo Nordisk A/S",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:NVO"
+    },
+    {
+      "symbol": "NVS",
+      "name": "Novartis AG",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:NVS"
+    },
+    {
+      "symbol": "NXE",
+      "name": "Nexgen Energy Ltd. Common Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:NXE"
+    },
+    {
+      "symbol": "O",
+      "name": "Realty Income Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:O"
+    },
+    {
+      "symbol": "OC",
+      "name": "Owens Corning Inc",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:OC"
+    },
+    {
+      "symbol": "OKLO",
+      "name": "Oklo Inc. Class A",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:OKLO"
+    },
+    {
+      "symbol": "ONDS",
+      "name": "Ondas Inc",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:ONDS"
+    },
+    {
+      "symbol": "ORCL",
+      "name": "Oracle Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:ORCL"
+    },
+    {
+      "symbol": "ORLY",
+      "name": "O'Reilly Automotive, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:ORLY"
+    },
+    {
+      "symbol": "OXY",
+      "name": "Occidental Petroleum Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:OXY"
+    },
+    {
+      "symbol": "PAAS",
+      "name": "Pan American Silver Corp.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:PAAS"
+    },
+    {
+      "symbol": "PAC",
+      "name": "Grupo Aeroportuario Del Pacifico, S.A. B. de C.V. Grupo Aeroportuario Del Pacifico, S.A. de C.V. (each representing 10 Series B shares)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:PAC"
+    },
+    {
+      "symbol": "PAGS",
+      "name": "PagSeguro Digital Ltd.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:PAGS"
+    },
+    {
+      "symbol": "PANW",
+      "name": "Palo Alto Networks, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:PANW"
+    },
+    {
+      "symbol": "PATH",
+      "name": "UiPath, Inc. Class A",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:PATH"
+    },
+    {
+      "symbol": "PBI",
+      "name": "Pitney Bowes Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:PBI"
+    },
+    {
+      "symbol": "PBR",
+      "name": "Petroleo Brasileiro S.A. Petrobras ADS",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:PBR"
+    },
+    {
+      "symbol": "PCAR",
+      "name": "PACCAR Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:PCAR"
+    },
+    {
+      "symbol": "PDD",
+      "name": "PDD Holdings Inc. -",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:PDD"
+    },
+    {
+      "symbol": "PEP",
+      "name": "PepsiCo, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:PEP"
+    },
+    {
+      "symbol": "PFE",
+      "name": "Pfizer, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:PFE"
+    },
+    {
+      "symbol": "PG",
+      "name": "Procter & Gamble Company (The)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:PG"
+    },
+    {
+      "symbol": "PHG",
+      "name": "Koninklijke Philips N.V. NY Registry Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:PHG"
+    },
+    {
+      "symbol": "PINS",
+      "name": "Pinterest, Inc. Class A",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:PINS"
+    },
+    {
+      "symbol": "PKX",
+      "name": "POSCO HOLDINGS INC.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:PKX"
+    },
+    {
+      "symbol": "PLTR",
+      "name": "Palantir Technologies Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:PLTR"
+    },
+    {
+      "symbol": "PM",
+      "name": "Philip Morris International Inc",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:PM"
+    },
+    {
+      "symbol": "PSQ",
+      "name": "ProShares Short QQQ",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:PSQ"
+    },
+    {
+      "symbol": "PSX",
+      "name": "Phillips 66",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:PSX"
+    },
+    {
+      "symbol": "PYPL",
+      "name": "PayPal Holdings, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:PYPL"
+    },
+    {
+      "symbol": "QCOM",
+      "name": "QUALCOMM Incorporated",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:QCOM"
+    },
+    {
+      "symbol": "QQQ",
+      "name": "Invesco QQQ Trust, Series 1",
+      "exchange": "NASDAQ",
+      "assetClass": "etf",
+      "tradingViewSymbol": "NASDAQ:QQQ"
+    },
+    {
+      "symbol": "RACE",
+      "name": "Ferrari N.V. Common Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:RACE"
+    },
+    {
+      "symbol": "RBLX",
+      "name": "Roblox Corporation Class A",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:RBLX"
+    },
+    {
+      "symbol": "RGTI",
+      "name": "Rigetti Computing, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:RGTI"
+    },
+    {
+      "symbol": "RIO",
+      "name": "Rio Tinto Plc",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:RIO"
+    },
+    {
+      "symbol": "RIOT",
+      "name": "Riot Platforms, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:RIOT"
+    },
+    {
+      "symbol": "RKLB",
+      "name": "Rocket Lab Corporation",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:RKLB"
+    },
+    {
+      "symbol": "ROKU",
+      "name": "Roku, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:ROKU"
+    },
+    {
+      "symbol": "ROST",
+      "name": "Ross Stores, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:ROST"
+    },
+    {
+      "symbol": "RSP",
+      "name": "Invesco S&P 500 Equal Weight ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:RSP"
+    },
+    {
+      "symbol": "RTX",
+      "name": "RTX Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:RTX"
+    },
+    {
+      "symbol": "SAN",
+      "name": "Banco Santander, S.A. Sponsored ADR (Spain)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SAN"
+    },
+    {
+      "symbol": "SAP",
+      "name": "SAP  SE ADS",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SAP"
+    },
+    {
+      "symbol": "SATL",
+      "name": "Satellogic Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:SATL"
+    },
+    {
+      "symbol": "SBS",
+      "name": "Companhia de saneamento Basico Do Estado De Sao Paulo - Sabesp",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SBS"
+    },
+    {
+      "symbol": "SBUX",
+      "name": "Starbucks Corporation",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:SBUX"
+    },
+    {
+      "symbol": "SCCO",
+      "name": "Southern Copper Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SCCO"
+    },
+    {
+      "symbol": "SCHW",
+      "name": "Charles Schwab Corporation (The)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SCHW"
+    },
+    {
+      "symbol": "SE",
+      "name": "Sea Limited",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SE"
+    },
+    {
+      "symbol": "SH",
+      "name": "ProShares Short S&P500",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:SH"
+    },
+    {
+      "symbol": "SHEL",
+      "name": "Shell PLC",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SHEL"
+    },
+    {
+      "symbol": "SHOP",
+      "name": "Shopify Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:SHOP"
+    },
+    {
+      "symbol": "SID",
+      "name": "Companhia Siderurgica Nacional S.A.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SID"
+    },
+    {
+      "symbol": "SLB",
+      "name": "SLB Limited Common Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SLB"
+    },
+    {
+      "symbol": "SLV",
+      "name": "iShares Silver Trust",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:SLV"
+    },
+    {
+      "symbol": "SMH",
+      "name": "VanEck Semiconductor ETF",
+      "exchange": "NASDAQ",
+      "assetClass": "etf",
+      "tradingViewSymbol": "NASDAQ:SMH"
+    },
+    {
+      "symbol": "SNA",
+      "name": "Snap-On Incorporated",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SNA"
+    },
+    {
+      "symbol": "SNAP",
+      "name": "Snap Inc. Class A",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SNAP"
+    },
+    {
+      "symbol": "SNDK",
+      "name": "Sandisk Corporation",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:SNDK"
+    },
+    {
+      "symbol": "SNOW",
+      "name": "Snowflake Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SNOW"
+    },
+    {
+      "symbol": "SONY",
+      "name": "Sony Group Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SONY"
+    },
+    {
+      "symbol": "SPCE",
+      "name": "Virgin Galactic Holdings, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SPCE"
+    },
+    {
+      "symbol": "SPCX",
+      "name": "Space Exploration Technologies Corp.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:SPCX"
+    },
+    {
+      "symbol": "SPGI",
+      "name": "S&P Global Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SPGI"
+    },
+    {
+      "symbol": "SPHQ",
+      "name": "Invesco S&P 500 Quality ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:SPHQ"
+    },
+    {
+      "symbol": "SPOT",
+      "name": "Spotify Technology S.A.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SPOT"
+    },
+    {
+      "symbol": "SPXL",
+      "name": "Direxion Daily S&P 500 Bull 3X ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:SPXL"
+    },
+    {
+      "symbol": "SPY",
+      "name": "State Street SPDR S&P 500 ETF Trust",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:SPY"
+    },
+    {
+      "symbol": "STLA",
+      "name": "Stellantis N.V. Common Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:STLA"
+    },
+    {
+      "symbol": "STNE",
+      "name": "StoneCo Ltd.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:STNE"
+    },
+    {
+      "symbol": "SUZ",
+      "name": "Suzano S.A.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SUZ"
+    },
+    {
+      "symbol": "SWKS",
+      "name": "Skyworks Solutions, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:SWKS"
+    },
+    {
+      "symbol": "SYY",
+      "name": "Sysco Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:SYY"
+    },
+    {
+      "symbol": "T",
+      "name": "AT&T Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:T"
+    },
+    {
+      "symbol": "TC",
+      "name": "Token Cat Limited -",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:TC"
+    },
+    {
+      "symbol": "TCOM",
+      "name": "Trip.com Group Limited -",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:TCOM"
+    },
+    {
+      "symbol": "TD",
+      "name": "Toronto Dominion Bank (The)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:TD"
+    },
+    {
+      "symbol": "TEAM",
+      "name": "Atlassian Corporation",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:TEAM"
+    },
+    {
+      "symbol": "TEM",
+      "name": "Tempus AI, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:TEM"
+    },
+    {
+      "symbol": "TEN",
+      "name": "Tsakos Energy Navigation Ltd Common Shares",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:TEN"
+    },
+    {
+      "symbol": "TGT",
+      "name": "Target Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:TGT"
+    },
+    {
+      "symbol": "TIMB",
+      "name": "TIM S.A.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:TIMB"
+    },
+    {
+      "symbol": "TJX",
+      "name": "TJX Companies, Inc. (The)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:TJX"
+    },
+    {
+      "symbol": "TM",
+      "name": "Toyota Motor Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:TM"
+    },
+    {
+      "symbol": "TMO",
+      "name": "Thermo Fisher Scientific Inc",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:TMO"
+    },
+    {
+      "symbol": "TMUS",
+      "name": "T-Mobile US, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:TMUS"
+    },
+    {
+      "symbol": "TQQQ",
+      "name": "ProShares UltraPro QQQ",
+      "exchange": "NASDAQ",
+      "assetClass": "etf",
+      "tradingViewSymbol": "NASDAQ:TQQQ"
+    },
+    {
+      "symbol": "TRIP",
+      "name": "TripAdvisor, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:TRIP"
+    },
+    {
+      "symbol": "TRV",
+      "name": "The Travelers Companies, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:TRV"
+    },
+    {
+      "symbol": "TSLA",
+      "name": "Tesla, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:TSLA"
+    },
+    {
+      "symbol": "TSM",
+      "name": "Taiwan Semiconductor Manufacturing Company Ltd.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:TSM"
+    },
+    {
+      "symbol": "TTE",
+      "name": "TotalEnergies SE",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:TTE"
+    },
+    {
+      "symbol": "TV",
+      "name": "Grupo Televisa S.A.B.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:TV"
+    },
+    {
+      "symbol": "TWLO",
+      "name": "Twilio Inc. Class A",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:TWLO"
+    },
+    {
+      "symbol": "TX",
+      "name": "Ternium S.A. Ternium S.A.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:TX"
+    },
+    {
+      "symbol": "TXN",
+      "name": "Texas Instruments Incorporated",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:TXN"
+    },
+    {
+      "symbol": "UAL",
+      "name": "United Airlines Holdings, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:UAL"
+    },
+    {
+      "symbol": "UBER",
+      "name": "Uber Technologies, Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:UBER"
+    },
+    {
+      "symbol": "UGP",
+      "name": "Ultrapar Participacoes S.A. (New)",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:UGP"
+    },
+    {
+      "symbol": "UL",
+      "name": "Unilever PLC",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:UL"
+    },
+    {
+      "symbol": "UNH",
+      "name": "UnitedHealth Group Incorporated",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:UNH"
+    },
+    {
+      "symbol": "UNP",
+      "name": "Union Pacific Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:UNP"
+    },
+    {
+      "symbol": "UPST",
+      "name": "Upstart Holdings, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:UPST"
+    },
+    {
+      "symbol": "URA",
+      "name": "Global X Uranium ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:URA"
+    },
+    {
+      "symbol": "URBN",
+      "name": "Urban Outfitters, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:URBN"
+    },
+    {
+      "symbol": "USB",
+      "name": "U.S. Bancorp",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:USB"
+    },
+    {
+      "symbol": "USO",
+      "name": "United States Oil Fund",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:USO"
+    },
+    {
+      "symbol": "V",
+      "name": "Visa Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:V"
+    },
+    {
+      "symbol": "VALE",
+      "name": "VALE S.A.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:VALE"
+    },
+    {
+      "symbol": "VC",
+      "name": "Visteon Corporation",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:VC"
+    },
+    {
+      "symbol": "VEA",
+      "name": "Vanguard FTSE Developed Markets ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:VEA"
+    },
+    {
+      "symbol": "VIG",
+      "name": "Vanguard Div Appreciation ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:VIG"
+    },
+    {
+      "symbol": "VIST",
+      "name": "Vista Energy S.A.B. de C.V.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:VIST"
+    },
+    {
+      "symbol": "VIV",
+      "name": "Telefonica Brasil S.A.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:VIV"
+    },
+    {
+      "symbol": "VOD",
+      "name": "Vodafone Group Plc -",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:VOD"
+    },
+    {
+      "symbol": "VRSN",
+      "name": "VeriSign, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:VRSN"
+    },
+    {
+      "symbol": "VRTX",
+      "name": "Vertex Pharmaceuticals Incorporated",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:VRTX"
+    },
+    {
+      "symbol": "VST",
+      "name": "Vistra Corp.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:VST"
+    },
+    {
+      "symbol": "VXX",
+      "name": "iPath Series B S&P 500 VIX Short-Term Futures ETN",
+      "exchange": "Cboe BZX",
+      "assetClass": "stock",
+      "tradingViewSymbol": "BATS:VXX"
+    },
+    {
+      "symbol": "VZ",
+      "name": "Verizon Communications Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:VZ"
+    },
+    {
+      "symbol": "WB",
+      "name": "Weibo Corporation -",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:WB"
+    },
+    {
+      "symbol": "WFC",
+      "name": "Wells Fargo & Company",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:WFC"
+    },
+    {
+      "symbol": "WMT",
+      "name": "Walmart Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:WMT"
+    },
+    {
+      "symbol": "XLB",
+      "name": "State Street Materials Select Sector SPDR ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:XLB"
+    },
+    {
+      "symbol": "XLC",
+      "name": "State Street Communication Services Select Sector SPDR ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:XLC"
+    },
+    {
+      "symbol": "XLE",
+      "name": "State Street Energy Select Sector SPDR ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:XLE"
+    },
+    {
+      "symbol": "XLF",
+      "name": "State Street Financial Select Sector SPDR ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:XLF"
+    },
+    {
+      "symbol": "XLI",
+      "name": "State Street Industrial Select Sector SPDR ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:XLI"
+    },
+    {
+      "symbol": "XLK",
+      "name": "State Street Technology Select Sector SPDR ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:XLK"
+    },
+    {
+      "symbol": "XLP",
+      "name": "State Street Consumer Staples Select Sector SPDR ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:XLP"
+    },
+    {
+      "symbol": "XLRE",
+      "name": "State Street Real Estate Select Sector SPDR ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:XLRE"
+    },
+    {
+      "symbol": "XLU",
+      "name": "State Street Utilities Select Sector SPDR ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:XLU"
+    },
+    {
+      "symbol": "XLV",
+      "name": "State Street Health Care Select Sector SPDR ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:XLV"
+    },
+    {
+      "symbol": "XLY",
+      "name": "State Street Consumer Discretionary Select Sector SPDR ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:XLY"
+    },
+    {
+      "symbol": "XME",
+      "name": "State Street SPDR S&P Metals & Mining ETF",
+      "exchange": "NYSE Arca",
+      "assetClass": "etf",
+      "tradingViewSymbol": "AMEX:XME"
+    },
+    {
+      "symbol": "XOM",
+      "name": "ExxonMobil Holdings Corporation",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:XOM"
+    },
+    {
+      "symbol": "XP",
+      "name": "XP Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:XP"
+    },
+    {
+      "symbol": "XPEV",
+      "name": "XPeng Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:XPEV"
+    },
+    {
+      "symbol": "XRX",
+      "name": "Xerox Holdings Corporation",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:XRX"
+    },
+    {
+      "symbol": "XYZ",
+      "name": "Block, Inc. Class A",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:XYZ"
+    },
+    {
+      "symbol": "YELP",
+      "name": "Yelp Inc.",
+      "exchange": "NYSE",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NYSE:YELP"
+    },
+    {
+      "symbol": "ZM",
+      "name": "Zoom Communications, Inc.",
+      "exchange": "NASDAQ",
+      "assetClass": "stock",
+      "tradingViewSymbol": "NASDAQ:ZM"
+    }
+  ]
+}

@@ -53,6 +53,7 @@ function toUniverseItem(instrument: Instrument, index: number): InstrumentUniver
   const isFixedIncome = ["bond", "bill", "corporate_bond"].includes(instrument.assetClass);
 
   return {
+    instrumentId: instrument.id,
     symbol: instrument.symbol,
     displayName: instrument.name,
     displayNameEn: instrument.name,

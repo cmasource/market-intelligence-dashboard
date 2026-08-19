@@ -1,5 +1,6 @@
 import { instrumentMasterSeed } from "@/lib/instruments/instrument-master.seed";
 import type { Instrument } from "@/lib/instruments/types";
+import { getAssetHref } from "@/lib/instruments/assetHref";
 import type { HeatmapFilters, HeatmapItem, HeatmapSegment, HeatmapSourceKind } from "./heatmap-types";
 
 function getSegment(instrument: Instrument): Exclude<HeatmapSegment, "all"> {
@@ -42,7 +43,7 @@ export function getBaseHeatmapItems(): HeatmapItem[] {
       segment,
       assetType: instrument.assetClass,
       typeLabel: instrument.assetClass.replaceAll("_", " "),
-      href: `/asset/${encodeURIComponent(instrument.symbol)}`,
+      href: getAssetHref(instrument.symbol, instrument.id),
       price: null,
       currency: instrument.currency,
       changePercent: null,

@@ -2,30 +2,19 @@
 
 import Link from "next/link";
 import { LogIn, LogOut, UserRound } from "lucide-react";
-import { useEffect, useState } from "react";
 import { signOutAction } from "@/app/auth/actions";
-import { getSupabaseConfig } from "@/lib/supabase/config";
-import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/lib/i18n/useLanguage";
-import { setWatchlistUser } from "@/lib/watchlist";
 
-export function AuthNavigation({ collapsed, onNavigate }: { collapsed: boolean; onNavigate: () => void }) {
+export function AuthNavigation({
+  authenticated,
+  collapsed,
+  onNavigate,
+}: {
+  authenticated: boolean;
+  collapsed: boolean;
+  onNavigate: () => void;
+}) {
   const { language } = useLanguage();
-  const [authenticated, setAuthenticated] = useState(false);
-
-  useEffect(() => {
-    if (!getSupabaseConfig()) return;
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setAuthenticated(Boolean(data.user));
-      setWatchlistUser(data.user?.id ?? null);
-    });
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthenticated(Boolean(session?.user));
-      setWatchlistUser(session?.user?.id ?? null);
-    });
-    return () => { data.subscription.unsubscribe(); setWatchlistUser(null); };
-  }, []);
 
   if (authenticated) {
     return (

@@ -11,6 +11,7 @@
     "validate:finance": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/validate-financial-engine.ts",
     "validate:argentina": "tsx scripts/validate-argentina-data.ts",
     "validate:coverage": "tsx scripts/validate-public-asset-coverage.ts",
+    "sync:us-instruments": "tsx scripts/sync-us-cedear-underlyings.ts",
     "test:technical": "node --import tsx --test tests/technical/*.test.ts tests/market-data/*.test.ts tests/api/*.test.ts tests/intelligence/*.test.ts",
     "test:watchlist": "node --import tsx --test tests/watchlist/*.test.ts",
     "test:auth": "node --import tsx --test tests/auth/*.test.ts",

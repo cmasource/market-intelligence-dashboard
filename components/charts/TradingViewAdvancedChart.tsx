@@ -7,6 +7,7 @@ import { useTheme } from "@/lib/theme/useTheme";
 
 type TradingViewAdvancedChartProps = {
   symbol: string;
+  instrumentId?: string;
   theme?: "dark" | "light";
   height?: number;
   locale?: "en" | "es";
@@ -19,6 +20,7 @@ function tradingViewSymbolSlug(symbol: string) {
 
 export function TradingViewAdvancedChart({
   symbol,
+  instrumentId,
   theme,
   height = 620,
   locale,
@@ -27,7 +29,7 @@ export function TradingViewAdvancedChart({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { language } = useLanguage();
   const { resolvedMode } = useTheme();
-  const mapping = useMemo(() => getTradingViewSymbol(symbol), [symbol]);
+  const mapping = useMemo(() => getTradingViewSymbol(symbol, instrumentId), [instrumentId, symbol]);
   const resolvedTheme = theme ?? (resolvedMode === "light" ? "light" : "dark");
   const resolvedLocale = locale ?? (language === "es" ? "es" : "en");
   const symbolSlug = tradingViewSymbolSlug(mapping.tradingViewSymbol);

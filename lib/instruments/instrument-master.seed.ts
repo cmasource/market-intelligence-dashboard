@@ -3,8 +3,17 @@ import { providerCedearSymbols, providerEquitySymbols, providerInstrumentNames }
 import { cedearUnderlyingSymbols, cedearWarning } from "./cedearMappings";
 import { fixedIncomeGroups } from "./fixedIncomeMappings";
 import type { Instrument, InstrumentAssetClass } from "./types";
+import generatedUsUnderlyings from "@/data/us-cedear-underlyings.generated.json";
 
 type UsSeed = { symbol: string; name: string; exchange: string; assetClass: "stock" | "etf" | "adr"; tv?: string; tags?: string[] };
+
+type GeneratedUsUnderlying = {
+  symbol: string;
+  name: string;
+  exchange: string;
+  assetClass: "stock" | "etf";
+  tradingViewSymbol: string;
+};
 
 const usEtfs: UsSeed[] = [
   { symbol: "SPY", name: "SPDR S&P 500 ETF Trust", exchange: "NYSE Arca", assetClass: "etf", tv: "AMEX:SPY" },
@@ -78,6 +87,18 @@ const adrSeeds: UsSeed[] = [
   { symbol: "SUPV", name: "Grupo Supervielle S.A. ADR", exchange: "NYSE", assetClass: "adr" },
   { symbol: "BBAR", name: "Banco BBVA Argentina S.A. ADR", exchange: "NYSE", assetClass: "adr" },
 ];
+
+const knownUsSymbols = new Set([...usEtfs, ...usStocks, ...adrSeeds].map((seed) => seed.symbol));
+const generatedUsSeeds: UsSeed[] = (generatedUsUnderlyings.instruments as GeneratedUsUnderlying[])
+  .filter((instrument) => !knownUsSymbols.has(instrument.symbol))
+  .map((instrument) => ({
+    symbol: instrument.symbol,
+    name: instrument.name,
+    exchange: instrument.exchange,
+    assetClass: instrument.assetClass,
+    tv: instrument.tradingViewSymbol,
+    tags: ["us-listing", "underlying"],
+  }));
 
 const localEquities = [
   ["GGAL", "Grupo Financiero Galicia S.A."],
@@ -280,7 +301,7 @@ const cedearStocks = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "
 const cedearEtfs = ["SPY", "QQQ", "DIA", "IWM", "EWZ", "ARKK", "XLF", "XLK", "XLE"];
 const fixedIncomeSymbols = ["AL30", "AL30D", "AL30C", "GD30", "GD30D", "GD30C", "AE38", "AE38D", "AL35", "AL35D", "TX26", "TZX26", "S31L6", "S30N6", "D31L6"];
 
-const usBySymbol = new Map([...usEtfs, ...usStocks, ...adrSeeds].map((item) => [item.symbol, item]));
+const usBySymbol = new Map([...usEtfs, ...usStocks, ...adrSeeds, ...generatedUsSeeds].map((item) => [item.symbol, item]));
 const seededLocalEquitySymbols = new Set<string>(localEquities.map(([symbol]) => symbol));
 const seededCedearSymbols = new Set<string>([...cedearStocks, ...cedearEtfs]);
 
@@ -294,16 +315,22 @@ const providerCedearStocks = providerCedearSymbols
 const providerCedearEtfs = providerCedearSymbols
   .filter((symbol) => !seededCedearSymbols.has(symbol) && cedearUnderlyingSymbols[symbol]?.type === "etf");
 
+function cedearOriginName(localSymbol: string) {
+  const underlyingSymbol = cedearUnderlyingSymbols[localSymbol]?.underlyingSymbol ?? localSymbol;
+  return usBySymbol.get(underlyingSymbol)?.name ?? providerInstrumentNames[localSymbol] ?? localSymbol;
+}
+
 export const instrumentMasterSeed: Instrument[] = [
   ...usEtfs.map(usInstrument),
   ...usStocks.map(usInstrument),
   ...adrSeeds.map(usInstrument),
+  ...generatedUsSeeds.map(usInstrument),
   ...localEquities.map(([symbol, name]) => localEquity(symbol, name)),
   ...providerLocalEquities.map(([symbol, name]) => localEquity(symbol, name)),
   ...cedearStocks.map((symbol) => cedear(symbol, `${usBySymbol.get(symbol)?.name ?? symbol} CEDEAR`, "cedear")),
   ...cedearEtfs.map((symbol) => cedear(symbol, `${usBySymbol.get(symbol)?.name ?? symbol} CEDEAR ETF`, "cedear_etf")),
-  ...providerCedearStocks.map((symbol) => cedear(symbol, `${providerInstrumentNames[symbol] ?? symbol} CEDEAR`, "cedear")),
-  ...providerCedearEtfs.map((symbol) => cedear(symbol, `${providerInstrumentNames[symbol] ?? symbol} CEDEAR ETF`, "cedear_etf")),
+  ...providerCedearStocks.map((symbol) => cedear(symbol, `${cedearOriginName(symbol)} CEDEAR`, "cedear")),
+  ...providerCedearEtfs.map((symbol) => cedear(symbol, `${cedearOriginName(symbol)} CEDEAR ETF`, "cedear_etf")),
   ...fixedIncomeSymbols.map(fixedIncome),
   ...cryptoSeeds.map(([symbol, name]) => crypto(symbol, name)),
 ];

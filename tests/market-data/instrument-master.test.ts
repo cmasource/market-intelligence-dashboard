@@ -6,6 +6,10 @@ import { searchInstruments } from "@/lib/instruments/searchInstruments";
 import { isProviderQuoteSupported } from "@/lib/market-data/provider-symbols";
 import { getYahooSymbol } from "@/lib/market-data/symbol-map";
 import { resolveTechnicalAnalysisSymbol } from "@/lib/analysis/technical-analysis-service";
+import { getTradingViewSymbol } from "@/lib/tradingview/symbol-map";
+import { getYahooFundamentalsSymbol } from "@/lib/fundamentals-data/symbol-map";
+import { getAssetHref } from "@/lib/instruments/assetHref";
+import { instrumentMasterSeed } from "@/lib/instruments/instrument-master.seed";
 
 test("instrument search prioritizes exact US symbols and includes CEDEAR alternatives", () => {
   const results = searchInstruments({ query: "MSFT", limit: 5 });
@@ -20,6 +24,45 @@ test("instrument search supports company names", () => {
 
   assert.equal(results.some((result) => result.id === "stock:MSFT"), true);
   assert.equal(results.some((result) => result.id === "cedear:MSFT"), true);
+});
+
+test("generated US underlyings keep stock and CEDEAR identities separate", () => {
+  const stock = resolveInstrument({ instrumentId: "stock:MP" });
+  const cedear = resolveInstrument({ instrumentId: "cedear:MP" });
+
+  assert.equal(stock?.instrument.name, "MP Materials Corp.");
+  assert.equal(stock?.instrument.exchange, "NYSE");
+  assert.equal(stock?.instrument.currency, "USD");
+  assert.equal(stock?.technicalLayer?.symbol, "MP");
+  assert.equal(cedear?.instrument.currency, "ARS");
+  assert.equal(cedear?.technicalLayer?.symbol, "MP");
+  assert.equal(getTradingViewSymbol("MP", "stock:MP").tradingViewSymbol, "NYSE:MP");
+  assert.equal(getTradingViewSymbol("MP", "cedear:MP").tradingViewSymbol, "BCBA:MP");
+  assert.equal(getYahooFundamentalsSymbol("MP"), "MP");
+  assert.equal(getAssetHref("MP", "stock:MP"), "/asset/MP?instrumentId=stock%3AMP");
+});
+
+test("USA underlying catalogue no longer depends on fabricated CEDEAR rows", () => {
+  const results = searchInstruments({ query: "MP Materials", limit: 5 });
+
+  assert.equal(results[0]?.id, "stock:MP");
+  assert.equal(results.some((result) => result.id === "cedear:MP"), true);
+});
+
+test("every searchable US stock and ETF has route-safe market metadata", () => {
+  const instruments = instrumentMasterSeed.filter(
+    (instrument) => instrument.market === "us" && ["stock", "etf"].includes(instrument.assetClass),
+  );
+
+  assert.ok(instruments.length >= 350);
+  for (const instrument of instruments) {
+    assert.notEqual(instrument.name, instrument.symbol);
+    assert.equal(instrument.currency, "USD");
+    assert.match(instrument.tradingViewSymbol ?? "", /^[A-Z_]+:.+$/);
+    assert.equal(instrument.dataCapabilities.includes("technical_full"), true);
+    assert.ok(getYahooFundamentalsSymbol(instrument.symbol));
+    assert.match(getAssetHref(instrument.symbol, instrument.id), /instrumentId=/);
+  }
 });
 
 test("CEDEAR resolution points technical layer to US underlying", () => {

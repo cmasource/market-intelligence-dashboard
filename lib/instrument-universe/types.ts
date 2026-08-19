@@ -42,6 +42,7 @@ export type InstrumentDataCoverage = {
 };
 
 export type InstrumentUniverseItem = {
+  instrumentId?: string;
   symbol: string;
   displayName: string;
   displayNameEn?: string;
@@ -87,6 +88,7 @@ export type InstrumentUniverseItem = {
 };
 
 export type RelatedInstrument = {
+  instrumentId: string;
   symbol: string;
   displayName: string;
   category: InstrumentCategory;
