@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { EmailNotificationChannel } from "../../lib/alerts/channels";
+import { buildAlertEmailHtml, EmailNotificationChannel } from "../../lib/alerts/channels";
 import { DEFAULT_ALERT_PREFERENCES } from "../../lib/alerts/preferences";
 
 function databaseRecorder() {
@@ -34,6 +34,9 @@ test("Resend delivery uses a deterministic idempotency key and records provider 
     const body = JSON.parse(String(captured?.body)) as { html: string };
     assert.match(body.html, /https:\/\/example\.com\/alerts\/guide/);
     assert.match(body.html, /Entender esta alerta/);
+    assert.match(body.html, /https:\/\/example\.com\/brand\/cma-consulting-header-transparent\.png/);
+    assert.match(body.html, /#27b7ae/);
+    assert.match(body.html, /condición determinística/);
     assert.equal(writes.at(-1)?.provider_message_id, "email-1");
     assert.equal(writes.at(-1)?.provider_status, "accepted");
   } finally {
@@ -41,4 +44,15 @@ test("Resend delivery uses a deterministic idempotency key and records provider 
     if (previousKey === undefined) delete process.env.RESEND_API_KEY; else process.env.RESEND_API_KEY = previousKey;
     if (previousFrom === undefined) delete process.env.RESEND_FROM_EMAIL; else process.env.RESEND_FROM_EMAIL = previousFrom;
   }
+});
+
+test("branded email escapes dynamic alert content", () => {
+  const html = buildAlertEmailHtml({
+    title: "<script>alert('title')</script>",
+    summary: "MSFT > 500 & verified",
+    alertUrl: "https://example.com/alerts/event-2",
+  });
+  assert.doesNotMatch(html, /<script>alert/);
+  assert.match(html, /&lt;script&gt;alert\(&#39;title&#39;\)&lt;\/script&gt;/);
+  assert.match(html, /MSFT &gt; 500 &amp; verified/);
 });

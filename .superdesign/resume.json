@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "/alerts": {
+      "targetKind": "existing-ui",
+      "projectId": "488dd837-6de6-4a4c-8757-d8f766848a27",
+      "baselineDraftId": "de42a27e-48e5-4338-97be-29b870a70ce0",
+      "activeDraftId": "de42a27e-48e5-4338-97be-29b870a70ce0",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [
+        "c0283dde-f013-40ab-a2f9-8feb462ebe53",
+        "public-brand-cma-monogram-transparent.png",
+        "public-brand-cma-consulting-header-transparent.png"
+      ],
+      "brandAssets": {
+        "logo": {
+          "assetKey": "public-brand-cma-consulting-header-transparent.png",
+          "url": "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/projects/488dd837-6de6-4a4c-8757-d8f766848a27/brand-assets/public-brand-cma-consulting-header-transparent.png/cma-consulting-header-transparent.png",
+          "sourcePath": "public/brand/cma-consulting-header-transparent.png"
+        }
+      },
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "app/globals.css",
+        "app/alerts/page.tsx",
+        "components/alerts/AlertsCenter.tsx",
+        "components/layout/AppShell.tsx",
+        "components/layout/Sidebar.tsx",
+        "components/layout/AppHeader.tsx",
+        "components/layout/AppFooter.tsx",
+        "components/layout/AppearanceToggle.tsx",
+        "components/layout/LanguageSwitcher.tsx",
+        "components/layout/MarketTicker.tsx",
+        "components/auth/AuthNavigation.tsx",
+        "components/watchlist/WatchlistImportPrompt.tsx",
+        "postcss.config.mjs"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "7d2da4088880f485fa3f6e77bedefc88cc4bc0ee85a75a9368fc8e83932c4c12",
+        "app/globals.css": "fbe24a496f7a161df801d9085885323039b1429af46daed66b98fb5d2d097351",
+        "app/alerts/page.tsx": "a35b7d976ace3e62566b9d0ee6e30cd4e3c77fa102712dd660300609c29709ab",
+        "components/alerts/AlertsCenter.tsx": "ddc69524a2ba5c2546595aa9ef9fbfd4c394920d7cdf5508297ad9021a7fa2dd",
+        "components/layout/AppShell.tsx": "a493d9c6022a073252d47c4c7b5d9cf4ee03bb3d69b9ab02d1c69c357045cfe2",
+        "components/layout/Sidebar.tsx": "416446600b42857d433973be0f063b4b68de92283a937b8fe67ed4cd9432da68",
+        "components/layout/AppHeader.tsx": "f4d126cec5236905dccfaa59beb796075b56924c95e0e673afb907d45e4858ab",
+        "components/layout/AppFooter.tsx": "e2f5ebfb7f23a37da244ef391cb0228e5111ff145ab773c066fb0e072e878327",
+        "components/layout/AppearanceToggle.tsx": "3c6b4fc637f7344e529cd97f4ae30ced21756f973cfdca58672ef972a66c930c",
+        "components/layout/LanguageSwitcher.tsx": "69aa96875fbc4892cf79e0eefca8711996c702e2d09e2a26504d8d5ac73cfb17",
+        "components/layout/MarketTicker.tsx": "742a3ebc81e19bddf0d633af5590b2fadca40fb3c3d87f77e641f0a63f6c5126",
+        "components/auth/AuthNavigation.tsx": "e172ee260fc59d5d11ddf1d52eacebcd0cd344de37e1bd4a639f2850012a611c",
+        "components/watchlist/WatchlistImportPrompt.tsx": "7a26882e99ab4dd7614b23c97297d0fb0e3772440b740d60b1ba7c5434a07866",
+        "postcss.config.mjs": "7b299d3d3b16699ddda397c0b2373b3af4f25f8fc9ccc9b3d9e64ef083bc1c21"
+      },
+      "components": [
+        {
+          "name": "AppFooter",
+          "id": "022770da-3e1c-4a1f-8e7c-dbcc4de3f6d3",
+          "sourcePath": "components/layout/AppFooter.tsx",
+          "logoAssetKey": "public-brand-cma-consulting-header-transparent.png"
+        }
+      ],
+      "drafts": {
+        "de42a27e-48e5-4338-97be-29b870a70ce0": {
+          "title": "CMA Markets Alert Center - Redesign",
+          "visualDirection": "financial inbox with explicit unread and read hierarchy",
+          "currentVersion": 4
+        }
+      },
+      "updatedAt": "2026-08-19T15:25:00.0000000Z"
+    },
+    "alert-email": {
+      "targetKind": "existing-ui",
+      "projectId": "488dd837-6de6-4a4c-8757-d8f766848a27",
+      "baselineDraftId": "86e028fc-501b-4594-b32c-7bd9d2ef40c1",
+      "activeDraftId": "86e028fc-501b-4594-b32c-7bd9d2ef40c1",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [
+        "2f51ba50-cc53-41e6-9e48-49dc119b3779",
+        "public-brand-cma-consulting-header-transparent.png"
+      ],
+      "brandAssets": {
+        "logo": {
+          "assetKey": "public-brand-cma-consulting-header-transparent.png",
+          "url": "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/projects/488dd837-6de6-4a4c-8757-d8f766848a27/brand-assets/public-brand-cma-consulting-header-transparent.png/cma-consulting-header-transparent.png",
+          "sourcePath": "public/brand/cma-consulting-header-transparent.png"
+        }
+      },
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "app/globals.css",
+        "lib/alerts/channels.ts"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "7d2da4088880f485fa3f6e77bedefc88cc4bc0ee85a75a9368fc8e83932c4c12",
+        "app/globals.css": "fbe24a496f7a161df801d9085885323039b1429af46daed66b98fb5d2d097351",
+        "lib/alerts/channels.ts": "cd155c06ddbb8281bab8306992e91d60159d21399c27aec0d9976c35e90c7364"
+      },
+      "drafts": {
+        "86e028fc-501b-4594-b32c-7bd9d2ef40c1": {
+          "title": "CMA Alert Email - Redesign",
+          "visualDirection": "branded transactional email with evidence-first hierarchy",
+          "currentVersion": 2
+        }
+      },
+      "updatedAt": "2026-08-19T15:25:00.0000000Z"
+    }
+  }
+}

@@ -2,7 +2,30 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BellPlus, BellRing, BookOpen, CheckCheck, Clock3, ExternalLink, Pause, Pencil, Play, Settings2, Trash2 } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  BellPlus,
+  BellRing,
+  BookOpen,
+  Check,
+  CheckCheck,
+  Clock3,
+  ExternalLink,
+  Gauge,
+  Landmark,
+  LineChart,
+  Newspaper,
+  Pause,
+  Pencil,
+  Play,
+  Repeat2,
+  Settings2,
+  Target,
+  Trash2,
+  TrendingUp,
+  type LucideIcon,
+} from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { getArbitrageProvider } from "@/lib/arbitrage";
 import { useLanguage } from "@/lib/i18n/useLanguage";
@@ -50,6 +73,19 @@ const severityStyle: Record<AlertSeverity, string> = {
 const severityLabels: Record<AlertSeverity, { es: string; en: string }> = {
   informational: { es: "Informativa", en: "Informational" }, low: { es: "Baja", en: "Low" },
   medium: { es: "Media", en: "Medium" }, high: { es: "Alta", en: "High" }, critical: { es: "Crítica", en: "Critical" },
+};
+
+const categoryIcons: Record<AlertCategory, LucideIcon> = {
+  unusual_price_move: Activity,
+  unusual_volume: BarChart3,
+  trend_change: TrendingUp,
+  elevated_volatility: Gauge,
+  technical_change: LineChart,
+  opportunity: Target,
+  bond_event: Landmark,
+  corporate_bond_event: Landmark,
+  material_news: Newspaper,
+  arbitrage_opportunity: Repeat2,
 };
 
 export function AlertsCenter() {
@@ -119,6 +155,8 @@ export function AlertsCenter() {
       && (!date || alert.triggeredAt.slice(0, 10) === date)
       && (!needle || `${alert.instrumentId} ${alert.instrumentSymbol} ${alert.title} ${alert.summary}`.toLowerCase().includes(needle));
   }), [alerts, category, date, query, severity, unreadOnly, watchlistId]);
+  const visibleUnread = useMemo(() => visible.filter((alert) => !alert.readAt), [visible]);
+  const visibleRead = useMemo(() => visible.filter((alert) => Boolean(alert.readAt)), [visible]);
 
   function openComposer(subscription: PersonalAlertSubscription | null = null) {
     setEditingSubscription(subscription);
@@ -255,12 +293,61 @@ export function AlertsCenter() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 id="alert-history-title" className="text-xl font-semibold">{uiLanguage === "es" ? "Historial de eventos" : "Event history"}</h2><p className="mt-1 text-sm text-[var(--cma-text-secondary)]">{uiLanguage === "es" ? "Aquí aparecen sólo las alertas que ya cumplieron su condición." : "Only alerts whose condition has triggered appear here."}</p></div>{hasFilters ? <button type="button" onClick={clearFilters} className="min-h-10 rounded-lg border border-[var(--cma-border-soft)] px-3 text-xs text-cyan-100">{uiLanguage === "es" ? "Limpiar filtros" : "Clear filters"}</button> : null}</div>
           <div aria-label={uiLanguage === "es" ? "Filtros del historial de alertas" : "Alert history filters"} className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-6"><label className="grid gap-1 text-xs text-[var(--cma-text-muted)]">{uiLanguage === "es" ? "Instrumento" : "Instrument"}<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={uiLanguage === "es" ? "Ticker o texto" : "Ticker or text"} className="min-h-11 rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] px-3 text-sm" /></label><label className="grid gap-1 text-xs text-[var(--cma-text-muted)]">{uiLanguage === "es" ? "Severidad" : "Severity"}<select value={severity} onChange={(event) => setSeverity(event.target.value)} className="min-h-11 rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] px-3 text-sm"><option value="all">{uiLanguage === "es" ? "Todas" : "All"}</option>{(["informational", "low", "medium", "high", "critical"] as AlertSeverity[]).map((value) => <option key={value} value={value}>{severityLabels[value][uiLanguage]}</option>)}</select></label><label className="grid gap-1 text-xs text-[var(--cma-text-muted)]">{uiLanguage === "es" ? "Categoría" : "Category"}<select value={category} onChange={(event) => setCategory(event.target.value)} className="min-h-11 rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] px-3 text-sm"><option value="all">{uiLanguage === "es" ? "Todas" : "All"}</option>{Array.from(new Set(alerts.map((alert) => alert.category))).map((value) => <option key={value} value={value}>{categoryLabels[value][uiLanguage]}</option>)}</select></label><label className="grid gap-1 text-xs text-[var(--cma-text-muted)]">{uiLanguage === "es" ? "Lista" : "Watchlist"}<select value={watchlistId} onChange={(event) => setWatchlistId(event.target.value)} className="min-h-11 rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] px-3 text-sm"><option value="all">{uiLanguage === "es" ? "Todas" : "All"}</option>{watchlists.map((list) => <option key={list.id} value={list.id}>{list.name}</option>)}</select></label><label className="grid gap-1 text-xs text-[var(--cma-text-muted)]">{uiLanguage === "es" ? "Fecha" : "Date"}<input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="min-h-11 rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] px-3 text-sm" /></label><label className="flex min-h-11 items-center gap-2 self-end rounded-lg border border-[var(--cma-border-soft)] px-3 text-sm text-[var(--cma-text-secondary)]"><input type="checkbox" checked={unreadOnly} onChange={(event) => setUnreadOnly(event.target.checked)} />{uiLanguage === "es" ? "No leídas" : "Unread"}</label></div>
 
-          {error ? <p role="alert" className="mt-4 rounded-lg border border-rose-300/30 p-4 text-sm text-rose-200">{error}</p> : loading ? <p className="mt-4 rounded-lg border border-[var(--cma-border-soft)] p-6 text-sm text-[var(--cma-text-muted)]">{uiLanguage === "es" ? "Cargando alertas…" : "Loading alerts…"}</p> : !visible.length ? <div className="mt-4 rounded-xl border border-dashed border-[var(--cma-border-soft)] p-8 text-center"><BellRing className="mx-auto text-[var(--cma-text-muted)]" /><h3 className="mt-3 text-lg font-semibold">{hasFilters ? (uiLanguage === "es" ? "No hay eventos para estos filtros" : "No events match these filters") : (uiLanguage === "es" ? "Todavía no se activó ninguna alerta" : "No alerts have triggered yet")}</h3><p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-[var(--cma-text-secondary)]">{hasFilters ? (uiLanguage === "es" ? "Probá limpiar los filtros para volver a ver todo el historial." : "Clear the filters to view the full history.") : (uiLanguage === "es" ? "Tus activos continúan monitoreados. Un evento aparecerá cuando una regla automática o personal se cumpla con datos verificables." : "Your assets remain monitored. An event will appear when an automatic or personal condition triggers with verifiable data.")}</p></div> : <div className="mt-4 space-y-3">{visible.map((alert) => {
-            const title = alert.localizedContent.title?.[uiLanguage] ?? alert.title;
-            const summary = alert.localizedContent.summary?.[uiLanguage] ?? alert.summary;
-            const sourceLabel = alert.category === "arbitrage_opportunity" ? (uiLanguage === "es" ? "Radar de Arbitraje" : "Arbitrage Radar") : listNames.get(alert.watchlistId ?? "") ?? (uiLanguage === "es" ? "Lista eliminada" : "Deleted watchlist");
-            return <article key={alert.id} className={`rounded-xl border bg-[var(--cma-bg-elevated)] p-5 ${alert.readAt ? "border-[var(--cma-border-soft)]" : "border-cyan-300/30"}`}><div className="flex flex-col gap-4 sm:flex-row sm:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${severityStyle[alert.severity]}`}>{severityLabels[alert.severity][uiLanguage]}</span><span className="text-xs text-[var(--cma-text-muted)]">{categoryLabels[alert.category][uiLanguage]} · {sourceLabel}</span>{!alert.readAt ? <span className="rounded-full bg-cyan-300/10 px-2 py-1 text-[10px] text-cyan-100">{uiLanguage === "es" ? "Nueva" : "New"}</span> : null}</div><h3 className="mt-3 text-lg font-semibold">{title}</h3><p className="mt-2 text-sm leading-6 text-[var(--cma-text-secondary)]">{summary}</p><p className="mt-3 text-xs text-[var(--cma-text-muted)]">{new Intl.DateTimeFormat(uiLanguage === "es" ? "es-AR" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(alert.triggeredAt))} · {alert.provider} · {alert.freshnessStatus}</p></div><div className="flex shrink-0 flex-wrap items-start gap-2">{!alert.readAt ? <button type="button" onClick={() => void read(alert.id)} className="min-h-11 rounded-lg border border-[var(--cma-border-soft)] px-3 text-sm">{uiLanguage === "es" ? "Marcar leída" : "Mark read"}</button> : null}<Link href={`/alerts/${alert.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-cyan-300/30 px-3 text-sm text-cyan-100">{uiLanguage === "es" ? "Ver detalle" : "View detail"}<ExternalLink size={14} /></Link></div></div></article>;
-          })}</div>}
+          {error ? <p role="alert" className="mt-4 rounded-lg border border-rose-300/30 p-4 text-sm text-rose-200">{error}</p> : loading ? <p className="mt-4 rounded-lg border border-[var(--cma-border-soft)] p-6 text-sm text-[var(--cma-text-muted)]">{uiLanguage === "es" ? "Cargando alertas…" : "Loading alerts…"}</p> : !visible.length ? <div className="mt-4 rounded-xl border border-dashed border-[var(--cma-border-soft)] p-8 text-center"><BellRing className="mx-auto text-[var(--cma-text-muted)]" /><h3 className="mt-3 text-lg font-semibold">{hasFilters ? (uiLanguage === "es" ? "No hay eventos para estos filtros" : "No events match these filters") : (uiLanguage === "es" ? "Todavía no se activó ninguna alerta" : "No alerts have triggered yet")}</h3><p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-[var(--cma-text-secondary)]">{hasFilters ? (uiLanguage === "es" ? "Probá limpiar los filtros para volver a ver todo el historial." : "Clear the filters to view the full history.") : (uiLanguage === "es" ? "Tus activos continúan monitoreados. Un evento aparecerá cuando una regla automática o personal se cumpla con datos verificables." : "Your assets remain monitored. An event will appear when an automatic or personal condition triggers with verifiable data.")}</p></div> : <div className="mt-5 space-y-5">{[
+            { key: "unread", alerts: visibleUnread, label: uiLanguage === "es" ? "Sin leer" : "Unread", Icon: BellRing },
+            { key: "read", alerts: visibleRead, label: uiLanguage === "es" ? "Leídas anteriores" : "Previously read", Icon: CheckCheck },
+          ].filter((group) => group.alerts.length).map((group) => (
+            <section key={group.key} aria-labelledby={`alert-history-${group.key}`} className="space-y-3">
+              <div className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--cma-text-muted)]">
+                <group.Icon aria-hidden="true" size={15} />
+                <h3 id={`alert-history-${group.key}`}>{group.label} · {group.alerts.length}</h3>
+                <span aria-hidden="true" className="h-px flex-1 bg-[var(--cma-border-soft)]" />
+              </div>
+              {group.alerts.map((alert) => {
+                const title = alert.localizedContent.title?.[uiLanguage] ?? alert.title;
+                const summary = alert.localizedContent.summary?.[uiLanguage] ?? alert.summary;
+                const sourceLabel = alert.category === "arbitrage_opportunity" ? (uiLanguage === "es" ? "Radar de Arbitraje" : "Arbitrage Radar") : listNames.get(alert.watchlistId ?? "") ?? (uiLanguage === "es" ? "Lista eliminada" : "Deleted watchlist");
+                const CategoryIcon = categoryIcons[alert.category];
+                const isRead = Boolean(alert.readAt);
+                return (
+                  <article
+                    key={alert.id}
+                    className={`relative overflow-hidden rounded-xl border p-4 transition sm:p-5 ${isRead
+                      ? "border-[var(--cma-border-soft)] bg-[color-mix(in_srgb,var(--cma-bg-panel)_76%,var(--cma-bg-elevated)_24%)]"
+                      : "border-cyan-300/35 bg-[color-mix(in_srgb,var(--cma-bg-elevated)_86%,var(--cma-accent-cyan)_14%)] shadow-[0_10px_28px_rgba(0,0,0,0.18)]"}`}
+                  >
+                    {!isRead ? <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-[var(--cma-accent-cyan)]" /> : null}
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-base)] text-[var(--cma-accent-cyan)]">
+                          <CategoryIcon aria-hidden="true" size={18} />
+                        </span>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`inline-flex min-h-6 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${isRead ? "border-[var(--cma-border-soft)] bg-[color-mix(in_srgb,var(--cma-text-muted)_8%,transparent)] text-[var(--cma-text-muted)]" : "border-cyan-300/35 bg-cyan-300/10 text-cyan-100"}`}>
+                              {isRead ? <Check aria-hidden="true" size={12} /> : <BellRing aria-hidden="true" size={12} />}
+                              {isRead ? (uiLanguage === "es" ? "Leída" : "Read") : (uiLanguage === "es" ? "Nueva" : "New")}
+                            </span>
+                            <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${severityStyle[alert.severity]}`}>
+                              {uiLanguage === "es" ? "Severidad" : "Severity"} {severityLabels[alert.severity][uiLanguage].toLocaleLowerCase(uiLanguage === "es" ? "es-AR" : "en-US")}
+                            </span>
+                            <span className="text-xs text-[var(--cma-text-muted)]">{categoryLabels[alert.category][uiLanguage]} · {sourceLabel}</span>
+                          </div>
+                          <h4 className={`mt-3 text-lg font-semibold ${isRead ? "text-[var(--cma-text-secondary)]" : "text-[var(--cma-text-primary)]"}`}>{title}</h4>
+                          <p className={`mt-2 text-sm leading-6 ${isRead ? "text-[var(--cma-text-muted)]" : "text-[var(--cma-text-secondary)]"}`}>{summary}</p>
+                          <p className="mt-3 text-xs text-[var(--cma-text-muted)]">{new Intl.DateTimeFormat(uiLanguage === "es" ? "es-AR" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(alert.triggeredAt))} · {alert.provider} · {alert.freshnessStatus}</p>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-wrap items-start gap-2 sm:ml-4">
+                        {!isRead ? <button type="button" onClick={() => void read(alert.id)} className="min-h-11 rounded-lg border border-[var(--cma-border-soft)] px-3 text-sm text-[var(--cma-text-secondary)]">{uiLanguage === "es" ? "Marcar leída" : "Mark read"}</button> : null}
+                        <Link href={`/alerts/${alert.id}`} className={`inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm font-medium ${isRead ? "border-[var(--cma-border-soft)] text-[var(--cma-text-secondary)]" : "border-cyan-300/30 bg-cyan-300/10 text-cyan-100"}`}>{uiLanguage === "es" ? "Ver detalle" : "View detail"}<ExternalLink aria-hidden="true" size={14} /></Link>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </section>
+          ))}</div>}
         </section>
       </div>
       <AlertComposerDialog open={composerOpen} watchlists={watchlists} initialSubscription={editingSubscription} onClose={closeComposer} />
