@@ -7,14 +7,16 @@ export async function GET(
 ) {
   const { symbol: rawSymbol } = await context.params;
   const symbol = normalizeSymbol(decodeURIComponent(rawSymbol ?? ""));
-  const debug = new URL(request.url).searchParams.get("debug") === "1";
+  const requestUrl = new URL(request.url);
+  const debug = requestUrl.searchParams.get("debug") === "1";
+  const instrumentId = requestUrl.searchParams.get("instrumentId")?.trim() || undefined;
 
   if (!symbol) {
     return Response.json({ error: "Symbol is required." }, { status: 400 });
   }
 
   try {
-    const quote = await getMarketQuote(symbol);
+    const quote = await getMarketQuote(symbol, { instrumentId });
     const responseBody = debug ? quote : { ...quote, providerTrace: undefined };
 
     return Response.json(responseBody, {

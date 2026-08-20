@@ -10,6 +10,7 @@ import { getTradingViewSymbol } from "@/lib/tradingview/symbol-map";
 import { getYahooFundamentalsSymbol } from "@/lib/fundamentals-data/symbol-map";
 import { getAssetHref } from "@/lib/instruments/assetHref";
 import { instrumentMasterSeed } from "@/lib/instruments/instrument-master.seed";
+import { resolveMarketQuoteCurrency } from "@/lib/market-data/quote-service";
 
 test("instrument search prioritizes exact US symbols and includes CEDEAR alternatives", () => {
   const results = searchInstruments({ query: "MSFT", limit: 5 });
@@ -63,6 +64,21 @@ test("every searchable US stock and ETF has route-safe market metadata", () => {
     assert.ok(getYahooFundamentalsSymbol(instrument.symbol));
     assert.match(getAssetHref(instrument.symbol, instrument.id), /instrumentId=/);
   }
+});
+
+test("Argentine ADR quotes keep their US-listed USD identity", () => {
+  const adrs = instrumentMasterSeed.filter((instrument) => instrument.assetClass === "adr");
+
+  assert.ok(adrs.length >= 10);
+  for (const adr of adrs) {
+    assert.equal(adr.market, "us");
+    assert.equal(adr.currency, "USD");
+    assert.equal(resolveMarketQuoteCurrency(adr.symbol, adr.id), "USD");
+    assert.match(getAssetHref(adr.symbol, adr.id), /instrumentId=/);
+  }
+
+  assert.equal(resolveMarketQuoteCurrency("BMA", "adr:BMA"), "USD");
+  assert.equal(resolveMarketQuoteCurrency("BMA", "ar-equity:BMA"), "ARS");
 });
 
 test("CEDEAR resolution points technical layer to US underlying", () => {

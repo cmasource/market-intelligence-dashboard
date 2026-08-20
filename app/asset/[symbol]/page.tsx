@@ -59,7 +59,11 @@ export default async function AssetDetailPage({
 
   return (
     <AppShell width="asset">
-      <AssetQuoteProvider symbol={asset.symbol} isArgentina={Boolean(asset.argentinaContext)}>
+      <AssetQuoteProvider
+        symbol={asset.symbol}
+        instrumentId={resolvedInstrumentId}
+        isArgentina={Boolean(asset.argentinaContext)}
+      >
       <AssetAnalysisProvider symbol={asset.symbol} instrumentId={resolvedInstrumentId} enabled={!isFixedIncome}>
       <div className="space-y-6">
         <AssetHeader asset={asset} />

@@ -1,4 +1,5 @@
 import { findAsset } from "@/lib/mock-data";
+import { resolveInstrument } from "@/lib/instruments/resolveInstrument";
 import { getAlphaVantageQuoteSnapshot, getFmpQuoteSnapshot } from "@/lib/providers";
 import type { ProviderTraceEntry } from "@/lib/providers/types";
 import { getMarketData } from "./market-data-service";
@@ -24,16 +25,32 @@ function latestQuoteFromCandles(candles: MarketDataCandle[]) {
   };
 }
 
-function unavailableQuote(symbol: string, error?: string, providerTrace: ProviderTraceEntry[] = []): MarketQuoteResponse {
+type MarketQuoteOptions = {
+  instrumentId?: string;
+};
+
+export function resolveMarketQuoteCurrency(symbol: string, instrumentId?: string) {
   const normalizedSymbol = normalizeSymbol(symbol);
+  const instrument = resolveInstrument({ symbol: normalizedSymbol, instrumentId })?.instrument;
   const asset = findAsset(normalizedSymbol);
+
+  return instrument?.currency ?? asset?.quoteCurrency ?? asset?.currency ?? "USD";
+}
+
+function unavailableQuote(
+  symbol: string,
+  error?: string,
+  providerTrace: ProviderTraceEntry[] = [],
+  instrumentId?: string,
+): MarketQuoteResponse {
+  const normalizedSymbol = normalizeSymbol(symbol);
 
   return {
     symbol: normalizedSymbol,
     price: null,
     change: null,
     changePercent: null,
-    currency: asset?.quoteCurrency ?? asset?.currency ?? "USD",
+    currency: resolveMarketQuoteCurrency(normalizedSymbol, instrumentId),
     provider: "unavailable",
     sourceLabel: "No verified quote",
     isFallback: true,
@@ -54,7 +71,7 @@ function unavailableQuote(symbol: string, error?: string, providerTrace: Provide
   };
 }
 
-export async function getMarketQuote(symbol: string): Promise<MarketQuoteResponse> {
+export async function getMarketQuote(symbol: string, options: MarketQuoteOptions = {}): Promise<MarketQuoteResponse> {
   const normalizedSymbol = normalizeSymbol(symbol);
   const errors: string[] = [];
   const providerTrace: ProviderTraceEntry[] = [];
@@ -101,7 +118,6 @@ export async function getMarketQuote(symbol: string): Promise<MarketQuoteRespons
     const candleQuote = latestQuoteFromCandles(marketData.candles);
 
     if (candleQuote) {
-      const asset = findAsset(normalizedSymbol);
       providerTrace.push({
         provider: marketData.provider,
         attempted: true,
@@ -115,7 +131,7 @@ export async function getMarketQuote(symbol: string): Promise<MarketQuoteRespons
         price: candleQuote.price,
         change: candleQuote.change,
         changePercent: candleQuote.changePercent,
-        currency: asset?.quoteCurrency ?? asset?.currency ?? "USD",
+        currency: resolveMarketQuoteCurrency(normalizedSymbol, options.instrumentId),
         provider: marketData.provider,
         sourceLabel: marketData.sourceLabel,
         isFallback: marketData.isFallback,
@@ -142,5 +158,10 @@ export async function getMarketQuote(symbol: string): Promise<MarketQuoteRespons
     errors.push(error instanceof Error ? error.message : "Quote provider chain failed.");
   }
 
-  return unavailableQuote(normalizedSymbol, errors.filter(Boolean).join(" | ") || undefined, providerTrace);
+  return unavailableQuote(
+    normalizedSymbol,
+    errors.filter(Boolean).join(" | ") || undefined,
+    providerTrace,
+    options.instrumentId,
+  );
 }
