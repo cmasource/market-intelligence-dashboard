@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildOpportunityMatrix, buildOpportunityMatrixForAsset, buildTransferRoute, calculateArbitrageOpportunity, filterQuotesByTransferAsset, rankBuyQuotes, rankSellQuotes } from "../../lib/arbitrage";
+import { buildOpportunityMatrix, buildOpportunityMatrixForAsset, buildTransferRoute, calculateArbitrageOpportunity, filterQuotesByTransferAsset, getArbitrageProvider, rankBuyQuotes, rankSellQuotes } from "../../lib/arbitrage";
 import type { FxQuote, TransferRoute } from "../../lib/arbitrage/types";
 
 function quote(overrides: Partial<FxQuote> & Pick<FxQuote, "id" | "providerId">): FxQuote {
@@ -90,6 +90,26 @@ test("Plus to Fiwind composite USD route stays informational even when gross spr
   assert.equal(result.netProfitArs, undefined);
   assert.equal(result.classification, "potential_gross_difference");
   assert.equal(result.isProfitable, false);
+});
+
+test("documented USD account providers can build a transfer route to Fiwind", () => {
+  const destination = quote({
+    id: "fiwind-usd-via-usdt",
+    providerId: "fiwind",
+    instrument: "crypto_usd_route",
+    userSellsUsdAt: 1510,
+  });
+
+  for (const providerId of ["banco-ciudad", "banco-hipotecario", "banco-provincia", "banco-supervielle", "bancor", "brubank", "uala", "reba", "balanz"]) {
+    const provider = getArbitrageProvider(providerId);
+    assert.equal(provider?.supportsUsdDeposit, true, `${providerId} should accept USD transfers`);
+    assert.equal(provider?.supportsUsdWithdrawal, true, `${providerId} should send USD transfers`);
+
+    const source = quote({ id: `${providerId}-usd`, providerId });
+    const route = buildTransferRoute(source, destination, 1000);
+    assert.equal(route.blockers.includes("transfer_capability_unverified"), false, `${providerId} should not be blocked by an unknown transfer capability`);
+    assert.equal(route.isCompatible, true, `${providerId} should be transfer-compatible with Fiwind`);
+  }
 });
 
 test("converts fixed USD fees once at the applicable rate", () => {

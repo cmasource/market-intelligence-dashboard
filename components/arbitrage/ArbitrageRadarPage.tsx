@@ -13,8 +13,11 @@ import { ArbitrageMatrix } from "./ArbitrageMatrix";
 import { formatArs, formatTimestamp, formatUsd } from "./format";
 import { ProviderLogo } from "./ProviderLogo";
 import { ProviderQuoteCard } from "./ProviderQuoteCard";
+import { UsdCryptoCircuitMonitor } from "./UsdCryptoCircuitMonitor";
 
 const assets: TransferAsset[] = ["USD_BANK", "USDT", "USDC"];
+const usdCryptoCircuitTab = "USD_CRYPTO" as const;
+type RadarTab = TransferAsset | typeof usdCryptoCircuitTab;
 
 function assetLabel(asset: TransferAsset, language: "es" | "en") {
   if (asset === "USD_BANK") return language === "es" ? "USD bancario" : "Bank USD";
@@ -48,6 +51,7 @@ export function ArbitrageRadarPage() {
   const [error, setError] = useState(false);
   const [amount, setAmount] = useState("1000");
   const [selectedAsset, setSelectedAsset] = useState<TransferAsset>("USD_BANK");
+  const [selectedTab, setSelectedTab] = useState<RadarTab>("USD_BANK");
   const [sourceId, setSourceId] = useState("");
   const [destinationId, setDestinationId] = useState("");
   const [onlyFresh, setOnlyFresh] = useState(false);
@@ -112,6 +116,7 @@ export function ArbitrageRadarPage() {
   const bestSellId = sellQuotes[0]?.id;
 
   function selectAsset(asset: TransferAsset) {
+    setSelectedTab(asset);
     setSelectedAsset(asset);
     setSourceId("");
     setDestinationId("");
@@ -154,18 +159,31 @@ export function ArbitrageRadarPage() {
         <section aria-label={language === "es" ? "Activo comparado" : "Compared asset"} className="border-b border-[var(--cma-border-soft)]">
           <div className="flex gap-1 overflow-x-auto">
             {assets.map((asset) => {
-              const active = selectedAsset === asset;
+              const active = selectedTab === asset;
               const count = payload?.quotes.filter((quote) => quote.transferAsset === asset).length ?? 0;
               return <button key={asset} type="button" onClick={() => selectAsset(asset)} aria-pressed={active} className={`relative min-h-12 shrink-0 px-4 text-sm font-semibold transition ${active ? "text-[var(--cma-accent-cyan)]" : "text-[var(--cma-text-muted)] hover:text-[var(--cma-text-primary)]"}`}>{assetLabel(asset, language)}<span className="ml-2 rounded-full border border-[var(--cma-border-soft)] px-1.5 py-0.5 text-[10px]">{count}</span>{active ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[var(--cma-accent-cyan)]" /> : null}</button>;
             })}
+            <button
+              type="button"
+              onClick={() => setSelectedTab(usdCryptoCircuitTab)}
+              aria-pressed={selectedTab === usdCryptoCircuitTab}
+              className={`relative min-h-12 shrink-0 px-4 text-sm font-semibold transition ${selectedTab === usdCryptoCircuitTab ? "text-[var(--cma-accent-cyan)]" : "text-[var(--cma-text-muted)] hover:text-[var(--cma-text-primary)]"}`}
+            >
+              {language === "es" ? "USD → cripto → ARS" : "USD → crypto → ARS"}
+              <span className="ml-2 rounded-full border border-[var(--cma-border-soft)] px-1.5 py-0.5 text-[10px]">{payload?.usdCryptoCircuits.length ?? 0}</span>
+              {selectedTab === usdCryptoCircuitTab ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[var(--cma-accent-cyan)]" /> : null}
+            </button>
           </div>
         </section>
 
-        <section className="rounded-xl border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] p-4 sm:p-5" data-testid="best-arbitrage-opportunity">
-          <OpportunitySummary opportunity={summaryOpportunity} verified={Boolean(best)} potential={Boolean(bestPotential)} providers={providers} language={language} onCreateAlert={summaryOpportunity ? () => setAlertConfig({ opportunity: summaryOpportunity, scope: "any_verified" }) : undefined} />
-        </section>
+        {selectedTab === usdCryptoCircuitTab ? (
+          <UsdCryptoCircuitMonitor circuits={payload?.usdCryptoCircuits ?? []} providers={providers} language={language} />
+        ) : <>
+          <section className="rounded-xl border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] p-4 sm:p-5" data-testid="best-arbitrage-opportunity">
+            <OpportunitySummary opportunity={summaryOpportunity} verified={Boolean(best)} potential={Boolean(bestPotential)} providers={providers} language={language} onCreateAlert={summaryOpportunity ? () => setAlertConfig({ opportunity: summaryOpportunity, scope: "any_verified" }) : undefined} />
+          </section>
 
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)]">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)]">
           <section className="min-w-0" data-testid="arbitrage-quote-cards">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
@@ -185,7 +203,8 @@ export function ArbitrageRadarPage() {
             <ArbitrageMatrix buyQuotes={buyQuotes} sellQuotes={sellQuotes} opportunities={matrix} providers={providers} language={language} asset={selectedAsset} t={translate} />
             <ArbitrageCalculator amount={amount} onAmountChange={setAmount} sourceId={selectedSource?.id ?? ""} destinationId={selectedDestination?.id ?? ""} onSourceChange={selectSource} onDestinationChange={setDestinationId} buyQuotes={buyQuotes} sellQuotes={sellQuotes} opportunity={selectedOpportunity} providers={providers} asset={selectedAsset} language={language} t={translate} onCreateAlert={(opportunity) => setAlertConfig({ opportunity, scope: "route" })} />
           </aside>
-        </div>
+          </div>
+        </>}
 
         <section className="rounded-xl border border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] p-4 sm:p-5" data-testid="arbitrage-source-status">
           <div>

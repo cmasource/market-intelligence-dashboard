@@ -7,7 +7,7 @@ const providers = [
   { id: "bna", name: "Banco Nación", providerType: "bank", operates24x7: false, supportsArsDeposit: true, supportsArsWithdrawal: true, supportsUsdDeposit: true, supportsUsdWithdrawal: true, requiresSameHolderAccount: true, sourceType: "public_page", status: "active", verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "verified" } },
   { id: "satoshitango", name: "Satoshi Tango", providerType: "exchange", operates24x7: true, sourceType: "aggregator", status: "active", verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "unverified", availability24x7: "reference_only" } },
   { id: "fiwind", name: "Fiwind", providerType: "wallet", operates24x7: true, sourceType: "aggregator", status: "active", verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "verified", transferAsset: "partially_verified", availability24x7: "partially_verified" } },
-  { id: "banco-hipotecario", name: "Banco Hipotecario", providerType: "bank", operates24x7: false, sourceType: "aggregator", status: "active", verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "partially_verified", availability24x7: "reference_only" } },
+  { id: "banco-hipotecario", name: "Banco Hipotecario", providerType: "bank", operates24x7: false, supportsUsdDeposit: true, supportsUsdWithdrawal: true, requiresSameHolderAccount: true, sourceType: "aggregator", status: "active", verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "reference_only" } },
   { id: "galicia", name: "Banco Galicia", providerType: "bank", sourceType: "unavailable", status: "unsupported", verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "unverified", availability24x7: "unverified" } },
 ] as const;
 
@@ -39,7 +39,7 @@ function response({ negative = false } = {}) {
     quote({ id: "plus-usd", providerId: "plus", instrument: "bank_usd", userBuysUsdAt: negative ? 1519 : 1500, userSellsUsdAt: 1490 }),
     quote({ id: "bna-usd", providerId: "bna", userBuysUsdAt: negative ? 1530 : 1510, userSellsUsdAt: negative ? 1501.92 : 1505, sourceType: "public_page", fees: { confidence: "unknown" }, warnings: ["costs_unverified"] }),
     quote({ id: "fiwind-usd-via-usdt", providerId: "fiwind", instrument: "crypto_usd_route", userBuysUsdAt: 1532, userSellsUsdAt: negative ? 1501 : 1520, observedAt: undefined, status: "delayed", sourcePollingIntervalSeconds: 300, sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["observed_at_unavailable", "costs_unverified", "verify_final_price", "provider_partial_data"], verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" } }),
-    quote({ id: "hipotecario-usd", providerId: "banco-hipotecario", userBuysUsdAt: 1540, userSellsUsdAt: 1495, observedAt: undefined, status: "delayed", sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["observed_at_unavailable", "costs_unverified", "provider_partial_data"], verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" } }),
+    quote({ id: "hipotecario-usd", providerId: "banco-hipotecario", userBuysUsdAt: 1511, userSellsUsdAt: 1495, observedAt: undefined, status: "delayed", sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["observed_at_unavailable", "costs_unverified", "provider_partial_data"], verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" } }),
     quote({ id: "satoshi-usdt", providerId: "satoshitango", instrument: "usdt", transferAsset: "USDT", userBuysUsdAt: 1590, userSellsUsdAt: 1562, observedAt: "2020-01-01T00:00:00.000Z", status: "stale", sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["stale_quote", "observed_at_unavailable"], verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" } }),
     quote({ id: "fiwind-usdt", providerId: "fiwind", instrument: "usdt", transferAsset: "USDT", userBuysUsdAt: 1580, userSellsUsdAt: 1567, quotedAmountUsd: 1000, status: "delayed", sourceType: "aggregator", fees: { confidence: "unknown" }, warnings: ["costs_unverified", "verify_final_price", "volume_specific_quote"], verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" } }),
   ];
@@ -47,6 +47,29 @@ function response({ negative = false } = {}) {
     generatedAt: now,
     providers,
     quotes,
+    usdCryptoCircuits: [{
+      id: "plus-usd--fiwind-usdt-circuit",
+      sourceProviderId: "plus",
+      destinationProviderId: "fiwind",
+      sourceQuoteId: "plus-usd",
+      destinationQuoteId: "fiwind-usd-via-usdt",
+      stablecoin: "USDT",
+      mode: "automatic",
+      status: "effective_quote",
+      amountUsd: 1000,
+      usdBuyRateArs: negative ? 1519 : 1500,
+      stablecoinSellRateArs: negative ? 1501 : 1520,
+      effectiveSellRateArs: negative ? 1501 : 1520,
+      grossSpreadUpperBoundArsPerUsd: negative ? -18 : 20,
+      grossResultUpperBoundArs: negative ? -18000 : 20000,
+      freshnessStatus: "unverifiable",
+      fetchedAt: now,
+      requiresSameHolderAccount: true,
+      conversionRateVerified: true,
+      providerDocumentationUrl: "https://help.fiwind.io/example",
+      destinationQuoteUrl: "https://example.com/fiwind",
+      warnings: ["same_holder_required", "costs_unverified", "verify_final_price"],
+    }],
     providerResults: [
       { providerId: "plus", quotes: [quotes[0]], status: "success", fetchedAt: now, cacheStatus: "fresh" },
       { providerId: "bna", quotes: [quotes[1]], status: "success", fetchedAt: now, cacheStatus: "fresh" },
@@ -83,6 +106,9 @@ test("separates assets, shows both user-side prices and constrains routes", asyn
   await expect(page.getByTestId("arbitrage-quote-cards")).toContainText(/CMA check|Consulta CMA/);
   await expect(page.getByTestId("arbitrage-quote-cards")).not.toContainText(/Source time unavailable|Fuente sin hora propia/);
   await expect(page.getByTestId("best-arbitrage-opportunity")).toContainText(/Possible gross difference|Posible diferencia bruta/);
+  const hipotecarioRoute = page.getByTestId("arbitrage-matrix").locator("article").filter({ hasText: "Banco Hipotecario → Fiwind" });
+  await expect(hipotecarioRoute).toContainText(/Possible gross difference|Posible diferencia bruta/);
+  await expect(hipotecarioRoute).not.toContainText(/Route not operable|Ruta no operable/);
   await expect(page.getByTestId("arbitrage-matrix")).not.toContainText(/Unverifiable freshness|Frescura no verificable/);
   await page.getByTestId("best-arbitrage-opportunity").getByRole("button", { name: /Create difference alert|Crear alerta por diferencia/ }).click();
   await expect(page.getByRole("dialog")).toContainText(/Alertarme por diferencia de cotización|Alert me about a quote difference/);
@@ -93,6 +119,11 @@ test("separates assets, shows both user-side prices and constrains routes", asyn
   await expect(page.getByTestId("arbitrage-calculator")).toContainText(/Calculadora|calculator/i);
   await expect(page.getByTestId("arbitrage-source-status")).toContainText("Fiwind");
   await expect(page.getByTestId("arbitrage-source-status")).toContainText(/Banco Hipotecario/);
+  await expect(page.getByTestId("usd-crypto-circuit-monitor")).toHaveCount(0);
+  await page.getByRole("button", { name: /USD.*(?:cripto|crypto).*ARS/i }).click();
+  await expect(page.getByTestId("usd-crypto-circuit-monitor")).toContainText(/USD bancario.*stablecoin.*pesos|Bank USD.*stablecoin.*pesos/i);
+  await expect(page.getByTestId("usd-crypto-circuit-monitor")).toContainText(/Fiwind/);
+  await expect(page.getByTestId("usd-crypto-circuit-monitor")).toContainText(/ganancia neta|net profit/i);
 
   await page.getByRole("button", { name: /USDT/ }).click();
   await expect(page.getByTestId("arbitrage-quote-cards")).toContainText("Fiwind");

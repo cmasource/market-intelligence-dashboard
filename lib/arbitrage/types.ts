@@ -185,10 +185,41 @@ export type ArbitrageOpportunity = {
   calculatedAt: string;
 };
 
+export type UsdCryptoCircuitMode = "automatic" | "manual";
+export type UsdCryptoCircuitStatus = "effective_quote" | "conversion_spread_unavailable" | "unavailable";
+
+export type UsdCryptoCircuit = {
+  id: string;
+  sourceProviderId: string;
+  destinationProviderId: string;
+  sourceQuoteId: string;
+  destinationQuoteId: string;
+  stablecoin: "USDT" | "USDC";
+  mode: UsdCryptoCircuitMode;
+  status: UsdCryptoCircuitStatus;
+  amountUsd: number;
+  usdBuyRateArs: number;
+  stablecoinSellRateArs: number;
+  effectiveSellRateArs?: number;
+  grossSpreadUpperBoundArsPerUsd: number;
+  grossResultUpperBoundArs: number;
+  netResultArs?: number;
+  freshnessStatus: FreshnessStatus;
+  observedAt?: string;
+  fetchedAt: string;
+  requiresSameHolderAccount: boolean;
+  conversionRateVerified: boolean;
+  sourceUrl?: string;
+  destinationQuoteUrl?: string;
+  providerDocumentationUrl: string;
+  warnings: ArbitrageIssueCode[];
+};
+
 export type ArbitrageQuotesResponse = {
   generatedAt: string;
   providers: FxProvider[];
   quotes: FxQuote[];
+  usdCryptoCircuits: UsdCryptoCircuit[];
   providerResults: ProviderQuoteResult[];
   cache: {
     plusTtlSeconds: number;

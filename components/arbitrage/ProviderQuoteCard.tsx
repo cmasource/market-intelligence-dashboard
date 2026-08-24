@@ -95,7 +95,7 @@ export function ProviderQuoteCard({ quote, provider, asset, isBestBuy, isBestSel
         {quote.observedAt ? <span title={formatTimestamp(quote.observedAt, language)}>{language === "es" ? "Hora de la fuente" : "Source time"}: {observedLabel}</span> : null}
         <span title={formatTimestamp(quote.fetchedAt, language)} className="font-medium text-[var(--cma-text-secondary)]">{language === "es" ? "Última consulta CMA" : "Latest CMA check"}: {fetchedLabel}</span>
         {quote.quotedAmountUsd ? <span>{language === "es" ? "Volumen" : "Volume"}: {formatUsd(quote.quotedAmountUsd, language)}</span> : null}
-        {referenceOnly ? <span className="inline-flex items-center gap-1 text-sky-300"><ShieldCheck size={11} aria-hidden="true" />{language === "es" ? "No confirma una ruta operable" : "Does not confirm an operable route"}</span> : null}
+        {referenceOnly ? <span className="inline-flex items-center gap-1 text-sky-300"><ShieldCheck size={11} aria-hidden="true" />{language === "es" ? "Operabilidad por verificar" : "Operability pending verification"}</span> : null}
         {quote.sourceUrl ? <a href={quote.sourceUrl} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex min-h-8 items-center gap-1 font-semibold text-[var(--cma-accent-cyan)] hover:underline"><ExternalLink size={11} aria-hidden="true" />{t("arbitrageOpenSource")}</a> : null}
       </div>
     </article>

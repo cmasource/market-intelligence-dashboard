@@ -5,6 +5,7 @@ import { CriptoYaStablecoinAdapter } from "./adapters/criptoya";
 import { errorResult } from "./adapters/shared";
 import { PlusQuoteAdapter } from "./adapters/plus";
 import { ARBITRAGE_PROVIDERS } from "./provider-registry";
+import { buildUsdCryptoCircuits } from "./conversion-circuits";
 import type { ArbitrageQuoteProvider, ArbitrageQuotesResponse, ProviderQuoteResult } from "./types";
 
 const adapters: ArbitrageQuoteProvider[] = [new PlusQuoteAdapter(), new BnaQuoteAdapter(), new CriptoYaStablecoinAdapter(), new ComparaDolarUsdAdapter()];
@@ -48,10 +49,12 @@ export async function getArbitrageQuotes(forceRefresh = false): Promise<Arbitrag
   const providerResults = settled.map((result, index) => result.status === "fulfilled"
     ? result.value
     : errorResult(adapters[index]?.id ?? "unknown", result.reason));
+  const quotes = providerResults.flatMap((result) => result.quotes);
   return {
     generatedAt: new Date().toISOString(),
     providers: ARBITRAGE_PROVIDERS,
-    quotes: providerResults.flatMap((result) => result.quotes),
+    quotes,
+    usdCryptoCircuits: buildUsdCryptoCircuits(quotes),
     providerResults,
     cache: { plusTtlSeconds: 60, bnaTtlSeconds: 300, criptoYaTtlSeconds: 60, comparaDolarTtlSeconds: 60 },
     disclaimer: "informational_only",
