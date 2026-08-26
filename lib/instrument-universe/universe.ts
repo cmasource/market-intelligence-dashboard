@@ -99,8 +99,14 @@ function toUniverseItem(instrument: Instrument, index: number): InstrumentUniver
       instrument.underlyingSymbol,
       ...(instrument.aliases ?? []),
     ].filter((value): value is string => Boolean(value)))),
-    relationType: category === "cedear" ? "cedear" : category === "adr" ? "adr" : undefined,
-    isPrimary: true,
+    relationType: category === "cedear"
+      ? "cedear"
+      : category === "adr"
+        ? "adr"
+        : instrument.market === "argentina" && instrument.assetClass === "stock"
+          ? "local_equity"
+          : undefined,
+    isPrimary: instrument.market !== "argentina",
     isSearchable: instrument.enabled,
     tags: instrument.tags,
     description: instrument.warnings[0],

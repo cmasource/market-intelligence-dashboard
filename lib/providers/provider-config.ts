@@ -27,7 +27,6 @@ export function getMarketDataProviderPriority(): ProviderAvailability[] {
     availability("finnhub", "FINNHUB_API_KEY"),
     availability("alpha_vantage", "ALPHA_VANTAGE_API_KEY"),
     availability("yahoo"),
-    availability("unavailable"),
   ];
 }
 
@@ -37,7 +36,6 @@ export function getFundamentalsProviderPriority(): ProviderAvailability[] {
     availability("finnhub", "FINNHUB_API_KEY"),
     availability("alpha_vantage", "ALPHA_VANTAGE_API_KEY"),
     availability("yahoo"),
-    availability("unavailable"),
   ];
 }
 
@@ -47,7 +45,6 @@ export function getNewsProviderPriority(): ProviderAvailability[] {
     availability("finnhub", "FINNHUB_API_KEY"),
     availability("alpha_vantage", "ALPHA_VANTAGE_API_KEY"),
     availability("google_news_rss"),
-    availability("unavailable"),
   ];
 }
 

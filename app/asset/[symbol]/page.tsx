@@ -41,9 +41,7 @@ export default async function AssetDetailPage({
   const instrumentResolution = resolveInstrument({ symbol: normalizedSymbol, instrumentId });
   const resolvedAsset = instrumentResolution ? assetFromInstrument(instrumentResolution.instrument) : null;
   const mockAsset = findAsset(normalizedSymbol);
-  const asset = mockAsset && (!resolvedAsset || (mockAsset.type === resolvedAsset.type && mockAsset.currency === resolvedAsset.currency))
-    ? mockAsset
-    : resolvedAsset;
+  const asset = resolvedAsset ?? mockAsset;
 
   if (!asset) {
     return (
@@ -67,6 +65,7 @@ export default async function AssetDetailPage({
       <AssetAnalysisProvider symbol={asset.symbol} instrumentId={resolvedInstrumentId} enabled={!isFixedIncome}>
       <div className="space-y-6">
         <AssetHeader asset={asset} />
+        <RelatedInstrumentsCard symbol={asset.symbol} instrumentId={resolvedInstrumentId} />
         {!isFixedIncome ? <InvestmentDecisionPanel asset={asset} /> : null}
         {!isFixedIncome ? <ResearchTearsheetCard asset={asset} /> : null}
         {tradingViewMapping.verified ? (
@@ -111,7 +110,6 @@ export default async function AssetDetailPage({
           </aside>
         </div>
         <AssetSecondaryDetails symbol={asset.symbol} />
-        <RelatedInstrumentsCard symbol={asset.symbol} instrumentId={resolvedInstrumentId} />
         <AssetDisclaimer />
       </div>
       </AssetAnalysisProvider>

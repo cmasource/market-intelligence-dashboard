@@ -153,7 +153,8 @@ export function FundamentalAnalysisCard({
               ? t("fundamentalsFallback")
               : t("fundamentalsNotApplicable");
   const isNotApplicable = fundamentals?.provider === "unavailable" || (!hasAnyFundamental(snapshot) && !loading);
-  const usesUnderlying = Boolean(fundamentals?.symbol && symbol && fundamentals.symbol.toUpperCase() !== symbol.toUpperCase());
+  const usesUnderlying = fundamentals?.listingContext?.basis === "underlying_adr"
+    || Boolean(fundamentals?.symbol && symbol && fundamentals.symbol.toUpperCase() !== symbol.toUpperCase());
   const missingFieldList = fundamentals?.missingFields ?? unavailableFields(snapshot);
   const hasPartialCoverage = hasAnyFundamental(snapshot) && missingFieldList.length >= 6;
   const coveragePercent =
@@ -240,6 +241,7 @@ export function FundamentalAnalysisCard({
     { id: "fiftyTwoWeekHigh", label: <GlossaryLabel termKey="fiftyTwoWeekHigh" />, value: formatOptionalCurrency(snapshot.fiftyTwoWeekHigh, safeCurrency, na, language) },
     { id: "fiftyTwoWeekLow", label: <GlossaryLabel termKey="fiftyTwoWeekLow" />, value: formatOptionalCurrency(snapshot.fiftyTwoWeekLow, safeCurrency, na, language) },
     { id: "marketCap", label: <GlossaryLabel termKey="marketCap" />, value: formatOptionalCurrency(snapshot.marketCap, safeCurrency, na, language) },
+    { id: "enterpriseValue", label: <span>{language === "es" ? "Valor empresa" : "Enterprise value"}</span>, value: formatOptionalCurrency(snapshot.enterpriseValue, safeCurrency, na, language) },
   ];
   const renderMetricSection = (title: string, items: typeof valuationMetrics) => {
     const visibleItems = hasPartialCoverage ? items.filter((item) => item.value !== na) : items;
@@ -269,8 +271,16 @@ export function FundamentalAnalysisCard({
         {usesUnderlying ? (
           <Badge>
             {language === "es"
-              ? `Fundamentos basados en subyacente: ${fundamentals?.symbol}`
-              : `Fundamentals based on underlying: ${fundamentals?.symbol}`}
+              ? `Fundamentos basados en ADR: ${fundamentals?.listingContext?.providerSymbol ?? fundamentals?.symbol} (USD)`
+              : `Fundamentals based on ADR: ${fundamentals?.listingContext?.providerSymbol ?? fundamentals?.symbol} (USD)`}
+          </Badge>
+        ) : null}
+        {snapshot.period ? <Badge>{snapshot.period}</Badge> : null}
+        {snapshot.reportingCurrency && snapshot.reportingCurrency !== safeCurrency ? (
+          <Badge>
+            {language === "es"
+              ? `Estados contables en ${snapshot.reportingCurrency}`
+              : `Financial statements in ${snapshot.reportingCurrency}`}
           </Badge>
         ) : null}
       </div>

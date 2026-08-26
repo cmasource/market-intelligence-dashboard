@@ -14,6 +14,14 @@ export type FundamentalsRequest = {
   assetClass?: FundamentalsAssetClass;
 };
 
+export type FundamentalsListingContext = {
+  basis: "direct" | "underlying_adr";
+  requestedSymbol: string;
+  providerSymbol: string;
+  market?: string;
+  currency?: string;
+};
+
 export type FundamentalsMetricSource = "reported" | "calculated" | "provider" | "mock" | "unavailable";
 
 export type FundamentalsSnapshot = {
@@ -43,6 +51,7 @@ export type FundamentalsSnapshot = {
   fiftyTwoWeekHigh?: number;
   fiftyTwoWeekLow?: number;
   currency?: string;
+  reportingCurrency?: string;
   fiscalYear?: string;
   period?: string;
 };
@@ -75,6 +84,7 @@ export type FundamentalsResponse = {
   missingFields?: string[];
   coverageRatio?: number;
   providerTrace?: FundamentalsProviderTraceEntry[];
+  listingContext?: FundamentalsListingContext;
   warnings?: string[];
   error?: string;
 };

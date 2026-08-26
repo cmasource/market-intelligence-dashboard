@@ -74,6 +74,14 @@ function decimalValue(value: string | undefined) {
   return Math.abs(parsed) > 1.5 ? parsed / 100 : parsed;
 }
 
+function ratioValue(numerator: string | undefined, denominator: string | undefined) {
+  const top = numberValue(numerator);
+  const bottom = numberValue(denominator);
+  if (top === undefined || bottom === undefined || bottom === 0) return undefined;
+  const result = top / bottom;
+  return Number.isFinite(result) ? result : undefined;
+}
+
 function percentValue(value: string | undefined) {
   if (!value) return null;
   const parsed = Number(value.replace("%", "").replace(",", "."));
@@ -236,11 +244,17 @@ export async function getAlphaVantageFundamentals(request: FundamentalsRequest):
     forwardPE: numberValue(data.ForwardPE),
     priceToBook: numberValue(data.PriceToBookRatio),
     priceToSales: numberValue(data.PriceToSalesRatioTTM),
+    pegRatio: numberValue(data.PEGRatio),
     eps: numberValue(data.EPS),
+    bookValuePerShare: numberValue(data.BookValue),
     roe: decimalValue(data.ReturnOnEquityTTM),
     roa: decimalValue(data.ReturnOnAssetsTTM),
+    grossMargin: ratioValue(data.GrossProfitTTM, data.RevenueTTM),
     operatingMargin: decimalValue(data.OperatingMarginTTM),
+    ebitdaMargin: ratioValue(data.EBITDA, data.RevenueTTM),
     netMargin: decimalValue(data.ProfitMargin),
+    revenueGrowth: decimalValue(data.QuarterlyRevenueGrowthYOY),
+    earningsGrowth: decimalValue(data.QuarterlyEarningsGrowthYOY),
     dividendYield: decimalValue(data.DividendYield),
     beta: numberValue(data.Beta),
     fiftyTwoWeekHigh: numberValue(data["52WeekHigh"]),

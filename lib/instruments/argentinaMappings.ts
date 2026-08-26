@@ -25,6 +25,7 @@ export const adrToLocalSymbol: Record<string, string> = {
   BBAR: "BBAR",
   BMA: "BMA",
   SUPV: "SUPV",
+  CRESY: "CRES",
   IRS: "IRSA",
   TEO: "TECO2",
 };

@@ -16,6 +16,169 @@ type YahooResponse = {
   };
 };
 
+type YahooTimeseriesPoint = {
+  asOfDate?: string;
+  currencyCode?: string;
+  reportedValue?: YahooRawValue;
+};
+
+type YahooTimeseriesResult = {
+  meta?: { type?: string[] };
+  [key: string]: YahooTimeseriesPoint[] | { type?: string[] } | undefined;
+};
+
+type YahooTimeseriesResponse = {
+  timeseries?: {
+    result?: YahooTimeseriesResult[];
+    error?: { description?: string } | null;
+  };
+};
+
+const marketSeriesTypes = [
+  "trailingMarketCap",
+  "trailingEnterpriseValue",
+  "trailingPeRatio",
+  "trailingForwardPeRatio",
+  "trailingPsRatio",
+  "trailingPbRatio",
+  "trailingPegRatio",
+  "trailingDividendYield",
+];
+
+const statementSeriesTypes = [
+  "trailingBasicEPS",
+  "trailingDilutedEPS",
+  "trailingTotalRevenue",
+  "trailingNetIncome",
+  "trailingGrossProfit",
+  "trailingOperatingIncome",
+  "trailingEBITDA",
+  "quarterlyTotalRevenue",
+  "quarterlyNetIncome",
+  "quarterlyTotalAssets",
+  "quarterlyStockholdersEquity",
+  "quarterlyTotalDebt",
+  "quarterlyCurrentAssets",
+  "quarterlyCurrentLiabilities",
+  "trailingDilutedAverageShares",
+  "trailingBasicAverageShares",
+];
+
+function divide(numerator: number | undefined, denominator: number | undefined) {
+  if (numerator === undefined || denominator === undefined || denominator === 0) return undefined;
+  const value = numerator / denominator;
+  return Number.isFinite(value) ? value : undefined;
+}
+
+function timeseriesMap(data: YahooTimeseriesResponse) {
+  return new Map<string, YahooTimeseriesPoint[]>(
+    (data.timeseries?.result ?? []).flatMap((item) => {
+      const type = item.meta?.type?.[0];
+      const points = type ? item[type] : undefined;
+      return type && Array.isArray(points) ? [[type, points] as [string, YahooTimeseriesPoint[]]] : [];
+    }),
+  );
+}
+
+function latestPoint(series: Map<string, YahooTimeseriesPoint[]>, type: string) {
+  return series.get(type)?.at(-1);
+}
+
+function latestValue(series: Map<string, YahooTimeseriesPoint[]>, type: string) {
+  const value = latestPoint(series, type)?.reportedValue?.raw;
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function yearOverYear(series: Map<string, YahooTimeseriesPoint[]>, type: string) {
+  const points = series.get(type) ?? [];
+  const latest = points.at(-1)?.reportedValue?.raw;
+  const previous = points.at(-5)?.reportedValue?.raw;
+  if (latest === undefined || previous === undefined || previous <= 0 || latest < 0) return undefined;
+  return divide(latest - previous, previous);
+}
+
+async function getYahooTimeseriesFundamentals(request: FundamentalsRequest, yahooSymbol: string) {
+  const url = new URL(`https://query2.finance.yahoo.com/ws/fundamentals-timeseries/v1/finance/timeseries/${encodeURIComponent(yahooSymbol)}`);
+  url.searchParams.set("symbol", yahooSymbol);
+  url.searchParams.set("type", [...marketSeriesTypes, ...statementSeriesTypes].join(","));
+  url.searchParams.set("merge", "false");
+  url.searchParams.set("period1", String(Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 365 * 5));
+  url.searchParams.set("period2", String(Math.floor(Date.now() / 1000) + 60 * 60 * 24));
+
+  const response = await fetch(url, {
+    headers: { "User-Agent": "CMA Market Intelligence fundamentals" },
+    next: { revalidate: 3600 },
+  });
+  if (!response.ok) return failureResponse(request, `Yahoo fundamentals timeseries returned HTTP ${response.status}.`);
+
+  const data = (await response.json()) as YahooTimeseriesResponse;
+  const providerError = data.timeseries?.error?.description;
+  if (providerError) return failureResponse(request, providerError);
+
+  const series = timeseriesMap(data);
+  const revenue = latestValue(series, "trailingTotalRevenue");
+  const netIncome = latestValue(series, "trailingNetIncome");
+  const equity = latestValue(series, "quarterlyStockholdersEquity");
+  const assets = latestValue(series, "quarterlyTotalAssets");
+  const shares = latestValue(series, "trailingDilutedAverageShares")
+    ?? latestValue(series, "trailingBasicAverageShares");
+  const marketCurrency = latestPoint(series, "trailingMarketCap")?.currencyCode ?? "USD";
+  const reportingCurrency = latestPoint(series, "trailingTotalRevenue")?.currencyCode;
+  const currenciesMatch = !reportingCurrency || reportingCurrency === marketCurrency;
+  const period = [
+    latestPoint(series, "trailingTotalRevenue")?.asOfDate,
+    latestPoint(series, "trailingNetIncome")?.asOfDate,
+  ].filter(Boolean).sort().at(-1);
+
+  const snapshot: FundamentalsSnapshot = {
+    marketCap: latestValue(series, "trailingMarketCap"),
+    enterpriseValue: latestValue(series, "trailingEnterpriseValue"),
+    trailingPE: latestValue(series, "trailingPeRatio"),
+    forwardPE: latestValue(series, "trailingForwardPeRatio"),
+    priceToBook: latestValue(series, "trailingPbRatio"),
+    priceToSales: latestValue(series, "trailingPsRatio"),
+    pegRatio: latestValue(series, "trailingPegRatio"),
+    eps: currenciesMatch
+      ? latestValue(series, "trailingDilutedEPS") ?? latestValue(series, "trailingBasicEPS")
+      : undefined,
+    bookValuePerShare: currenciesMatch ? divide(equity, shares) : undefined,
+    roe: divide(netIncome, equity),
+    roa: divide(netIncome, assets),
+    grossMargin: divide(latestValue(series, "trailingGrossProfit"), revenue),
+    operatingMargin: divide(latestValue(series, "trailingOperatingIncome"), revenue),
+    ebitdaMargin: divide(latestValue(series, "trailingEBITDA"), revenue),
+    netMargin: divide(netIncome, revenue),
+    revenueGrowth: yearOverYear(series, "quarterlyTotalRevenue"),
+    earningsGrowth: yearOverYear(series, "quarterlyNetIncome"),
+    debtToEquity: divide(latestValue(series, "quarterlyTotalDebt"), equity),
+    currentRatio: divide(
+      latestValue(series, "quarterlyCurrentAssets"),
+      latestValue(series, "quarterlyCurrentLiabilities"),
+    ),
+    dividendYield: latestValue(series, "trailingDividendYield"),
+    currency: marketCurrency,
+    reportingCurrency,
+    period: period ? `TTM al ${period}` : "Yahoo Finance latest",
+  };
+  const fundamentalScore = calculateFundamentalScore(snapshot);
+  const warnings = !currenciesMatch
+    ? [`Los estados financieros se reportan en ${reportingCurrency}; se excluyeron importes por accion no comparables con la cotizacion en ${marketCurrency}.`]
+    : undefined;
+
+  return {
+    symbol: normalizeFundamentalsSymbol(request.symbol),
+    provider: "yahoo" as const,
+    assetClass: request.assetClass ?? getFundamentalsAssetClass(request.symbol),
+    sourceLabel: "Yahoo Finance fundamentals",
+    isFallback: false,
+    fetchedAt: new Date().toISOString(),
+    snapshot,
+    fundamentalScore,
+    interpretation: buildFundamentalsInterpretation(snapshot, fundamentalScore),
+    warnings: hasMeaningfulSnapshot(snapshot) ? warnings : ["Provider returned no usable fundamentals."],
+  } satisfies FundamentalsResponse;
+}
+
 function raw(module: YahooModule | undefined, key: string) {
   const value = module?.[key];
   if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
@@ -78,14 +241,14 @@ export async function getYahooFundamentals(request: FundamentalsRequest): Promis
       next: { revalidate: 300 },
     });
 
-    if (!response.ok) return failureResponse(request, `Yahoo fundamentals provider returned HTTP ${response.status}.`);
+    if (!response.ok) return getYahooTimeseriesFundamentals(request, yahooSymbol);
 
     const data = (await response.json()) as YahooResponse;
     const providerError = data.quoteSummary?.error?.description;
     const result = data.quoteSummary?.result?.[0];
 
     if (providerError) return failureResponse(request, providerError);
-    if (!result) return failureResponse(request, "Yahoo fundamentals provider returned no result.");
+    if (!result) return getYahooTimeseriesFundamentals(request, yahooSymbol);
 
     const snapshot: FundamentalsSnapshot = {
       marketPrice: raw(result.price, "regularMarketPrice"),

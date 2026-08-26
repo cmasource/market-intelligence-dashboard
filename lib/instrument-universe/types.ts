@@ -25,6 +25,7 @@ export type InstrumentRelationType =
   | "dollar_mep_species"
   | "dollar_cable_species"
   | "adr"
+  | "local_equity"
   | "cedear"
   | "underlying_stock"
   | "crypto_pair"

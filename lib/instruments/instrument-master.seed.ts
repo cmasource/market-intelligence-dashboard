@@ -86,6 +86,8 @@ const adrSeeds: UsSeed[] = [
   { symbol: "IRS", name: "IRSA Inversiones y Representaciones S.A. ADR", exchange: "NYSE", assetClass: "adr" },
   { symbol: "SUPV", name: "Grupo Supervielle S.A. ADR", exchange: "NYSE", assetClass: "adr" },
   { symbol: "BBAR", name: "Banco BBVA Argentina S.A. ADR", exchange: "NYSE", assetClass: "adr" },
+  { symbol: "CRESY", name: "Cresud S.A.C.I.F. y A. ADR", exchange: "NASDAQ", assetClass: "adr" },
+  { symbol: "TEO", name: "Telecom Argentina S.A. ADR", exchange: "NYSE", assetClass: "adr" },
 ];
 
 const knownUsSymbols = new Set([...usEtfs, ...usStocks, ...adrSeeds].map((seed) => seed.symbol));

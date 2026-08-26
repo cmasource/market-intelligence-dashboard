@@ -13,7 +13,6 @@ function formatProviderDisplay(provider: string, isSpanish: boolean) {
   if (provider === "yahoo") return isSpanish ? "Yahoo compatible" : "Yahoo-compatible";
   if (provider === "google_news_rss") return "Google News RSS";
   if (provider === "alpha_vantage") return "Alpha Vantage";
-  if (provider === "unavailable") return isSpanish ? "No disponible" : "Unavailable";
   return formatProvider(provider);
 }
 
@@ -95,7 +94,7 @@ export function ProviderStatusPanel() {
               <div className="flex items-start justify-between gap-3">
                 <h3 className="font-semibold text-white">{group.title}</h3>
                 <span className="rounded-full border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-xs text-emerald-100">
-                  {isSpanish ? "activo: " : "active: "}{formatProviderDisplay(group.active, isSpanish)}
+                  {isSpanish ? "principal: " : "primary: "}{formatProviderDisplay(group.active, isSpanish)}
                 </span>
               </div>
               <div className="mt-3 space-y-2">
@@ -103,7 +102,11 @@ export function ProviderStatusPanel() {
                   <div key={`${group.title}-${item.provider}`} className="flex items-start justify-between gap-2 text-xs">
                     <span className="text-slate-300">{formatProviderDisplay(item.provider, isSpanish)}</span>
                     <span className={item.enabled ? "text-emerald-200" : "text-amber-200"}>
-                      {item.enabled ? (isSpanish ? "activo" : "enabled") : formatProviderReason(item.reason, isSpanish)}
+                      {item.enabled
+                        ? item.provider === group.active
+                          ? isSpanish ? "principal" : "primary"
+                          : isSpanish ? "respaldo disponible" : "available fallback"
+                        : formatProviderReason(item.reason, isSpanish)}
                     </span>
                   </div>
                 ))}

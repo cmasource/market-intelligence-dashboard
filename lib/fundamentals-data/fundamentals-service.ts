@@ -9,6 +9,11 @@ import { getFundamentalProviderSymbol } from "@/lib/instruments";
 import type { FundamentalsProviderName, FundamentalsProviderTraceEntry, FundamentalsRequest, FundamentalsResponse, FundamentalsSnapshot } from "./types";
 import { buildFundamentalsInterpretation, calculateFundamentalScore } from "./fundamentals-score";
 import { getAlphaVantageFundamentals, getFinnhubFundamentals, getFmpFundamentals } from "@/lib/providers";
+import {
+  isArgentineAdrSymbol,
+  sanitizeFundamentalsResponse,
+  sanitizeMergedAdrSnapshot,
+} from "./provider-quality";
 
 type ManualArgentinaFundamentals = {
   asOf: string | null;
@@ -215,17 +220,25 @@ export async function getFundamentals(request: FundamentalsRequest): Promise<Fun
     }
 
     if (getYahooFundamentalsSymbol(symbol)) {
-      const providerAttempts = [
-        () => getFmpFundamentals(normalizedRequest),
-        () => getFinnhubFundamentals(normalizedRequest),
-        () => getAlphaVantageFundamentals(normalizedRequest),
-      ];
+      const isArgentineAdr = isArgentineAdrSymbol(symbol);
+      const providerAttempts = isArgentineAdr
+        ? [
+            () => getFmpFundamentals(normalizedRequest),
+            () => getYahooFundamentals(normalizedRequest),
+            () => getAlphaVantageFundamentals(normalizedRequest),
+            () => getFinnhubFundamentals(normalizedRequest),
+          ]
+        : [
+            () => getFmpFundamentals(normalizedRequest),
+            () => getFinnhubFundamentals(normalizedRequest),
+            () => getAlphaVantageFundamentals(normalizedRequest),
+          ];
       const providerResponses: FundamentalsResponse[] = [];
 
       for (const attempt of providerAttempts) {
-        const response = await attempt();
+        const response = sanitizeFundamentalsResponse(await attempt(), { providerSymbol: symbol });
         providerResponses.push(response);
-        if (isEnabledProviderResponse(response) && metricCount(response.snapshot) >= 8) {
+        if (!isArgentineAdr && isEnabledProviderResponse(response) && metricCount(response.snapshot) >= 8) {
           return {
             ...response,
             missingFields: missingFields(response.snapshot),
@@ -235,13 +248,16 @@ export async function getFundamentals(request: FundamentalsRequest): Promise<Fun
         }
       }
 
-      const providerResponse = await getYahooFundamentals(normalizedRequest);
-      providerResponses.push(providerResponse);
+      const providerResponse = isArgentineAdr
+        ? providerResponses.find((response) => response.provider === "yahoo") ?? providerResponses.at(-1)!
+        : sanitizeFundamentalsResponse(await getYahooFundamentals(normalizedRequest), { providerSymbol: symbol });
+      if (!isArgentineAdr) providerResponses.push(providerResponse);
       const usableResponses = providerResponses.filter(hasProviderData);
       const manualResponse = getManualArgentinaFundamentals(requestedSymbol, requestedAssetClass);
 
       if (usableResponses.length > 0) {
-        const snapshot = mergeSnapshots(usableResponses);
+        const merged = sanitizeMergedAdrSnapshot(mergeSnapshots(usableResponses), { providerSymbol: symbol });
+        const snapshot = merged.snapshot;
         const fundamentalScore = calculateFundamentalScore(snapshot);
         const missing = missingFields(snapshot);
         const sourceLabel = combinedSourceLabel(usableResponses);
@@ -258,11 +274,12 @@ export async function getFundamentals(request: FundamentalsRequest): Promise<Fun
           missingFields: missing,
           coverageRatio: coverageRatio(snapshot),
           providerTrace: providerResponses.map(trace),
-          warnings: [
+          warnings: Array.from(new Set([
             ...providerResponses.flatMap((response) => response.warnings ?? []),
             ...providerResponses.flatMap((response) => response.error ? [response.error] : []),
+            ...merged.warnings,
             ...(missing.length ? ["Some indicators are not available from the current provider coverage."] : []),
-          ],
+          ])),
         };
       }
 

@@ -28,15 +28,20 @@ export function RelatedInstrumentsCard({ symbol, instrumentId }: RelatedInstrume
   const isSpanish = language === "es";
 
   return (
-    <section className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-5 backdrop-blur">
+    <section className="rounded-lg border border-cyan-300/20 bg-cyan-400/[0.07] p-4 backdrop-blur">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
-            {isSpanish ? "Instrumentos relacionados" : "Related instruments"}
+            {isSpanish ? "Mercados disponibles" : "Available markets"}
           </p>
           <h2 className="mt-2 text-xl font-semibold text-white">
-            {isSpanish ? "Especies y simbolos vinculados" : "Linked symbols and trading species"}
+            {isSpanish ? "Accion local y ADR" : "Local share and ADR"}
           </h2>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-400">
+            {isSpanish
+              ? "Cada especie conserva su mercado, moneda, cotizacion y analisis tecnico. Los fundamentos de la especie local pueden tomar como base el ADR asociado."
+              : "Each listing keeps its own market, currency, quote and technical analysis. Local-share fundamentals may use the related ADR as their basis."}
+          </p>
         </div>
         {primaryInstrument && primaryHref ? (
           <a
@@ -63,11 +68,6 @@ export function RelatedInstrumentsCard({ symbol, instrumentId }: RelatedInstrume
               <span className="mt-1 block text-xs text-slate-500">
                 {formatDisplayCurrency(instrument.currency, language)} | {instrument.market}
               </span>
-              {instrument.isPrimary ? (
-                <span className="mt-2 inline-flex rounded-full border border-emerald-300/25 bg-emerald-300/10 px-2 py-0.5 text-xs text-emerald-100">
-                  {isSpanish ? "Principal" : "Primary"}
-                </span>
-              ) : null}
             </>
           );
 
