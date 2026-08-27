@@ -1,7 +1,14 @@
 import { getAssetClassForMarketData, getYahooSymbol, normalizeSymbol } from "./symbol-map";
-import type { MarketDataCandle, MarketDataRequest, MarketDataResponse, MarketDataTimeframe } from "./types";
+import type { ProviderTraceEntry } from "@/lib/providers/types";
+import type { MarketDataCandle, MarketDataRequest, MarketDataResponse, MarketDataTimeframe, MarketQuoteResponse } from "./types";
 
 type YahooChartResult = {
+  meta?: {
+    currency?: string;
+    regularMarketPrice?: number;
+    regularMarketTime?: number;
+    exchangeDataDelayedBy?: number;
+  };
   timestamp?: number[];
   indicators?: {
     quote?: Array<{
@@ -84,7 +91,7 @@ function normalizeCandles(result: YahooChartResult): MarketDataCandle[] {
   });
 }
 
-export async function getYahooChartCandles(
+async function fetchYahooChartResult(
   yahooSymbol: string,
   options: { range: string; interval: string; revalidate: number },
 ) {
@@ -119,15 +126,116 @@ export async function getYahooChartCandles(
         continue;
       }
 
-      const candles = normalizeCandles(result);
-      if (candles.length) return candles;
-      errors.push(`${host} returned no usable candles`);
+      return result;
     } catch (error) {
       errors.push(error instanceof Error ? error.message : `${host} request failed`);
     }
   }
 
   throw new Error(errors.join(" | ") || "Market history is unavailable.");
+}
+
+export async function getYahooChartCandles(
+  yahooSymbol: string,
+  options: { range: string; interval: string; revalidate: number },
+) {
+  const result = await fetchYahooChartResult(yahooSymbol, options);
+  const candles = normalizeCandles(result);
+  if (candles.length) return candles;
+  throw new Error("Yahoo returned no usable candles.");
+}
+
+function yahooQuoteTrace(success: boolean): ProviderTraceEntry {
+  return {
+    provider: "yahoo",
+    attempted: true,
+    success,
+    endpointName: "chart-quote",
+    sourceLabel: "Yahoo Finance compatible quote",
+    ...(!success ? { reason: "unknown_error" as const } : {}),
+  };
+}
+
+export async function getYahooQuoteSnapshot(symbol: string): Promise<MarketQuoteResponse> {
+  const normalizedSymbol = normalizeSymbol(symbol);
+  const yahooSymbol = getYahooSymbol(normalizedSymbol);
+  const fetchedAt = new Date().toISOString();
+
+  if (!yahooSymbol) {
+    return {
+      symbol: normalizedSymbol,
+      price: null,
+      change: null,
+      changePercent: null,
+      currency: "USD",
+      provider: "yahoo",
+      sourceLabel: "Yahoo Finance compatible quote",
+      isFallback: false,
+      observedAt: null,
+      fetchedAt,
+      dataDelay: "unknown",
+      error: "Yahoo provider does not support this symbol.",
+      providerTrace: [yahooQuoteTrace(false)],
+    };
+  }
+
+  try {
+    const result = await fetchYahooChartResult(yahooSymbol, {
+      range: "5d",
+      interval: "1d",
+      revalidate: 15,
+    });
+    const candles = normalizeCandles(result);
+    const latest = candles.at(-1);
+    const previous = candles.at(-2);
+    const marketPrice = result.meta?.regularMarketPrice;
+    const price = typeof marketPrice === "number" && Number.isFinite(marketPrice) && marketPrice > 0
+      ? marketPrice
+      : latest?.close ?? null;
+    const previousClose = previous?.close ?? null;
+
+    if (price === null || price <= 0 || previousClose === null || previousClose <= 0) {
+      throw new Error("Yahoo returned insufficient daily quote data.");
+    }
+
+    const change = price - previousClose;
+    const observedAt = result.meta?.regularMarketTime
+      ? new Date(result.meta.regularMarketTime * 1000).toISOString()
+      : latest
+        ? new Date(latest.time * 1000).toISOString()
+        : null;
+
+    return {
+      symbol: normalizedSymbol,
+      price,
+      change,
+      changePercent: (change / previousClose) * 100,
+      currency: result.meta?.currency ?? "USD",
+      provider: "yahoo",
+      sourceLabel: "Yahoo Finance compatible quote",
+      isFallback: false,
+      observedAt,
+      fetchedAt,
+      dataDelay: (result.meta?.exchangeDataDelayedBy ?? 0) > 0 ? "delayed" : "realtime",
+      providerTrace: [yahooQuoteTrace(true)],
+    };
+  } catch (error) {
+    return {
+      symbol: normalizedSymbol,
+      price: null,
+      change: null,
+      changePercent: null,
+      currency: "USD",
+      provider: "yahoo",
+      sourceLabel: "Yahoo Finance compatible quote",
+      isFallback: false,
+      observedAt: null,
+      fetchedAt,
+      dataDelay: "unknown",
+      error: error instanceof Error ? error.message : "Yahoo quote request failed.",
+      providerTrace: [yahooQuoteTrace(false)],
+    };
+  }
 }
 
 export async function getYahooMarketData(request: MarketDataRequest): Promise<MarketDataResponse> {

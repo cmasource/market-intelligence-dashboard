@@ -61,6 +61,7 @@ test("every searchable US stock and ETF has route-safe market metadata", () => {
     assert.equal(instrument.currency, "USD");
     assert.match(instrument.tradingViewSymbol ?? "", /^[A-Z_]+:.+$/);
     assert.equal(instrument.dataCapabilities.includes("technical_full"), true);
+    assert.ok(getYahooSymbol(instrument.providerSymbol ?? instrument.symbol));
     assert.ok(getYahooFundamentalsSymbol(instrument.symbol));
     assert.match(getAssetHref(instrument.symbol, instrument.id), /instrumentId=/);
   }

@@ -29,11 +29,14 @@ export function AssetQuoteProvider({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const controller = new AbortController();
+    let active = true;
+    let controller: AbortController | null = null;
 
-    async function loadQuote() {
-      setLoading(true);
-      setError(null);
+    async function loadQuote(showLoading = false) {
+      controller?.abort();
+      const requestController = new AbortController();
+      controller = requestController;
+      if (showLoading) setLoading(true);
       try {
         const quoteParams = new URLSearchParams();
         if (instrumentId) quoteParams.set("instrumentId", instrumentId);
@@ -41,25 +44,39 @@ export function AssetQuoteProvider({
         const endpoint = isArgentina
           ? `/api/argentina/quote/${encodeURIComponent(symbol)}`
           : `/api/market-data/quote/${encodeURIComponent(symbol)}${query}`;
-        const response = await fetch(endpoint, { signal: controller.signal });
+        const response = await fetch(endpoint, { cache: "no-store", signal: requestController.signal });
         if (!response.ok) throw new Error(`Quote API returned HTTP ${response.status}.`);
         const nextQuote = (await response.json()) as ArgentinaQuote | MarketQuoteResponse;
-        if (!controller.signal.aborted) {
+        if (active && !requestController.signal.aborted) {
           setQuote(nextQuote);
           setError("error" in nextQuote ? nextQuote.error ?? null : null);
         }
       } catch (requestError) {
-        if (!controller.signal.aborted) {
-          setQuote(null);
+        if (active && !(requestError instanceof DOMException && requestError.name === "AbortError")) {
           setError(requestError instanceof Error ? requestError.message : "Quote request failed.");
         }
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (active && !requestController.signal.aborted) setLoading(false);
       }
     }
 
-    void loadQuote();
-    return () => controller.abort();
+    void loadQuote(true);
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === "visible") void loadQuote();
+    }, 30_000);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void loadQuote();
+    };
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
+    return () => {
+      active = false;
+      controller?.abort();
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, [instrumentId, isArgentina, symbol]);
 
   const value = useMemo(() => ({ quote, loading, error, isArgentina }), [error, isArgentina, loading, quote]);

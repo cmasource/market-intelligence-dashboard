@@ -5,6 +5,7 @@ import type { ProviderTraceEntry } from "@/lib/providers/types";
 import { getMarketData } from "./market-data-service";
 import { getAssetClassForMarketData, getYahooSymbol, normalizeSymbol } from "./symbol-map";
 import type { MarketDataCandle, MarketQuoteResponse } from "./types";
+import { getYahooQuoteSnapshot } from "./yahoo-provider";
 
 function latestQuoteFromCandles(candles: MarketDataCandle[]) {
   const last = candles.at(-1);
@@ -93,8 +94,31 @@ export async function getMarketQuote(symbol: string, options: MarketQuoteOptions
     };
   }
 
+  const explicitInstrument = options.instrumentId
+    ? resolveInstrument({ symbol: normalizedSymbol, instrumentId: options.instrumentId })?.instrument
+    : null;
+  if (explicitInstrument?.market === "argentina") {
+    return unavailableQuote(
+      normalizedSymbol,
+      "Local Argentine instruments require the Argentina quote endpoint.",
+      providerTrace,
+      options.instrumentId,
+    );
+  }
+
   try {
     if (getYahooSymbol(normalizedSymbol)) {
+      const yahooQuote = await getYahooQuoteSnapshot(normalizedSymbol);
+      if (yahooQuote.providerTrace) providerTrace.push(...yahooQuote.providerTrace);
+      if (!yahooQuote.error && typeof yahooQuote.price === "number" && yahooQuote.price > 0) {
+        return {
+          ...yahooQuote,
+          currency: resolveMarketQuoteCurrency(normalizedSymbol, options.instrumentId),
+          providerTrace,
+        };
+      }
+      if (yahooQuote.error) errors.push(yahooQuote.error);
+
       const fmpQuote = await getFmpQuoteSnapshot(normalizedSymbol);
       if (fmpQuote.providerTrace) providerTrace.push(...fmpQuote.providerTrace);
       if (!fmpQuote.error && typeof fmpQuote.price === "number" && fmpQuote.price > 0) {
