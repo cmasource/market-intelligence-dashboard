@@ -189,7 +189,7 @@ export function TradeRadarTechnicalChart({ analysis }: TradeRadarTechnicalChartP
   ]);
 
   return (
-    <section className="rounded-lg border border-cyan-300/20 bg-slate-950/55 p-4 shadow-2xl shadow-cyan-950/10">
+    <section className="min-w-0 rounded-lg border border-cyan-300/20 bg-slate-950/55 p-4 shadow-2xl shadow-cyan-950/10">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200">Grafico tecnico trazable</p>
@@ -207,10 +207,10 @@ export function TradeRadarTechnicalChart({ analysis }: TradeRadarTechnicalChartP
         </div>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-lg border border-white/10 bg-slate-950">
+      <div className="mt-4 min-w-0 max-w-full overflow-hidden rounded-lg border border-white/10 bg-slate-950">
         <div
           ref={chartContainerRef}
-          className="h-[360px] w-full sm:h-[460px]"
+          className="h-[360px] min-w-0 max-w-full sm:h-[460px]"
           data-testid="trade-radar-technical-chart"
           aria-label={`Grafico tecnico ${analysis.symbol}`}
         />

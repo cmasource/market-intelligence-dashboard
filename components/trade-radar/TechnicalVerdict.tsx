@@ -1,6 +1,7 @@
 "use client";
 
 import type { TradeRadarAnalysis } from "@/lib/technical/trade-radar";
+import { IntegratedOutlookCard } from "@/components/analysis/IntegratedOutlookCard";
 import { buildScoreSemantic, scoreToneClass } from "@/lib/analysis/score-semantics";
 import {
   formatTradeRadarDelay,
@@ -75,6 +76,10 @@ export function TechnicalVerdict({ analysis }: TechnicalVerdictProps) {
         <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-400">
           {analysis.technicalInterpretation.label}. {analysis.technicalInterpretation.summary}
         </p>
+      ) : null}
+
+      {analysis.integratedOutlook ? (
+        <IntegratedOutlookCard outlook={analysis.integratedOutlook} language="es" />
       ) : null}
 
       <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-5">

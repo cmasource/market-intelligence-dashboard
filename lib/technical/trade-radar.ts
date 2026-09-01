@@ -2,6 +2,10 @@ import { resolveInstrument } from "@/lib/instruments/resolveInstrument";
 import type { InstrumentResolution } from "@/lib/instruments/types";
 import { calculateEMA, calculateMACD, calculateSMA } from "@/lib/finance/technical";
 import { getFundamentals } from "@/lib/fundamentals-data";
+import type { FundamentalsResponse } from "@/lib/fundamentals-data/types";
+import { calculateMarketSignalScore } from "@/lib/analysis/market-signal";
+import { buildIntegratedOutlook, type IntegratedOutlook } from "@/lib/intelligence/integrated-outlook";
+import { enhanceIntegratedOutlook } from "@/lib/intelligence/integrated-outlook-ai";
 import { fetchBymaInstrumentLocalQuote, fetchTradeRadarOhlcv } from "@/lib/market-data/providerRouter";
 import { resolveTradeRadarSymbol } from "@/lib/market-data/resolveSymbol";
 import { getTechnicalAnalysis } from "@/lib/analysis/technical-analysis-service";
@@ -61,6 +65,7 @@ export type TradeRadarAnalysis = {
     strength: "strong" | "normal" | "neutral";
   } | null;
   fundamentalScore: number | null;
+  integratedOutlook?: IntegratedOutlook;
   levels: {
     supports: TechnicalLevel[];
     resistances: TechnicalLevel[];
@@ -247,6 +252,30 @@ function instrumentBadges(resolution: InstrumentResolution | null) {
   return badges;
 }
 
+async function getIntegratedOutlook(params: {
+  symbol: string;
+  technicalScore: number | null;
+  technicalSnapshot: TechnicalIndicatorSnapshot | null;
+  fundamentals: FundamentalsResponse;
+  assetType?: string;
+}) {
+  const marketSignal = calculateMarketSignalScore({
+    technicalScore: params.technicalScore,
+    fundamentalScore: params.fundamentals.fundamentalScore,
+    assetType: params.assetType,
+    language: "es",
+  });
+  const deterministic = buildIntegratedOutlook({
+    symbol: params.symbol,
+    language: "es",
+    technicalScore: params.technicalScore,
+    technicalSnapshot: params.technicalSnapshot,
+    fundamentals: params.fundamentals,
+    marketSignal,
+  });
+  return enhanceIntegratedOutlook(params.symbol, "es", deterministic);
+}
+
 export async function analyzeTradeRadar(params: {
   instrumentId?: string;
   symbol: string;
@@ -313,6 +342,13 @@ export async function analyzeTradeRadar(params: {
     const quote = response.localQuote;
     const quoteTime = quote.broadcastTime ?? quote.date ?? response.fetchedAt;
     const publishedTechnicalScore = canonicalTechnical?.technicalScore ?? null;
+    const integratedOutlook = await getIntegratedOutlook({
+      symbol: response.symbol,
+      technicalScore: publishedTechnicalScore,
+      technicalSnapshot: canonicalTechnical?.snapshot ?? null,
+      fundamentals,
+      assetType: instrumentResolution?.instrument.assetClass,
+    });
     return {
       symbol: response.symbol,
       resolvedSymbol: response.resolvedSymbol,
@@ -337,6 +373,7 @@ export async function analyzeTradeRadar(params: {
       technicalInterpretation: canonicalTechnical?.interpretation ?? null,
       tradeSignal: tradeSignal(publishedTechnicalScore),
       fundamentalScore: fundamentals.fundamentalScore ?? null,
+      integratedOutlook,
       levels: { supports: [], resistances: [] },
       signals: null,
       suggestedAlerts: [],
@@ -406,6 +443,13 @@ export async function analyzeTradeRadar(params: {
   const suggestedAlerts = sampleStatus === "ok"
     ? buildSuggestedAlerts(lastBar.close, atr14, levels.supports, levels.resistances)
     : [];
+  const integratedOutlook = await getIntegratedOutlook({
+    symbol: response.symbol,
+    technicalScore: publishedTechnicalScore,
+    technicalSnapshot: publishedTechnicalSnapshot,
+    fundamentals,
+    assetType: instrumentResolution?.instrument.assetClass,
+  });
 
   return {
     symbol: response.symbol,
@@ -443,6 +487,7 @@ export async function analyzeTradeRadar(params: {
     technicalInterpretation: publishedTechnicalInterpretation,
     tradeSignal: tradeSignal(publishedTechnicalScore),
     fundamentalScore: fundamentals.fundamentalScore ?? null,
+    integratedOutlook,
     levels,
     signals,
     suggestedAlerts,

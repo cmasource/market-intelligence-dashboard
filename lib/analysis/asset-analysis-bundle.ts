@@ -3,6 +3,8 @@ import { assetFromInstrument } from "@/lib/assets/asset-from-instrument";
 import { getFundamentals } from "@/lib/fundamentals-data";
 import { resolveInstrument } from "@/lib/instruments/resolveInstrument";
 import type { FundamentalsResponse } from "@/lib/fundamentals-data/types";
+import { buildIntegratedOutlook, type IntegratedOutlook } from "@/lib/intelligence/integrated-outlook";
+import { enhanceIntegratedOutlook } from "@/lib/intelligence/integrated-outlook-ai";
 import { calculateMarketSignalScore, type MarketSignalResult } from "./market-signal";
 import { getTechnicalAnalysis } from "./technical-analysis-service";
 import type { TechnicalAnalysisResponse } from "./types";
@@ -14,6 +16,7 @@ export type AssetAnalysisBundle = {
   technical: TechnicalAnalysisResponse;
   fundamentals: FundamentalsResponse;
   marketSignal: MarketSignalResult;
+  integratedOutlook: IntegratedOutlook;
 };
 
 export async function getAssetAnalysisBundle(
@@ -46,6 +49,22 @@ export async function getAssetAnalysisBundle(
       currency: instrument?.underlyingCurrency ?? instrument?.currency,
     },
   };
+  const marketSignal = calculateMarketSignalScore({
+    technicalScore: technical.isFallback ? null : technical.technicalScore,
+    fundamentalScore: fundamentals.fundamentalScore,
+    assetType: asset?.type,
+    riskLevel: asset?.riskLevel,
+    language,
+  });
+  const deterministicOutlook = buildIntegratedOutlook({
+    symbol: normalized,
+    language,
+    technicalScore: technical.isFallback ? null : technical.technicalScore,
+    technicalSnapshot: technical.isFallback ? null : technical.snapshot,
+    fundamentals,
+    marketSignal,
+  });
+  const integratedOutlook = await enhanceIntegratedOutlook(normalized, language, deterministicOutlook);
 
   return {
     symbol: normalized,
@@ -53,12 +72,7 @@ export async function getAssetAnalysisBundle(
     generatedAt: new Date().toISOString(),
     technical,
     fundamentals,
-    marketSignal: calculateMarketSignalScore({
-      technicalScore: technical.isFallback ? null : technical.technicalScore,
-      fundamentalScore: fundamentals.fundamentalScore,
-      assetType: asset?.type,
-      riskLevel: asset?.riskLevel,
-      language,
-    }),
+    marketSignal,
+    integratedOutlook,
   };
 }

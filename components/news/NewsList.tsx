@@ -4,12 +4,13 @@ import { useState } from "react";
 import type { NewsArticle } from "@/lib/news";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import { sanitizeNewsArticle } from "@/lib/news/sanitize-news";
+import { orderNewsArticles } from "@/lib/news/order-news";
 import { NewsSourceBadge } from "./NewsSourceBadge";
 
 export function NewsList({ articles }: { articles: NewsArticle[] }) {
   const { language } = useLanguage();
   const isSpanish = language === "es";
-  const cleanArticles = articles.map(sanitizeNewsArticle);
+  const cleanArticles = orderNewsArticles(articles.map(sanitizeNewsArticle));
 
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

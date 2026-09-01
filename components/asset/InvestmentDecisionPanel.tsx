@@ -14,6 +14,7 @@ import type { Asset, AssetType } from "@/types/asset";
 import type { FundamentalMetrics } from "@/types/fundamentals";
 import type { TechnicalIndicators } from "@/types/technical";
 import { SignalGauge } from "../analysis/SignalGauge";
+import { IntegratedOutlookCard } from "../analysis/IntegratedOutlookCard";
 import { Badge } from "../ui/Badge";
 import { SectionHeader } from "../ui/SectionHeader";
 import { useAssetAnalysis } from "./AssetAnalysisProvider";
@@ -131,6 +132,8 @@ export function InvestmentDecisionPanel({ asset }: { asset: Asset }) {
           language={language}
         />
       </div>
+
+      <IntegratedOutlookCard outlook={bundle.integratedOutlook} language={language} />
 
       <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         <div className="rounded-lg border border-cyan-300/20 bg-cyan-300/10 p-4">

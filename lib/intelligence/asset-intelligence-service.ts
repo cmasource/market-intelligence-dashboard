@@ -135,7 +135,7 @@ export async function getAssetIntelligenceReport(
     getMarketQuote(normalized),
     getTechnicalAnalysis(normalized, "1Y"),
     getFundamentals({ symbol: normalized, assetClass: isBondType(asset?.type) ? "bond" : asset?.type === "crypto" ? "crypto" : undefined }),
-    getNewsForSymbol(normalized, 3),
+    getNewsForSymbol(normalized, 3, language),
     isCedearSymbol(normalized) ? getCedearAnalytics(normalized) : Promise.resolve(null),
     maybeFixedIncome(normalized, asset),
   ]);

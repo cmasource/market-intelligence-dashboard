@@ -1,6 +1,7 @@
 import { getAlphaVantageNews, getFinnhubCompanyNews, getFmpNews } from "@/lib/providers";
 import { getGoogleNewsRss } from "./google-news-rss";
 import { sanitizeNewsArticle, sanitizeNewsText } from "./sanitize-news";
+import { orderNewsArticles } from "./order-news";
 import type { NewsArticle, NewsResponse } from "./types";
 
 function normalize(symbol: string) {
@@ -67,13 +68,7 @@ async function getArgentinaMarketNews(limit = 8): Promise<NewsResponse | null> {
   );
 
   const articles = results.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
-  const ordered = articles
-    .map(cleanArticle)
-    .sort((a, b) => {
-      const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
-      const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
-      return dateB - dateA;
-    });
+  const ordered = orderNewsArticles(articles.map(cleanArticle));
 
   const perSourceCount = new Map<string, number>();
   const picked: NewsArticle[] = [];
@@ -98,9 +93,9 @@ export async function getNewsForSymbol(symbol: string, limit = 6, language: "en"
   const normalized = normalize(symbol);
 
   if (language === "es") {
-    const spanishRss = await getGoogleNewsRss(normalized, limit, "es");
+    const spanishRss = await getGoogleNewsRss(normalized, Math.max(limit * 3, limit), "es");
     if (spanishRss.articles.length > 0) {
-      return { ...spanishRss, articles: spanishRss.articles.map(cleanArticle) };
+      return { ...spanishRss, articles: orderNewsArticles(spanishRss.articles.map(cleanArticle), limit) };
     }
   }
 
@@ -112,11 +107,11 @@ export async function getNewsForSymbol(symbol: string, limit = 6, language: "en"
 
   for (const provider of providers) {
     const response = responseFromProvider(await provider.load(), provider.label);
-    if (response) return { ...response, articles: response.articles.slice(0, limit).map(cleanArticle) };
+    if (response) return { ...response, articles: orderNewsArticles(response.articles.map(cleanArticle), limit) };
   }
 
-  const rss = await getGoogleNewsRss(normalized, limit, language);
-  if (rss.articles.length > 0) return { ...rss, articles: rss.articles.map(cleanArticle) };
+  const rss = await getGoogleNewsRss(normalized, Math.max(limit * 3, limit), language);
+  if (rss.articles.length > 0) return { ...rss, articles: orderNewsArticles(rss.articles.map(cleanArticle), limit) };
 
   return {
     articles: [],
@@ -132,7 +127,7 @@ export async function getMarketNews(limit = 8): Promise<NewsResponse> {
   if (argentinaNews) return argentinaNews;
 
   const rss = await getGoogleNewsRss("Argentina markets MERVAL BYMA stocks bonds", limit, "es");
-  if (rss.articles.length > 0) return { ...rss, articles: rss.articles.map(cleanArticle) };
+  if (rss.articles.length > 0) return { ...rss, articles: orderNewsArticles(rss.articles.map(cleanArticle), limit) };
   return {
     articles: [],
     provider: "rss",

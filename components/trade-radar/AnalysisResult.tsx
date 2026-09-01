@@ -34,7 +34,7 @@ export function AnalysisResult({ analysis }: AnalysisResultProps) {
       };
 
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5 overflow-x-clip">
       <section className="cma-panel flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-sm font-semibold text-[var(--cma-text-primary)]">Seguimiento del activo</h2>
@@ -46,7 +46,7 @@ export function AnalysisResult({ analysis }: AnalysisResultProps) {
       {analysis.localLayer ? <BymaLocalQuoteTable quote={analysis.localLayer.quote} /> : null}
       <IndicatorCards analysis={analysis} />
       <LevelsTable supports={analysis.levels.supports} resistances={analysis.levels.resistances} />
-      <div className="grid gap-5 xl:grid-cols-[1fr_380px]">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         {analysis.ohlcv.length ? (
           <TradeRadarTechnicalChart analysis={analysis} />
         ) : (
@@ -57,7 +57,7 @@ export function AnalysisResult({ analysis }: AnalysisResultProps) {
             </p>
           </section>
         )}
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <SuggestedAlerts alerts={analysis.suggestedAlerts} />
           <section className="rounded-lg border border-white/10 bg-slate-950/45 p-4">
             <h3 className="text-sm font-semibold text-white">Trazabilidad</h3>
