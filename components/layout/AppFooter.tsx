@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 
 const footerLinks = [
+  { href: "/today", en: "Today", es: "Hoy" },
   { href: "/markets", en: "Markets", es: "Mercados" },
   { href: "/usa", en: "USA", es: "USA" },
   { href: "/argentina", en: "Argentina", es: "Argentina" },
