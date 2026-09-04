@@ -3,10 +3,10 @@ import "server-only";
 import OpenAI from "openai";
 import { getArgentinaQuotes } from "@/lib/argentina";
 import { getMarketData } from "@/lib/market-data";
-import { getGoogleNewsRss, getMarketNews, type NewsArticle } from "@/lib/news";
+import { getGoogleNewsRss, getMarketNews, getNewsForSymbol, type NewsArticle } from "@/lib/news";
 import {
   buildDeterministicTodayNarrative,
-  todaySources,
+  todayFeaturedNews,
   type TodayBrief,
   type TodayBriefLanguage,
   type TodayBriefNarrative,
@@ -203,10 +203,11 @@ export async function getTodayBrief(language: TodayBriefLanguage): Promise<Today
   const cached = cache.get(language);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
 
-  const [globalSnapshotResult, argentinaSnapshotResult, internationalNewsResult, argentinaNewsResult] = await Promise.allSettled([
+  const [globalSnapshotResult, argentinaSnapshotResult, internationalNewsResult, internationalMediaResult, argentinaNewsResult] = await Promise.allSettled([
     internationalSnapshots(),
     argentinaSnapshots(),
     getGoogleNewsRss(language === "es" ? "Wall Street Fed tasas bonos petroleo mercados globales" : "Wall Street Fed rates bonds oil global markets", 10, language),
+    getNewsForSymbol("SPY", 10, "en"),
     getMarketNews(10),
   ]);
   const snapshots = [
@@ -214,6 +215,7 @@ export async function getTodayBrief(language: TodayBriefLanguage): Promise<Today
     ...(argentinaSnapshotResult.status === "fulfilled" ? argentinaSnapshotResult.value : []),
   ];
   const internationalNews = internationalNewsResult.status === "fulfilled" ? internationalNewsResult.value.articles : [];
+  const internationalMedia = internationalMediaResult.status === "fulfilled" ? internationalMediaResult.value.articles : [];
   const argentinaNews = argentinaNewsResult.status === "fulfilled" ? argentinaNewsResult.value.articles : [];
   const deterministic = buildDeterministicTodayNarrative(language, snapshots, internationalNews, argentinaNews);
 
@@ -230,7 +232,10 @@ export async function getTodayBrief(language: TodayBriefLanguage): Promise<Today
     method: enhanced ? "openai" : "deterministic",
     ...(enhanced?.model ? { model: enhanced.model } : {}),
     snapshots,
-    sources: [...todaySources(internationalNews, "international"), ...todaySources(argentinaNews, "argentina")],
+    featuredNews: [
+      ...todayFeaturedNews(internationalMedia, "international", 1),
+      ...todayFeaturedNews(argentinaNews, "argentina", 1),
+    ],
     coverage: {
       availableSnapshots: snapshots.filter((item) => item.price !== null).length,
       totalSnapshots: snapshots.length,

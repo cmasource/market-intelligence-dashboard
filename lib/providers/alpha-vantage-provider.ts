@@ -61,7 +61,7 @@ type AlphaQuote = {
   };
 };
 type AlphaOverview = Record<string, string | undefined>;
-type AlphaNews = { feed?: Array<{ title?: string; source?: string; url?: string; time_published?: string; summary?: string; ticker_sentiment?: Array<{ ticker?: string }> }> };
+type AlphaNews = { feed?: Array<{ title?: string; source?: string; url?: string; banner_image?: string; time_published?: string; summary?: string; ticker_sentiment?: Array<{ ticker?: string }> }> };
 
 function numberValue(value: string | undefined) {
   const parsed = Number(value);
@@ -288,6 +288,7 @@ export async function getAlphaVantageNews(symbol: string): Promise<ProviderResul
       title: sanitizeNewsText(item.title, 180) || "Market update",
       source: sanitizeNewsText(item.source, 80) || "Alpha Vantage",
       url: item.url ?? "#",
+      imageUrl: item.banner_image,
       publishedAt: item.time_published,
       summary: sanitizeNewsText(item.summary, 240),
       relatedSymbols: item.ticker_sentiment?.map((ticker) => ticker.ticker ?? "").filter(Boolean),

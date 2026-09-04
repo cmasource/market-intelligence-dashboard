@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildDeterministicTodayNarrative, todaySources, type TodayMarketSnapshot } from "@/lib/research/today-brief";
+import { buildDeterministicTodayNarrative, todayFeaturedNews, todaySources, type TodayMarketSnapshot } from "@/lib/research/today-brief";
 import type { NewsArticle } from "@/lib/news";
 
 const snapshots: TodayMarketSnapshot[] = [
@@ -36,4 +36,15 @@ test("today sources remove duplicate and unusable URLs", () => {
 
   assert.equal(sources.length, 1);
   assert.equal(sources[0].title, "Uno");
+});
+
+test("featured news only exposes articles with real publisher images", () => {
+  const media = todayFeaturedNews([
+    { ...article("Con imagen", "https://example.com/a"), imageUrl: "https://cdn.example.com/news.jpg" },
+    article("Sin imagen", "https://example.com/b"),
+  ], "international");
+
+  assert.equal(media.length, 1);
+  assert.equal(media[0].publisher, "Test source");
+  assert.equal(media[0].imageUrl, "https://cdn.example.com/news.jpg");
 });

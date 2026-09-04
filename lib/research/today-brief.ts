@@ -50,12 +50,21 @@ export type TodayBriefSource = {
   market: "international" | "argentina";
 };
 
+export type TodayBriefMedia = {
+  title: string;
+  publisher: string;
+  url: string;
+  imageUrl: string;
+  publishedAt?: string;
+  market: "international" | "argentina";
+};
+
 export type TodayBrief = TodayBriefNarrative & {
   generatedAt: string;
   method: TodayBriefMethod;
   model?: string;
   snapshots: TodayMarketSnapshot[];
-  sources: TodayBriefSource[];
+  featuredNews: TodayBriefMedia[];
   coverage: {
     availableSnapshots: number;
     totalSnapshots: number;
@@ -98,6 +107,11 @@ export function buildDeterministicTodayNarrative(
   const localHeadlines = compactHeadlines(argentinaNews);
 
   if (language === "en") {
+    const localSignals = [
+      "Track the link between local rates, the currency market and sovereign spreads",
+      "Compare the local move with global risk appetite before increasing exposure",
+      "Prioritize liquidity and price confirmation in Argentine assets",
+    ];
     return {
       title: "Markets today: the signal behind the noise",
       deck: `International assets are ${direction(globalDay, language)}, while Argentina trades ${direction(localDay, language)}. The useful reading is to separate confirmed price action from headline risk.`,
@@ -106,12 +120,12 @@ export function buildDeterministicTodayNarrative(
       day: {
         headline: "What is moving the session",
         summary: `The available cross-market sample is ${direction(combinedDay, language)}. Short-term decisions should privilege confirmation over anticipation.`,
-        points: [...globalHeadlines.slice(0, 2), ...localHeadlines.slice(0, 2)].slice(0, 4),
+        points: [...globalHeadlines.slice(0, 2), ...localSignals.slice(0, 2)].slice(0, 4),
       },
       week: {
         headline: "The week in perspective",
         summary: `The international sample is ${direction(globalWeek, language)} over the latest five sessions. Local headlines remain especially sensitive to rates, FX expectations and sovereign risk.`,
-        points: [...globalHeadlines, ...localHeadlines].slice(0, 4),
+        points: [...globalHeadlines, ...localSignals].slice(0, 4),
       },
       international: {
         headline: "Global context",
@@ -121,7 +135,7 @@ export function buildDeterministicTodayNarrative(
       argentina: {
         headline: "Argentina context",
         summary: `The local sample is ${direction(localDay, language)}. The key transmission channels remain the dollar, peso liquidity, sovereign spreads and external risk appetite.`,
-        points: localHeadlines,
+        points: localSignals,
       },
       outlook: {
         headline: "What could come next",
@@ -186,5 +200,21 @@ export function todaySources(articles: NewsArticle[], market: TodayBriefSource["
     if (!article.url || article.url === "#" || seen.has(article.url)) return [];
     seen.add(article.url);
     return [{ title: article.title, publisher: article.source, url: article.url, publishedAt: article.publishedAt, market }];
+  }).slice(0, limit);
+}
+
+export function todayFeaturedNews(articles: NewsArticle[], market: TodayBriefMedia["market"], limit = 2): TodayBriefMedia[] {
+  const seen = new Set<string>();
+  return articles.flatMap((article) => {
+    if (!article.imageUrl || !article.imageUrl.startsWith("http") || !article.url || article.url === "#" || seen.has(article.url)) return [];
+    seen.add(article.url);
+    return [{
+      title: article.title,
+      publisher: article.source,
+      url: article.url,
+      imageUrl: article.imageUrl,
+      publishedAt: article.publishedAt,
+      market,
+    }];
   }).slice(0, limit);
 }

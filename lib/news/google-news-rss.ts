@@ -6,6 +6,15 @@ function tag(item: string, name: string) {
   return match?.[1] ? sanitizeNewsText(match[1].replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "")) : undefined;
 }
 
+function attr(item: string, tagName: string, attrName: string) {
+  const match = item.match(new RegExp(`<${tagName}[^>]*\\s${attrName}=["']([^"']+)["'][^>]*>`, "i"));
+  return match?.[1];
+}
+
+function imageFromRssItem(item: string) {
+  return attr(item, "media:content", "url") ?? attr(item, "media:thumbnail", "url") ?? attr(item, "enclosure", "url");
+}
+
 export async function getGoogleNewsRss(query: string, limit = 6, language: "en" | "es" = "en"): Promise<NewsResponse> {
   const url = new URL("https://news.google.com/rss/search");
   url.searchParams.set("q", language === "es" ? `${query} acciones bolsa mercado` : `${query} stock market`);
@@ -24,6 +33,7 @@ export async function getGoogleNewsRss(query: string, limit = 6, language: "en" 
       url: tag(item, "link") ?? "#",
       publishedAt: tag(item, "pubDate"),
       summary: sanitizeNewsText(tag(item, "description"), 240),
+      imageUrl: imageFromRssItem(item),
       relatedSymbols: [query.toUpperCase()],
       provider: "rss",
       isFallback: true,
