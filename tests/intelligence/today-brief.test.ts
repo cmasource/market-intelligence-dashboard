@@ -48,3 +48,11 @@ test("featured news only exposes articles with real publisher images", () => {
   assert.equal(media[0].publisher, "Test source");
   assert.equal(media[0].imageUrl, "https://cdn.example.com/news.jpg");
 });
+
+test("deterministic brief refuses a directional stance when every source is unavailable", () => {
+  const narrative = buildDeterministicTodayNarrative("es", [], [], []);
+
+  assert.match(narrative.recommendedStance.label, /datos insuficientes/i);
+  assert.match(narrative.recommendedStance.rationale, /no hay cotizaciones/i);
+  assert.ok(narrative.recommendedStance.actions.some((action) => /ausencia de datos/i.test(action)));
+});

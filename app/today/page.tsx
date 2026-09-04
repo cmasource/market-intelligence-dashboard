@@ -12,7 +12,7 @@ import {
   Minus,
   ShieldAlert,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import type { TodayBrief, TodayBriefMedia, TodayBriefSection, TodayMarketSnapshot } from "@/lib/research/today-brief";
@@ -157,24 +157,31 @@ export default function TodayPage() {
   const [brief, setBrief] = useState<TodayBrief | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const activeRequestRef = useRef<AbortController | null>(null);
 
   const loadBrief = useCallback(async () => {
+    activeRequestRef.current?.abort();
+    const controller = new AbortController();
+    activeRequestRef.current = controller;
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/research/today?language=${language}`);
+      const response = await fetch(`/api/research/today?language=${language}`, { signal: controller.signal });
       const payload = await response.json() as TodayBrief & { error?: string };
       if (!response.ok) throw new Error(payload.error ?? "Brief unavailable");
+      if (controller.signal.aborted) return;
       setBrief(payload);
     } catch (cause) {
+      if (controller.signal.aborted) return;
       setError(cause instanceof Error ? cause.message : (isSpanish ? "No se pudo cargar el informe." : "The brief could not be loaded."));
     } finally {
-      setLoading(false);
+      if (activeRequestRef.current === controller) setLoading(false);
     }
   }, [isSpanish, language]);
 
   useEffect(() => {
     queueMicrotask(() => { void loadBrief(); });
+    return () => activeRequestRef.current?.abort();
   }, [loadBrief]);
 
   const internationalMedia = brief?.featuredNews?.find((item) => item.market === "international");

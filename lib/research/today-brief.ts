@@ -105,6 +105,7 @@ export function buildDeterministicTodayNarrative(
   const tone: TodayBriefTone = combinedDay === null ? "neutral" : combinedDay > 0.6 ? "constructive" : combinedDay < -0.6 ? "cautious" : "neutral";
   const globalHeadlines = compactHeadlines(internationalNews);
   const localHeadlines = compactHeadlines(argentinaNews);
+  const hasEvidence = snapshots.some((item) => item.price !== null) || internationalNews.length > 0 || argentinaNews.length > 0;
 
   if (language === "en") {
     const localSignals = [
@@ -143,10 +144,10 @@ export function buildDeterministicTodayNarrative(
         points: ["Confirm the move with market breadth", "Watch rates, the dollar and energy", "Reassess if local and global signals diverge"],
       },
       recommendedStance: {
-        label: tone === "cautious" ? "Protect capital and wait for confirmation" : "Stay selective and scale entries",
-        rationale: "The current evidence supports measured positioning rather than an all-in directional bet.",
-        actions: ["Avoid chasing large opening moves", "Size positions in stages", "Define invalidation before entering"],
-        invalidation: "Change the stance if market breadth, rates or the local FX/risk picture contradict the base case.",
+        label: !hasEvidence ? "Insufficient data: avoid drawing a market conclusion" : tone === "cautious" ? "Protect capital and wait for confirmation" : "Stay selective and scale entries",
+        rationale: !hasEvidence ? "No current quote or headline evidence is available to support a directional stance." : "The current evidence supports measured positioning rather than an all-in directional bet.",
+        actions: !hasEvidence ? ["Wait for current market data", "Do not infer direction from missing information", "Reassess when coverage recovers"] : ["Avoid chasing large opening moves", "Size positions in stages", "Define invalidation before entering"],
+        invalidation: !hasEvidence ? "This restriction ends only when current prices or verified headlines become available." : "Change the stance if market breadth, rates or the local FX/risk picture contradict the base case.",
       },
       watchlist: ["US rates and dollar", "Equity breadth", "Oil and geopolitical risk", "Argentina sovereign spreads"],
       risks: ["Headline-driven reversals", "Stale or delayed quotes", "Divergence between global and local markets"],
@@ -184,10 +185,10 @@ export function buildDeterministicTodayNarrative(
       points: ["Confirmar el movimiento con amplitud de mercado", "Seguir tasas, dólar y energía", "Reevaluar si divergen las señales locales y globales"],
     },
     recommendedStance: {
-      label: tone === "cautious" ? "Priorizar capital y esperar confirmación" : "Mantener selectividad y escalonar entradas",
-      rationale: "La evidencia actual favorece una exposición medida, no una apuesta direccional total.",
-      actions: ["No perseguir movimientos fuertes de apertura", "Dimensionar posiciones por etapas", "Definir la invalidación antes de entrar"],
-      invalidation: "Cambiar la postura si la amplitud, las tasas o el cuadro cambiario y de riesgo local contradicen el escenario base.",
+      label: !hasEvidence ? "Datos insuficientes: no inferir una dirección de mercado" : tone === "cautious" ? "Priorizar capital y esperar confirmación" : "Mantener selectividad y escalonar entradas",
+      rationale: !hasEvidence ? "No hay cotizaciones ni titulares actuales suficientes para sostener una postura direccional." : "La evidencia actual favorece una exposición medida, no una apuesta direccional total.",
+      actions: !hasEvidence ? ["Esperar datos actuales del mercado", "No interpretar la ausencia de datos como una señal", "Reevaluar cuando se recupere la cobertura"] : ["No perseguir movimientos fuertes de apertura", "Dimensionar posiciones por etapas", "Definir la invalidación antes de entrar"],
+      invalidation: !hasEvidence ? "Esta restricción termina únicamente cuando vuelvan a estar disponibles precios actuales o titulares verificados." : "Cambiar la postura si la amplitud, las tasas o el cuadro cambiario y de riesgo local contradicen el escenario base.",
     },
     watchlist: ["Tasas y dólar en EE. UU.", "Amplitud de acciones", "Petróleo y riesgo geopolítico", "Spreads soberanos argentinos"],
     risks: ["Reversiones por titulares", "Cotizaciones demoradas o desactualizadas", "Divergencia entre mercado global y local"],

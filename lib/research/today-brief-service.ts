@@ -32,6 +32,19 @@ const ARGENTINA_SYMBOLS = [
 
 const cache = new Map<TodayBriefLanguage, { expiresAt: number; value: TodayBrief }>();
 const CACHE_TTL_MS = 15 * 60 * 1000;
+const DATA_DEADLINE_MS = 17_000;
+
+async function within<T>(promise: Promise<T>, milliseconds: number, fallback: T): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((resolve) => { timer = setTimeout(() => resolve(fallback), milliseconds); }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 function changePercent(current?: number, previous?: number) {
   return typeof current === "number" && typeof previous === "number" && Number.isFinite(current) && Number.isFinite(previous) && previous > 0
@@ -130,7 +143,7 @@ async function openAiNarrative(
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) return null;
   const model = process.env.OPENAI_ANALYSIS_MODEL?.trim() || "gpt-5-mini";
-  const client = new OpenAI({ apiKey, timeout: 20_000, maxRetries: 1 });
+  const client = new OpenAI({ apiKey, timeout: 8_000, maxRetries: 0 });
   const response = await client.responses.create({
     model,
     store: false,
@@ -203,20 +216,22 @@ export async function getTodayBrief(language: TodayBriefLanguage): Promise<Today
   const cached = cache.get(language);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
 
-  const [globalSnapshotResult, argentinaSnapshotResult, internationalNewsResult, internationalMediaResult, argentinaNewsResult] = await Promise.allSettled([
-    internationalSnapshots(),
-    argentinaSnapshots(),
-    getGoogleNewsRss(language === "es" ? "Wall Street Fed tasas bonos petroleo mercados globales" : "Wall Street Fed rates bonds oil global markets", 10, language),
-    getNewsForSymbol("SPY", 10, "en"),
-    getMarketNews(10),
+  const emptyNews = { articles: [], provider: "rss" as const, isFallback: true, sourceLabel: "Provider deadline reached" };
+  const results = await Promise.allSettled([
+    within(internationalSnapshots(), DATA_DEADLINE_MS, []),
+    within(argentinaSnapshots(), DATA_DEADLINE_MS, []),
+    within(getGoogleNewsRss(language === "es" ? "Wall Street Fed tasas bonos petroleo mercados globales" : "Wall Street Fed rates bonds oil global markets", 10, language), DATA_DEADLINE_MS, emptyNews),
+    within(getNewsForSymbol("SPY", 10, "en"), DATA_DEADLINE_MS, emptyNews),
+    within(getMarketNews(10), DATA_DEADLINE_MS, emptyNews),
   ]);
+  const [globalSnapshotResult, argentinaSnapshotResult, internationalNewsResult, internationalMediaResult, argentinaNewsResult] = results;
   const snapshots = [
-    ...(globalSnapshotResult.status === "fulfilled" ? globalSnapshotResult.value : []),
-    ...(argentinaSnapshotResult.status === "fulfilled" ? argentinaSnapshotResult.value : []),
+    ...(globalSnapshotResult?.status === "fulfilled" ? globalSnapshotResult.value : []),
+    ...(argentinaSnapshotResult?.status === "fulfilled" ? argentinaSnapshotResult.value : []),
   ];
-  const internationalNews = internationalNewsResult.status === "fulfilled" ? internationalNewsResult.value.articles : [];
-  const internationalMedia = internationalMediaResult.status === "fulfilled" ? internationalMediaResult.value.articles : [];
-  const argentinaNews = argentinaNewsResult.status === "fulfilled" ? argentinaNewsResult.value.articles : [];
+  const internationalNews = internationalNewsResult?.status === "fulfilled" ? internationalNewsResult.value.articles : [];
+  const internationalMedia = internationalMediaResult?.status === "fulfilled" ? internationalMediaResult.value.articles : [];
+  const argentinaNews = argentinaNewsResult?.status === "fulfilled" ? argentinaNewsResult.value.articles : [];
   const deterministic = buildDeterministicTodayNarrative(language, snapshots, internationalNews, argentinaNews);
 
   let enhanced: Awaited<ReturnType<typeof openAiNarrative>> = null;
