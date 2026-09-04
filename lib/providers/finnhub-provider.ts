@@ -35,7 +35,7 @@ type FinnhubQuote = { c?: number; h?: number; l?: number; pc?: number };
 type FinnhubCandles = { s?: string; t?: number[]; o?: number[]; h?: number[]; l?: number[]; c?: number[]; v?: number[] };
 type FinnhubProfile = { name?: string; marketCapitalization?: number; currency?: string; shareOutstanding?: number };
 type FinnhubMetrics = { metric?: Record<string, number | undefined> };
-type FinnhubNews = Array<{ headline?: string; source?: string; url?: string; datetime?: number; summary?: string; related?: string }>;
+type FinnhubNews = Array<{ headline?: string; source?: string; url?: string; image?: string; datetime?: number; summary?: string; related?: string }>;
 
 const ignoredNewsTerms = new Set(["inc", "corp", "corporation", "company", "group", "holdings", "limited", "plc", "trust"]);
 
@@ -227,6 +227,7 @@ export async function getFinnhubCompanyNews(symbol: string): Promise<ProviderRes
       title: sanitizeNewsText(item.headline, 180) || "Market update",
       source: sanitizeNewsText(item.source, 80) || "Finnhub",
       url: item.url ?? "#",
+      imageUrl: item.image,
       publishedAt: item.datetime ? new Date(item.datetime * 1000).toISOString() : undefined,
       summary: sanitizeNewsText(item.summary, 240),
       relatedSymbols: [normalizeSymbol(symbol)],

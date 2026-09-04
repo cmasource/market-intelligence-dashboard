@@ -23,6 +23,7 @@ import {
   Radar,
   Repeat2,
   ScanSearch,
+  SunMedium,
 } from "lucide-react";
 import { AuthNavigation } from "@/components/auth/AuthNavigation";
 import { useLanguage } from "@/lib/i18n/useLanguage";
@@ -35,6 +36,7 @@ import { LanguageSwitcher } from "./LanguageSwitcher";
 
 export const navItems = [
   { labelKey: "navDashboard", href: "/", icon: LayoutDashboard },
+  { labelKey: "navToday", href: "/today", icon: SunMedium },
   { labelKey: "navMarkets", href: "/markets", icon: LineChart },
   { labelKey: "navUSA", href: "/usa", icon: BarChart3 },
   { labelKey: "navTradeRadar", href: "/trade-radar", icon: Radar },

@@ -127,7 +127,7 @@ type FmpGrowth = Array<{
   epsgrowth?: number;
   epsGrowth?: number;
 }>;
-type FmpNews = Array<{ title?: string; site?: string; url?: string; publishedDate?: string; text?: string; symbol?: string }>;
+type FmpNews = Array<{ title?: string; site?: string; url?: string; image?: string; publishedDate?: string; text?: string; symbol?: string }>;
 
 function hasFundamentalMetric(snapshot: FundamentalsSnapshot) {
   return [
@@ -415,6 +415,7 @@ export async function getFmpNews(symbol: string): Promise<ProviderResult<NewsArt
       title: sanitizeNewsText(item.title, 180) || "Market update",
       source: sanitizeNewsText(item.site, 80) || "FMP",
       url: item.url ?? "#",
+      imageUrl: item.image,
       publishedAt: item.publishedDate,
       summary: sanitizeNewsText(item.text, 240),
       relatedSymbols: item.symbol ? [item.symbol] : [normalizeSymbol(symbol)],
