@@ -51,6 +51,22 @@ test("a US holiday is described as a prior close, not as today's US move", () =>
   assert.doesNotMatch(narrative.deck, /activos internacionales operan/i);
 });
 
+test("closed-market headlines do not leak into the daily active-market bullets", () => {
+  const laborDay = getTodayMarketSessions("es", new Date("2026-09-07T13:30:00.000Z"));
+  const narrative = buildDeterministicTodayNarrative(
+    "es",
+    snapshots,
+    [article("Wall Street cae hoy", "https://example.com/us")],
+    [article("El dólar MEP concentra la atención local", "https://example.com/ar")],
+    laborDay,
+  );
+
+  assert.equal(laborDay.argentina.status, "preopen");
+  assert.match(narrative.argentina.summary, /preapertura/i);
+  assert.ok(narrative.day.points.some((point) => /dólar MEP/i.test(point)));
+  assert.ok(narrative.day.points.every((point) => !/Wall Street cae hoy/i.test(point)));
+});
+
 test("featured news only exposes articles with real publisher images", () => {
   const media = todayFeaturedNews([
     { ...article("Con imagen", "https://example.com/a"), imageUrl: "https://cdn.example.com/news.jpg" },

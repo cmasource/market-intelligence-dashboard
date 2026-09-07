@@ -121,22 +121,35 @@ export function buildDeterministicTodayNarrative(
   const usContextEn = usClosed
     ? `Wall Street is ${marketSessions.international.statusLabel.toLowerCase()}${marketSessions.international.status === "holiday" ? ` (${marketSessions.international.detail})` : ""}; its changes refer to the latest session, not today.`
     : `Wall Street is ${marketSessions?.international.statusLabel.toLowerCase() ?? "in session"}.`;
+  const argentinaInactive = marketSessions && ["preopen", "holiday", "weekend"].includes(marketSessions.argentina.status);
+  const argentinaContextEs = argentinaInactive
+    ? `Argentina está en ${marketSessions.argentina.statusLabel.toLowerCase()}; las variaciones locales visibles son referencia de la última rueda y no integran la señal de hoy.`
+    : `Argentina está ${direction(localDay, language)}.`;
+  const argentinaContextEn = argentinaInactive
+    ? `Argentina is ${marketSessions.argentina.statusLabel.toLowerCase()}; visible local changes are prior-session references and are excluded from today's signal.`
+    : `Argentina is ${direction(localDay, language)}.`;
+  const localSignals = [
+    "Track the link between local rates, the currency market and sovereign spreads",
+    "Compare the local move with global risk appetite before increasing exposure",
+    "Prioritize liquidity and price confirmation in Argentine assets",
+  ];
+  const dayPointsEn = usClosed
+    ? [...localHeadlines.slice(0, 3), `Crypto is ${direction(cryptoDay, language)} in continuous trading`].slice(0, 4)
+    : [...globalHeadlines.slice(0, 2), ...localSignals.slice(0, 2)].slice(0, 4);
+  const dayPointsEs = usClosed
+    ? [...localHeadlines.slice(0, 3), `Cripto está ${direction(cryptoDay, language)} en mercado continuo`].slice(0, 4)
+    : [...globalHeadlines.slice(0, 2), ...localHeadlines.slice(0, 2)].slice(0, 4);
 
   if (language === "en") {
-    const localSignals = [
-      "Track the link between local rates, the currency market and sovereign spreads",
-      "Compare the local move with global risk appetite before increasing exposure",
-      "Prioritize liquidity and price confirmation in Argentine assets",
-    ];
     return {
       title: "Markets today: the signal behind the noise",
-      deck: `${usContextEn} Argentina is ${direction(localDay, language)} and crypto is ${direction(cryptoDay, language)}. The useful reading is to separate current price action from the latest available close.`,
+      deck: `${usContextEn} ${argentinaContextEn} Crypto is ${direction(cryptoDay, language)}. The useful reading is to separate current price action from the latest available close.`,
       tone,
       toneLabel: tone === "constructive" ? "Constructive with discipline" : tone === "cautious" ? "Defensive caution" : "Selective neutrality",
       day: {
         headline: "What is moving the session",
         summary: `Today's active-market sample is ${direction(combinedDay, language)}. Closed-market prices are excluded from that reading, so short-term decisions do not confuse a prior close with today's move.`,
-        points: [...globalHeadlines.slice(0, 2), ...localSignals.slice(0, 2)].slice(0, 4),
+        points: dayPointsEn,
       },
       week: {
         headline: "The week in perspective",
@@ -150,7 +163,7 @@ export function buildDeterministicTodayNarrative(
       },
       argentina: {
         headline: "Argentina context",
-        summary: `The local sample is ${direction(localDay, language)}. The key transmission channels remain the dollar, peso liquidity, sovereign spreads and external risk appetite.`,
+        summary: argentinaInactive ? `${argentinaContextEn} The key transmission channels remain the dollar, peso liquidity, sovereign spreads and external risk appetite.` : `The local sample is ${direction(localDay, language)}. The key transmission channels remain the dollar, peso liquidity, sovereign spreads and external risk appetite.`,
         points: localSignals,
       },
       outlook: {
@@ -171,13 +184,13 @@ export function buildDeterministicTodayNarrative(
 
   return {
     title: "Mercados hoy: la señal detrás del ruido",
-    deck: `${usContextEs} Argentina está ${direction(localDay, language)} y cripto ${direction(cryptoDay, language)}. La lectura útil es separar la acción de precios actual del último cierre disponible.`,
+    deck: `${usContextEs} ${argentinaContextEs} Cripto está ${direction(cryptoDay, language)}. La lectura útil es separar la acción de precios actual del último cierre disponible.`,
     tone,
     toneLabel: tone === "constructive" ? "Constructivo con disciplina" : tone === "cautious" ? "Cautela defensiva" : "Neutralidad selectiva",
     day: {
       headline: "Qué mueve la rueda",
       summary: `La muestra de mercados activos hoy está ${direction(combinedDay, language)}. Para decisiones de corto plazo, los mercados cerrados quedan fuera de esa lectura: así no se confunde un cierre previo con un movimiento de hoy.`,
-      points: [...globalHeadlines.slice(0, 2), ...localHeadlines.slice(0, 2)].slice(0, 4),
+      points: dayPointsEs,
     },
     week: {
       headline: "La semana en perspectiva",
@@ -191,7 +204,7 @@ export function buildDeterministicTodayNarrative(
     },
     argentina: {
       headline: "Contexto argentino",
-      summary: `La muestra local opera ${direction(localDay, language)}. Los canales centrales siguen siendo dólar, liquidez en pesos, riesgo soberano y apetito global por riesgo.`,
+      summary: argentinaInactive ? `${argentinaContextEs} Los canales centrales siguen siendo dólar, liquidez en pesos, riesgo soberano y apetito global por riesgo.` : `La muestra local opera ${direction(localDay, language)}. Los canales centrales siguen siendo dólar, liquidez en pesos, riesgo soberano y apetito global por riesgo.`,
       points: localHeadlines,
     },
     outlook: {
