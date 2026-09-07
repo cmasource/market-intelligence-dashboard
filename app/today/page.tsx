@@ -11,11 +11,13 @@ import {
   MapPin,
   Minus,
   ShieldAlert,
+  CircleDot,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import type { TodayBrief, TodayBriefMedia, TodayBriefSection, TodayMarketSnapshot } from "@/lib/research/today-brief";
+import type { TodayMarketSession, TodayMarketSessions } from "@/lib/research/market-calendar";
 
 function formatTimestamp(value: string, locale: string) {
   const date = new Date(value);
@@ -47,7 +49,14 @@ function ChangeIcon({ value }: { value: number | null }) {
   return value > 0 ? <ArrowUpRight size={14} aria-hidden="true" /> : <ArrowDownRight size={14} aria-hidden="true" />;
 }
 
-function SnapshotCard({ item, locale, isSpanish }: { item: TodayMarketSnapshot; locale: string; isSpanish: boolean }) {
+function sameMarketDate(value: string | null, marketDate: string, timeZone: string) {
+  if (!value) return false;
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(value));
+  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value;
+  return `${get("year")}-${get("month")}-${get("day")}` === marketDate;
+}
+
+function SnapshotCard({ item, session, locale, isSpanish }: { item: TodayMarketSnapshot; session: TodayMarketSession; locale: string; isSpanish: boolean }) {
   const palette = item.market === "argentina"
     ? "border-sky-300/20 bg-slate-950/55 hover:border-sky-300/40"
     : item.market === "crypto"
@@ -58,6 +67,10 @@ function SnapshotCard({ item, locale, isSpanish }: { item: TodayMarketSnapshot; 
     : item.market === "crypto"
       ? "border-violet-300/20 bg-violet-300/10 text-violet-200"
       : "border-cyan-300/15 bg-cyan-300/[0.07] text-cyan-200";
+  const timeZone = item.market === "international" ? "America/New_York" : item.market === "argentina" ? "America/Argentina/Buenos_Aires" : "UTC";
+  const isCurrent = item.market === "crypto" || (session.isTradingDay && session.status !== "preopen" && sameMarketDate(item.observedAt, session.marketDate, timeZone));
+  const changePeriod = isCurrent ? (isSpanish ? "hoy" : "today") : (isSpanish ? "última rueda" : "last session");
+  const observedLabel = item.observedAt ? new Date(item.observedAt).toLocaleDateString(locale, { timeZone, day: "numeric", month: "short" }) : null;
   return (
     <article className={`relative overflow-hidden rounded-md border p-4 transition ${palette}`}>
       <span className={`absolute inset-y-0 left-0 w-0.5 ${item.market === "argentina" ? "bg-sky-300" : item.market === "crypto" ? "bg-violet-300" : "bg-cyan-300"}`} />
@@ -67,7 +80,7 @@ function SnapshotCard({ item, locale, isSpanish }: { item: TodayMarketSnapshot; 
           <h3 className="mt-1 truncate text-sm font-semibold text-white">{item.label}</h3>
         </div>
         <span className={`rounded border px-2 py-1 text-[10px] font-semibold ${badge}`}>
-          {item.market === "argentina" ? "AR" : item.market === "crypto" ? "24/7" : "Global"}
+          {item.market === "crypto" ? "24/7" : session.statusLabel}
         </span>
       </div>
       <p className="mt-4 text-xl font-semibold tabular-nums text-white">{formatPrice(item, locale)}</p>
@@ -75,7 +88,7 @@ function SnapshotCard({ item, locale, isSpanish }: { item: TodayMarketSnapshot; 
         <span className={`inline-flex items-center gap-1 font-semibold tabular-nums ${changeColor(item.dailyChange)}`}>
           <ChangeIcon value={item.dailyChange} />
           {item.dailyChange === null ? "N/D" : `${item.dailyChange > 0 ? "+" : ""}${item.dailyChange.toFixed(2)}%`}
-          <span className="font-normal text-slate-600">{isSpanish ? "día" : "day"}</span>
+          <span className="font-normal text-slate-500">{changePeriod}</span>
         </span>
         {item.weeklyChange !== null ? (
           <span className={`font-semibold tabular-nums ${changeColor(item.weeklyChange)}`}>
@@ -83,7 +96,32 @@ function SnapshotCard({ item, locale, isSpanish }: { item: TodayMarketSnapshot; 
           </span>
         ) : null}
       </div>
+      {!isCurrent && observedLabel ? <p className="mt-3 text-[11px] text-slate-600">{isSpanish ? "Dato al" : "Data as of"} {observedLabel}</p> : null}
     </article>
+  );
+}
+
+function SessionStrip({ sessions, isSpanish }: { sessions: TodayMarketSessions; isSpanish: boolean }) {
+  const items = [
+    { label: isSpanish ? "Estados Unidos" : "United States", session: sessions.international, color: "text-cyan-300", dot: "bg-cyan-300" },
+    { label: "Argentina", session: sessions.argentina, color: "text-sky-300", dot: "bg-sky-300" },
+    { label: isSpanish ? "Cripto" : "Crypto", session: sessions.crypto, color: "text-violet-300", dot: "bg-violet-300" },
+  ];
+  return (
+    <section aria-label={isSpanish ? "Estado de los mercados" : "Market status"} className="overflow-hidden rounded-lg border border-white/10 bg-slate-950/55">
+      <div className="grid md:grid-cols-3">
+        {items.map(({ label, session, color, dot }, index) => (
+          <div key={session.market} className={`flex gap-3 px-4 py-3.5 ${index ? "border-t border-white/10 md:border-l md:border-t-0" : ""}`}>
+            <CircleDot size={16} className={`mt-0.5 shrink-0 ${color}`} aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
+              <p className={`mt-0.5 text-sm font-semibold ${color}`}><span className={`mr-2 inline-block h-1.5 w-1.5 rounded-full ${dot}`} />{session.statusLabel}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">{session.detail}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -213,12 +251,14 @@ export default function TodayPage() {
             </div>
           </section>
 
+          <SessionStrip sessions={brief.marketSessions} isSpanish={isSpanish} />
+
           <section aria-label={isSpanish ? "Pulso de activos" : "Asset pulse"}>
             <div className="mb-3 flex items-center justify-between gap-3">
-              <div><p className="cma-kicker">{isSpanish ? "Pulso de activos" : "Asset pulse"}</p><h2 className="mt-1 text-xl font-semibold text-white">{isSpanish ? "La rueda en números" : "The session in numbers"}</h2></div>
+              <div><p className="cma-kicker">{isSpanish ? "Pulso de activos" : "Asset pulse"}</p><h2 className="mt-1 text-xl font-semibold text-white">{isSpanish ? "Mercados activos y últimos cierres" : "Active markets and latest closes"}</h2></div>
               <span className="text-xs text-slate-600">{brief.coverage.availableSnapshots}/{brief.coverage.totalSnapshots} {isSpanish ? "datos disponibles" : "data points available"}</span>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{brief.snapshots.map((item) => <SnapshotCard key={`${item.market}-${item.symbol}`} item={item} locale={locale} isSpanish={isSpanish} />)}</div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{brief.snapshots.map((item) => <SnapshotCard key={`${item.market}-${item.symbol}`} item={item} session={brief.marketSessions[item.market]} locale={locale} isSpanish={isSpanish} />)}</div>
           </section>
 
           <div className="grid gap-5 xl:grid-cols-2">

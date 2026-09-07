@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { buildDeterministicTodayNarrative, todayFeaturedNews, todaySources, type TodayMarketSnapshot } from "@/lib/research/today-brief";
 import type { NewsArticle } from "@/lib/news";
+import { getTodayMarketSessions } from "@/lib/research/market-calendar";
 
 const snapshots: TodayMarketSnapshot[] = [
   { symbol: "SPY", label: "S&P 500", market: "international", price: 700, dailyChange: 1.1, weeklyChange: 2.2, currency: "USD", sourceLabel: "Yahoo", observedAt: "2026-09-02T14:00:00.000Z" },
@@ -36,6 +37,48 @@ test("today sources remove duplicate and unusable URLs", () => {
 
   assert.equal(sources.length, 1);
   assert.equal(sources[0].title, "Uno");
+});
+
+test("a US holiday is described as a prior close, not as today's US move", () => {
+  const laborDay = getTodayMarketSessions("es", new Date("2026-09-07T14:00:00.000Z"));
+  const narrative = buildDeterministicTodayNarrative("es", snapshots, [], [], laborDay);
+
+  assert.equal(laborDay.international.status, "holiday");
+  assert.equal(laborDay.international.previousSessionDate, "2026-09-04");
+  assert.equal(laborDay.international.nextSessionDate, "2026-09-08");
+  assert.match(narrative.deck, /Wall Street está cerrado por feriado/i);
+  assert.match(narrative.deck, /última rueda, no a hoy/i);
+  assert.doesNotMatch(narrative.deck, /activos internacionales operan/i);
+});
+
+test("closed-market headlines do not leak into the daily active-market bullets", () => {
+  const laborDay = getTodayMarketSessions("es", new Date("2026-09-07T13:30:00.000Z"));
+  const narrative = buildDeterministicTodayNarrative(
+    "es",
+    snapshots,
+    [article("Wall Street cae hoy", "https://example.com/us")],
+    [article("El dólar MEP concentra la atención local", "https://example.com/ar")],
+    laborDay,
+  );
+
+  assert.equal(laborDay.argentina.status, "preopen");
+  assert.match(narrative.argentina.summary, /preapertura/i);
+  assert.ok(narrative.day.points.some((point) => /dólar MEP/i.test(point)));
+  assert.ok(narrative.day.points.every((point) => !/Wall Street cae hoy/i.test(point)));
+});
+
+test("the English daily brief does not surface untranslated Argentina headlines", () => {
+  const laborDay = getTodayMarketSessions("en", new Date("2026-09-07T14:30:00.000Z"));
+  const narrative = buildDeterministicTodayNarrative(
+    "en",
+    snapshots,
+    [],
+    [article("El dólar MEP concentra la atención local", "https://example.com/ar")],
+    laborDay,
+  );
+
+  assert.ok(narrative.day.points.every((point) => !/El dólar/i.test(point)));
+  assert.ok(narrative.day.points.some((point) => /local rates/i.test(point)));
 });
 
 test("featured news only exposes articles with real publisher images", () => {

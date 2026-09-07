@@ -29,6 +29,14 @@ const argentinaMarketFeeds = [
   { url: "https://www.clarin.com/rss/economia/", source: "Clarin" },
 ];
 
+const argentinaMarketTerms = /\b(acciones?|bonos?|mercados?|bolsa|merval|byma|cedears?|d[oó]lar|blue|mep|ccl|contado con liqui|riesgo pa[ií]s|inflaci[oó]n|tasas?|bcra|reservas?|fmi|deuda|petr[oó]leo|energ[ií]a|econom[ií]a|financier[oa]s?|inversion(?:es)?|pesos?|licitaci[oó]n|cauciones?)\b/i;
+const argentinaNoiseTerms = /\b(anses|jubilad[oa]s?|auh|calendario de pagos?|recetas?|pami|asignaci[oó]n universal)\b/i;
+
+export function isArgentinaMarketRelevant(article: Pick<NewsArticle, "title" | "summary">) {
+  const text = `${article.title} ${article.summary ?? ""}`;
+  return argentinaMarketTerms.test(text) && !(argentinaNoiseTerms.test(article.title) && !argentinaMarketTerms.test(article.title));
+}
+
 function tag(item: string, name: string) {
   const match = item.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)<\\/${name}>`, "i"));
   return match?.[1]?.replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "");
@@ -68,7 +76,7 @@ async function getArgentinaMarketNews(limit = 8): Promise<NewsResponse | null> {
   );
 
   const articles = results.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
-  const ordered = orderNewsArticles(articles.map(cleanArticle));
+  const ordered = orderNewsArticles(articles.map(cleanArticle).filter(isArgentinaMarketRelevant));
 
   const perSourceCount = new Map<string, number>();
   const picked: NewsArticle[] = [];
