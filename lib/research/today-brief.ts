@@ -1,4 +1,5 @@
 import type { NewsArticle } from "@/lib/news";
+import { snapshotBelongsToCurrentSession, type TodayMarketSessions } from "./market-calendar";
 
 export type TodayBriefLanguage = "en" | "es";
 export type TodayBriefTone = "constructive" | "neutral" | "cautious";
@@ -64,6 +65,7 @@ export type TodayBrief = TodayBriefNarrative & {
   method: TodayBriefMethod;
   model?: string;
   snapshots: TodayMarketSnapshot[];
+  marketSessions: TodayMarketSessions;
   featuredNews: TodayBriefMedia[];
   coverage: {
     availableSnapshots: number;
@@ -95,17 +97,30 @@ export function buildDeterministicTodayNarrative(
   snapshots: TodayMarketSnapshot[],
   internationalNews: NewsArticle[],
   argentinaNews: NewsArticle[],
+  marketSessions?: TodayMarketSessions,
 ): TodayBriefNarrative {
-  const global = snapshots.filter((item) => item.market !== "argentina");
+  const global = snapshots.filter((item) => item.market === "international");
+  const crypto = snapshots.filter((item) => item.market === "crypto");
   const local = snapshots.filter((item) => item.market === "argentina");
-  const globalDay = finiteAverage(global.map((item) => item.dailyChange));
+  const currentGlobal = marketSessions ? global.filter((item) => snapshotBelongsToCurrentSession(item.observedAt, item.market, marketSessions)) : global;
+  const currentLocal = marketSessions ? local.filter((item) => snapshotBelongsToCurrentSession(item.observedAt, item.market, marketSessions)) : local;
+  const currentCrypto = marketSessions ? crypto.filter((item) => snapshotBelongsToCurrentSession(item.observedAt, item.market, marketSessions)) : crypto;
+  const globalDay = finiteAverage(currentGlobal.map((item) => item.dailyChange));
+  const cryptoDay = finiteAverage(currentCrypto.map((item) => item.dailyChange));
   const globalWeek = finiteAverage(global.map((item) => item.weeklyChange));
-  const localDay = finiteAverage(local.map((item) => item.dailyChange));
-  const combinedDay = finiteAverage([globalDay, localDay]);
+  const localDay = finiteAverage(currentLocal.map((item) => item.dailyChange));
+  const combinedDay = finiteAverage([globalDay, localDay, cryptoDay]);
   const tone: TodayBriefTone = combinedDay === null ? "neutral" : combinedDay > 0.6 ? "constructive" : combinedDay < -0.6 ? "cautious" : "neutral";
   const globalHeadlines = compactHeadlines(internationalNews);
   const localHeadlines = compactHeadlines(argentinaNews);
   const hasEvidence = snapshots.some((item) => item.price !== null) || internationalNews.length > 0 || argentinaNews.length > 0;
+  const usClosed = marketSessions && ["holiday", "weekend"].includes(marketSessions.international.status);
+  const usContextEs = usClosed
+    ? `Wall Street está ${marketSessions.international.statusLabel.toLowerCase()}${marketSessions.international.status === "holiday" ? ` (${marketSessions.international.detail})` : ""}; sus variaciones corresponden a la última rueda, no a hoy.`
+    : `Wall Street está ${marketSessions?.international.statusLabel.toLowerCase() ?? "en rueda"}.`;
+  const usContextEn = usClosed
+    ? `Wall Street is ${marketSessions.international.statusLabel.toLowerCase()}${marketSessions.international.status === "holiday" ? ` (${marketSessions.international.detail})` : ""}; its changes refer to the latest session, not today.`
+    : `Wall Street is ${marketSessions?.international.statusLabel.toLowerCase() ?? "in session"}.`;
 
   if (language === "en") {
     const localSignals = [
@@ -115,12 +130,12 @@ export function buildDeterministicTodayNarrative(
     ];
     return {
       title: "Markets today: the signal behind the noise",
-      deck: `International assets are ${direction(globalDay, language)}, while Argentina trades ${direction(localDay, language)}. The useful reading is to separate confirmed price action from headline risk.`,
+      deck: `${usContextEn} Argentina is ${direction(localDay, language)} and crypto is ${direction(cryptoDay, language)}. The useful reading is to separate current price action from the latest available close.`,
       tone,
       toneLabel: tone === "constructive" ? "Constructive with discipline" : tone === "cautious" ? "Defensive caution" : "Selective neutrality",
       day: {
         headline: "What is moving the session",
-        summary: `The available cross-market sample is ${direction(combinedDay, language)}. Short-term decisions should privilege confirmation over anticipation.`,
+        summary: `Today's active-market sample is ${direction(combinedDay, language)}. Closed-market prices are excluded from that reading, so short-term decisions do not confuse a prior close with today's move.`,
         points: [...globalHeadlines.slice(0, 2), ...localSignals.slice(0, 2)].slice(0, 4),
       },
       week: {
@@ -130,8 +145,8 @@ export function buildDeterministicTodayNarrative(
       },
       international: {
         headline: "Global context",
-        summary: `Equities, duration and crypto are sending a ${direction(globalDay, language)} message. Watch whether breadth and bonds confirm the move instead of relying on a single index.`,
-        points: globalHeadlines,
+        summary: usClosed ? `${usContextEn} Use US prices as the latest reference and wait for the next session to confirm direction.` : `US equities and duration are sending a ${direction(globalDay, language)} message. Watch whether breadth and bonds confirm the move instead of relying on a single index.`,
+        points: usClosed ? [`Latest US session: ${marketSessions.international.previousSessionDate}`, `Next US session: ${marketSessions.international.nextSessionDate}`, ...globalHeadlines].slice(0, 4) : globalHeadlines,
       },
       argentina: {
         headline: "Argentina context",
@@ -141,12 +156,12 @@ export function buildDeterministicTodayNarrative(
       outlook: {
         headline: "What could come next",
         summary: "The base case is continuity with volatility. A stronger signal requires price confirmation across several assets; a deterioration in breadth or liquidity would favor a more defensive stance.",
-        points: ["Confirm the move with market breadth", "Watch rates, the dollar and energy", "Reassess if local and global signals diverge"],
+        points: [usClosed ? `Wait for Wall Street to reopen on ${marketSessions.international.nextSessionDate}` : "Confirm the move with market breadth", "Watch rates, the dollar and energy", "Reassess if local and global signals diverge"],
       },
       recommendedStance: {
         label: !hasEvidence ? "Insufficient data: avoid drawing a market conclusion" : tone === "cautious" ? "Protect capital and wait for confirmation" : "Stay selective and scale entries",
         rationale: !hasEvidence ? "No current quote or headline evidence is available to support a directional stance." : "The current evidence supports measured positioning rather than an all-in directional bet.",
-        actions: !hasEvidence ? ["Wait for current market data", "Do not infer direction from missing information", "Reassess when coverage recovers"] : ["Avoid chasing large opening moves", "Size positions in stages", "Define invalidation before entering"],
+        actions: !hasEvidence ? ["Wait for current market data", "Do not infer direction from missing information", "Reassess when coverage recovers"] : [usClosed ? "Do not read the latest US close as today's move" : "Avoid chasing large opening moves", "Size positions in stages", "Define invalidation before entering"],
         invalidation: !hasEvidence ? "This restriction ends only when current prices or verified headlines become available." : "Change the stance if market breadth, rates or the local FX/risk picture contradict the base case.",
       },
       watchlist: ["US rates and dollar", "Equity breadth", "Oil and geopolitical risk", "Argentina sovereign spreads"],
@@ -156,12 +171,12 @@ export function buildDeterministicTodayNarrative(
 
   return {
     title: "Mercados hoy: la señal detrás del ruido",
-    deck: `Los activos internacionales operan ${direction(globalDay, language)}, mientras que Argentina se mueve ${direction(localDay, language)}. La lectura útil es separar la acción de precios confirmada del riesgo de titulares.`,
+    deck: `${usContextEs} Argentina está ${direction(localDay, language)} y cripto ${direction(cryptoDay, language)}. La lectura útil es separar la acción de precios actual del último cierre disponible.`,
     tone,
     toneLabel: tone === "constructive" ? "Constructivo con disciplina" : tone === "cautious" ? "Cautela defensiva" : "Neutralidad selectiva",
     day: {
       headline: "Qué mueve la rueda",
-      summary: `La muestra disponible entre mercados está ${direction(combinedDay, language)}. Para decisiones de corto plazo conviene privilegiar confirmación antes que anticipación.`,
+      summary: `La muestra de mercados activos hoy está ${direction(combinedDay, language)}. Para decisiones de corto plazo, los mercados cerrados quedan fuera de esa lectura: así no se confunde un cierre previo con un movimiento de hoy.`,
       points: [...globalHeadlines.slice(0, 2), ...localHeadlines.slice(0, 2)].slice(0, 4),
     },
     week: {
@@ -171,8 +186,8 @@ export function buildDeterministicTodayNarrative(
     },
     international: {
       headline: "Contexto internacional",
-      summary: `Acciones, duration y cripto envían un mensaje ${direction(globalDay, language)}. Conviene mirar si amplitud y bonos confirman el movimiento, en lugar de depender de un solo índice.`,
-      points: globalHeadlines,
+      summary: usClosed ? `${usContextEs} Los precios de EE. UU. funcionan como última referencia y la próxima rueda deberá confirmar la dirección.` : `Acciones y duration de EE. UU. envían un mensaje ${direction(globalDay, language)}. Conviene mirar si amplitud y bonos confirman el movimiento, en lugar de depender de un solo índice.`,
+      points: usClosed ? [`Última rueda de EE. UU.: ${marketSessions.international.previousSessionDate}`, `Próxima rueda de EE. UU.: ${marketSessions.international.nextSessionDate}`, ...globalHeadlines].slice(0, 4) : globalHeadlines,
     },
     argentina: {
       headline: "Contexto argentino",
@@ -182,12 +197,12 @@ export function buildDeterministicTodayNarrative(
     outlook: {
       headline: "Qué puede venir",
       summary: "El escenario base es de continuidad con volatilidad. Una señal más firme requiere confirmación de precios en varios activos; un deterioro de amplitud o liquidez justificaría una postura más defensiva.",
-      points: ["Confirmar el movimiento con amplitud de mercado", "Seguir tasas, dólar y energía", "Reevaluar si divergen las señales locales y globales"],
+      points: [usClosed ? `Esperar la reapertura de Wall Street el ${marketSessions.international.nextSessionDate}` : "Confirmar el movimiento con amplitud de mercado", "Seguir tasas, dólar y energía", "Reevaluar si divergen las señales locales y globales"],
     },
     recommendedStance: {
       label: !hasEvidence ? "Datos insuficientes: no inferir una dirección de mercado" : tone === "cautious" ? "Priorizar capital y esperar confirmación" : "Mantener selectividad y escalonar entradas",
       rationale: !hasEvidence ? "No hay cotizaciones ni titulares actuales suficientes para sostener una postura direccional." : "La evidencia actual favorece una exposición medida, no una apuesta direccional total.",
-      actions: !hasEvidence ? ["Esperar datos actuales del mercado", "No interpretar la ausencia de datos como una señal", "Reevaluar cuando se recupere la cobertura"] : ["No perseguir movimientos fuertes de apertura", "Dimensionar posiciones por etapas", "Definir la invalidación antes de entrar"],
+      actions: !hasEvidence ? ["Esperar datos actuales del mercado", "No interpretar la ausencia de datos como una señal", "Reevaluar cuando se recupere la cobertura"] : [usClosed ? "No leer el último cierre de EE. UU. como un movimiento de hoy" : "No perseguir movimientos fuertes de apertura", "Dimensionar posiciones por etapas", "Definir la invalidación antes de entrar"],
       invalidation: !hasEvidence ? "Esta restricción termina únicamente cuando vuelvan a estar disponibles precios actuales o titulares verificados." : "Cambiar la postura si la amplitud, las tasas o el cuadro cambiario y de riesgo local contradicen el escenario base.",
     },
     watchlist: ["Tasas y dólar en EE. UU.", "Amplitud de acciones", "Petróleo y riesgo geopolítico", "Spreads soberanos argentinos"],

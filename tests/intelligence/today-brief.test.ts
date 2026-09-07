@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { buildDeterministicTodayNarrative, todayFeaturedNews, todaySources, type TodayMarketSnapshot } from "@/lib/research/today-brief";
 import type { NewsArticle } from "@/lib/news";
+import { getTodayMarketSessions } from "@/lib/research/market-calendar";
 
 const snapshots: TodayMarketSnapshot[] = [
   { symbol: "SPY", label: "S&P 500", market: "international", price: 700, dailyChange: 1.1, weeklyChange: 2.2, currency: "USD", sourceLabel: "Yahoo", observedAt: "2026-09-02T14:00:00.000Z" },
@@ -36,6 +37,18 @@ test("today sources remove duplicate and unusable URLs", () => {
 
   assert.equal(sources.length, 1);
   assert.equal(sources[0].title, "Uno");
+});
+
+test("a US holiday is described as a prior close, not as today's US move", () => {
+  const laborDay = getTodayMarketSessions("es", new Date("2026-09-07T14:00:00.000Z"));
+  const narrative = buildDeterministicTodayNarrative("es", snapshots, [], [], laborDay);
+
+  assert.equal(laborDay.international.status, "holiday");
+  assert.equal(laborDay.international.previousSessionDate, "2026-09-04");
+  assert.equal(laborDay.international.nextSessionDate, "2026-09-08");
+  assert.match(narrative.deck, /Wall Street está cerrado por feriado/i);
+  assert.match(narrative.deck, /última rueda, no a hoy/i);
+  assert.doesNotMatch(narrative.deck, /activos internacionales operan/i);
 });
 
 test("featured news only exposes articles with real publisher images", () => {
