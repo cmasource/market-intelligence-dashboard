@@ -134,7 +134,7 @@ export function buildDeterministicTodayNarrative(
     "Prioritize liquidity and price confirmation in Argentine assets",
   ];
   const dayPointsEn = usClosed
-    ? [...localHeadlines.slice(0, 3), `Crypto is ${direction(cryptoDay, language)} in continuous trading`].slice(0, 4)
+    ? [...localSignals.slice(0, 3), `Crypto is ${direction(cryptoDay, language)} in continuous trading`].slice(0, 4)
     : [...globalHeadlines.slice(0, 2), ...localSignals.slice(0, 2)].slice(0, 4);
   const dayPointsEs = usClosed
     ? [...localHeadlines.slice(0, 3), `Cripto está ${direction(cryptoDay, language)} en mercado continuo`].slice(0, 4)

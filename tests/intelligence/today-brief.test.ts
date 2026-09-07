@@ -67,6 +67,20 @@ test("closed-market headlines do not leak into the daily active-market bullets",
   assert.ok(narrative.day.points.every((point) => !/Wall Street cae hoy/i.test(point)));
 });
 
+test("the English daily brief does not surface untranslated Argentina headlines", () => {
+  const laborDay = getTodayMarketSessions("en", new Date("2026-09-07T14:30:00.000Z"));
+  const narrative = buildDeterministicTodayNarrative(
+    "en",
+    snapshots,
+    [],
+    [article("El dólar MEP concentra la atención local", "https://example.com/ar")],
+    laborDay,
+  );
+
+  assert.ok(narrative.day.points.every((point) => !/El dólar/i.test(point)));
+  assert.ok(narrative.day.points.some((point) => /local rates/i.test(point)));
+});
+
 test("featured news only exposes articles with real publisher images", () => {
   const media = todayFeaturedNews([
     { ...article("Con imagen", "https://example.com/a"), imageUrl: "https://cdn.example.com/news.jpg" },
