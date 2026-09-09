@@ -19,9 +19,19 @@ type MacroMetric = {
 type WalletRate = { name: string; tna: number; tea: number; cap: number | null; date: string; conditions: string | null };
 type ExchangeRate = { code: string; label: string; value: number; currency: string; date: string | null };
 
-function formatMetric(metric: MacroMetric) {
+const englishMetricLabels: Record<number, { label: string; unit: string }> = {
+  1: { label: "International reserves", unit: "USD million" },
+  12: { label: "30-day term deposit", unit: "% APR" },
+  27: { label: "Monthly CPI", unit: "%" },
+  28: { label: "Annual CPI", unit: "%" },
+  29: { label: "Expected inflation, 12 months", unit: "%" },
+  30: { label: "CER", unit: "index" },
+  31: { label: "UVA", unit: "ARS" },
+};
+
+function formatMetric(metric: MacroMetric, isSpanish: boolean) {
   const maximumFractionDigits = metric.id === 1 ? 0 : metric.id === 30 || metric.id === 31 ? 2 : 1;
-  return new Intl.NumberFormat("es-AR", { maximumFractionDigits }).format(metric.value);
+  return new Intl.NumberFormat(isSpanish ? "es-AR" : "en-US", { maximumFractionDigits }).format(metric.value);
 }
 
 export function ArgentinaMacroMonitor() {
@@ -61,16 +71,18 @@ export function ArgentinaMacroMonitor() {
 
       <div className="grid xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.75fr)]">
         <div className="min-w-0 p-4 sm:p-5">
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {macro.map((metric) => {
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            {macro.map((metric, index) => {
               const positive = (metric.change ?? 0) >= 0;
               const date = new Date(`${metric.date}T12:00:00`).toLocaleDateString(isSpanish ? "es-AR" : "en-US", { day: "2-digit", month: "short" });
               const ChangeIcon = positive ? ArrowUpRight : ArrowDownRight;
+              const isFeatured = index === 0;
+              const displayMetric = isSpanish ? metric : (englishMetricLabels[metric.id] ?? metric);
               return (
-                <article key={metric.id} className="rounded-md border border-white/8 bg-white/[0.025] px-3.5 py-3 transition hover:border-cyan-300/15 hover:bg-cyan-300/[0.025]">
-                  <div className="flex min-h-10 items-start justify-between gap-3"><p className="text-[11px] font-semibold uppercase leading-4 text-slate-400">{metric.label}</p>{typeof metric.change === "number" ? <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold tabular-nums ${positive ? "text-emerald-300" : "text-rose-300"}`}><ChangeIcon size={12} />{Math.abs(metric.change).toLocaleString("es-AR", { maximumFractionDigits: 2 })}</span> : null}</div>
-                  <div className="mt-2 flex items-baseline gap-2"><p className="text-xl font-semibold tabular-nums text-white">{formatMetric(metric)}</p><span className="text-[11px] text-slate-500">{metric.unit}</span></div>
-                  <p className="mt-2 text-[10px] text-slate-600">
+                <article key={metric.id} className={`flex min-h-32 flex-col rounded-md border px-4 py-3.5 transition ${isFeatured ? "border-cyan-300/25 bg-cyan-300/[0.07] sm:col-span-2 xl:min-h-36" : "border-white/8 bg-white/[0.025] hover:border-cyan-300/15 hover:bg-cyan-300/[0.025]"}`}>
+                  <div className="flex items-start justify-between gap-3"><p className={`font-semibold uppercase leading-4 ${isFeatured ? "text-xs text-cyan-200" : "text-[11px] text-slate-400"}`}>{displayMetric.label}</p>{typeof metric.change === "number" ? <span className={`inline-flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ${positive ? "bg-emerald-300/10 text-emerald-300" : "bg-rose-300/10 text-rose-300"}`}><ChangeIcon size={12} />{Math.abs(metric.change).toLocaleString(isSpanish ? "es-AR" : "en-US", { maximumFractionDigits: 2 })}</span> : null}</div>
+                  <div className={`flex flex-1 items-end gap-2 ${isFeatured ? "mt-4" : "mt-3"}`}><p className={`font-semibold tabular-nums text-white ${isFeatured ? "text-3xl sm:text-4xl" : "text-2xl"}`}>{formatMetric(metric, isSpanish)}</p><span className={`${isFeatured ? "mb-1 text-xs text-cyan-100/70" : "mb-0.5 text-[11px] text-slate-500"}`}>{displayMetric.unit}</span></div>
+                  <p className={`mt-3 text-[10px] ${isFeatured ? "text-cyan-100/50" : "text-slate-600"}`}>
                     {isSpanish ? "Actualizado" : "Updated"} {date}
                     {metric.source ? <> · {metric.sourceUrl ? <a href={metric.sourceUrl} target="_blank" rel="noopener noreferrer" className="hover:text-cyan-200">{metric.source}</a> : metric.source}</> : null}
                   </p>

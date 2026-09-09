@@ -152,7 +152,7 @@ export function MarketHeatmap({
 
       <div className="mt-5 space-y-4">
         {Object.entries(groupedItems).map(([segment, items]) => (
-          <div key={segment} className="rounded-2xl border border-white/10 bg-slate-950/35 p-3">
+          <div key={segment} className="border-t border-white/10 pt-3">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h3 className="text-sm font-semibold text-white">
                 {segmentTitles[segment as Exclude<HeatmapSegment, "all">]?.[language] ?? segment}

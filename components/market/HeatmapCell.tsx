@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AssetLogo } from "@/components/assets/AssetLogo";
 import { formatCurrencyValue, formatPercent } from "@/lib/formatters";
 import type { FormatterLanguage } from "@/lib/formatters";
 import type { HeatmapItem } from "@/lib/market/heatmap-types";
@@ -46,13 +47,16 @@ export function HeatmapCell({ item, language }: HeatmapCellProps) {
       href={item.href}
       data-testid={`heatmap-cell-${item.symbol}`}
       aria-label={`${item.symbol} ${item.name}`}
-      className={`group min-h-28 rounded-xl border p-3 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(15,23,42,0.24)] ${getCellTone(
+      className={`group min-h-28 rounded-lg border p-3 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(15,23,42,0.24)] ${getCellTone(
         item.changePercent,
         item.isSimulated,
       )}`}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-semibold tracking-wide">{item.symbol}</span>
+        <span className="flex min-w-0 items-center gap-2">
+          <AssetLogo symbol={item.symbol} name={item.name} type={item.assetType} size="sm" className="h-8 w-8 rounded-full" />
+          <span className="truncate text-sm font-semibold tracking-wide">{item.symbol}</span>
+        </span>
         <span className="rounded-full bg-black/15 px-2 py-0.5 text-xs font-semibold">{changeLabel}</span>
       </div>
       <p className="mt-2 line-clamp-1 text-xs opacity-80">{item.name}</p>

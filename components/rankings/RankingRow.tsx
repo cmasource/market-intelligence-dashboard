@@ -33,7 +33,7 @@ export function RankingRow({ item, rank, accent, ctaLabel = "Abrir analisis", co
         {rank}
       </span>
       <span className="flex min-w-0 items-start gap-3">
-        <AssetLogo symbol={item.symbol} name={item.name} type={item.assetType} size="sm" className="mt-0.5 h-8 w-8 rounded-xl" />
+        <AssetLogo symbol={item.symbol} name={item.name} type={item.assetType} size="sm" className="mt-0.5 h-8 w-8" />
         <span className="min-w-0">
           <span className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-white">{item.symbol}</span>

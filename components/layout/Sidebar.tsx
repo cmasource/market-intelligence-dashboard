@@ -153,19 +153,21 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
       >
         <div className="flex h-[4.5rem] shrink-0 items-center border-b border-[var(--cma-border-soft)] px-3">
           <Link href="/" className="flex min-w-0 items-center gap-2.5" aria-label="CMA Markets">
-            <span className="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-md border border-[var(--cma-border-soft)] bg-white">
-              <Image src="/brand/cma-monogram-transparent.png" alt="CMA" width={355} height={144} priority className="h-6 w-full object-contain" />
+            <span className="relative grid h-9 w-10 shrink-0 place-items-center">
+              <Image src="/brand/cma-monogram-transparent.png" alt="CMA" width={355} height={144} priority className="cma-brand-mark h-7 w-full object-contain" />
             </span>
             {!collapsed ? (
               <span className="min-w-0">
                 <span className="block truncate text-sm font-semibold text-[var(--cma-text-primary)]">CMA Markets</span>
-                <span className="block text-[10px] font-medium text-[var(--cma-text-muted)]">Market intelligence</span>
+                <span className="block text-[10px] font-medium text-[var(--cma-text-muted)]">
+                  {language === "es" ? "Research financiero" : "Financial research"}
+                </span>
               </span>
             ) : null}
           </Link>
         </div>
 
-        <nav aria-label="Navegación principal" className="flex-1 overflow-y-auto px-2 py-3">
+        <nav aria-label={language === "es" ? "Navegación principal" : "Main navigation"} className="flex-1 overflow-y-auto px-2 py-3">
           {navItems.map((item) => {
             const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             const Icon = item.icon;
@@ -242,11 +244,11 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
           <button
             type="button"
             onClick={toggleCollapsed}
-            aria-label={collapsed ? "Expandir navegación" : "Contraer navegación"}
+            aria-label={collapsed ? (language === "es" ? "Expandir navegación" : "Expand navigation") : (language === "es" ? "Contraer navegación" : "Collapse navigation")}
             className="hidden w-full items-center justify-center gap-2 rounded-md border border-[var(--cma-border-soft)] py-1.5 text-xs font-medium text-[var(--cma-text-muted)] transition hover:text-[var(--cma-text-primary)] lg:flex"
           >
             {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
-            {!collapsed ? "Contraer" : null}
+            {!collapsed ? (language === "es" ? "Contraer" : "Collapse") : null}
           </button>
         </div>
       </aside>

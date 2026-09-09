@@ -135,8 +135,9 @@ export function AssetLogo({ symbol, name, type, size = "md", className = "" }: A
     <div
       aria-label={`${logo.label} logo`}
       data-testid="asset-logo"
+      data-external-logo={externalLogoUrl ? "true" : "false"}
       className={[
-        "relative grid shrink-0 place-items-center overflow-hidden rounded-lg border font-semibold",
+        "cma-asset-logo relative grid shrink-0 place-items-center overflow-hidden rounded-lg border font-semibold",
         sizeClasses[size],
         accentClasses[logo.accent],
         className,
@@ -150,7 +151,7 @@ export function AssetLogo({ symbol, name, type, size = "md", className = "" }: A
         <img
           src={externalLogoUrl}
           alt=""
-          className="absolute inset-[18%] h-[64%] w-[64%] object-contain"
+          className="cma-asset-logo__image absolute inset-0 h-full w-full object-contain"
           loading="lazy"
           onError={() => setFailedExternalLogoUrl(externalLogoUrl)}
         />
@@ -158,4 +159,3 @@ export function AssetLogo({ symbol, name, type, size = "md", className = "" }: A
     </div>
   );
 }
-
