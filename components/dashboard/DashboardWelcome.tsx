@@ -135,10 +135,14 @@ export function DashboardWelcome({ assets }: DashboardWelcomeProps) {
             {metrics.map((item, index) => {
               const change = item?.changePercent;
               const positive = typeof change === "number" && change >= 0;
+              const isInLastMobileRow = index >= metrics.length - 2;
+              const isLastDesktopRow = index === metrics.length - 1;
               return (
                 <div
                   key={item?.id ?? `metric-loading-${index}`}
-                  className="flex min-h-[4.5rem] min-w-0 flex-col justify-center gap-1.5 border-b border-[var(--cma-border-soft)] p-2.5 odd:border-r xl:grid xl:min-h-[3.75rem] xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center xl:gap-4 xl:border-r-0 xl:px-0 xl:py-2.5"
+                  className={`flex min-h-[4.75rem] min-w-0 flex-col justify-center gap-1.5 p-2.5 odd:border-r odd:border-[var(--cma-border-soft)] xl:grid xl:min-h-[4rem] xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center xl:gap-4 xl:border-r-0 xl:px-0 xl:py-3 ${
+                    isInLastMobileRow ? "border-b-0" : "border-b border-[var(--cma-border-soft)]"
+                  } ${isLastDesktopRow ? "xl:border-b-0" : "xl:border-b xl:border-[var(--cma-border-soft)]"}`}
                 >
                   {item ? (
                     <>

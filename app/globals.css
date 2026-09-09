@@ -65,6 +65,24 @@ body {
   font-family: var(--font-cma-sans);
 }
 
+.cma-asset-logo[data-external-logo="true"] {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.cma-asset-logo__image {
+  padding: 2px;
+}
+
+.cma-brand-mark {
+  filter: brightness(1.25) drop-shadow(0 0 8px rgba(39, 183, 174, 0.12));
+}
+
+:root[data-theme="light"] .cma-brand-mark {
+  filter: none;
+}
+
 .cma-pwa-install-panel {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
