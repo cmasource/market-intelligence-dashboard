@@ -199,7 +199,12 @@ export function InstrumentScreener({ initialFilters = {} }: InstrumentScreenerPr
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex min-w-0 items-start gap-3">
-                  <AssetLogo symbol={instrument.symbol} name={instrument.displayName} type={instrument.category} size="sm" />
+                  <AssetLogo
+                    symbol={instrument.symbol}
+                    name={instrument.displayName}
+                    type={instrument.country === "AR" && instrument.category === "equity" ? "argentine_equity" : instrument.category}
+                    size="sm"
+                  />
                   <div className="min-w-0">
                     <h3 className="text-xl font-semibold text-white">{instrument.symbol}</h3>
                     <p className="mt-1 text-sm text-slate-300">

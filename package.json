@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "audit:i18n": "tsx scripts/audit-visible-english.ts",
+    "audit:logos": "node --import tsx scripts/audit-logo-coverage.ts",
     "validate:finance": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/validate-financial-engine.ts",
     "validate:argentina": "tsx scripts/validate-argentina-data.ts",
     "validate:coverage": "tsx scripts/validate-public-asset-coverage.ts",

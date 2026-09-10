@@ -1,6 +1,7 @@
 "use client";
 
 import { getAssetLogoMetadata } from "@/lib/assets/logo-map";
+import { getLogoLookups, logoLookupPath } from "@/lib/assets/logo-sources";
 import type { AssetType } from "@/types/asset";
 import { useState } from "react";
 
@@ -28,23 +29,24 @@ const accentClasses = {
   slate: "border-slate-300/30 bg-slate-300/10 text-slate-50",
 };
 
-function getExternalLogoUrl(logo: ReturnType<typeof getAssetLogoMetadata>) {
+function getExternalLogoUrls(
+  logo: ReturnType<typeof getAssetLogoMetadata>,
+  input: Pick<AssetLogoProps, "symbol" | "name" | "type">,
+) {
   const provider = process.env.NEXT_PUBLIC_ASSET_LOGO_PROVIDER?.toLowerCase();
-  if (provider !== "logo-dev") return null;
-  if (process.env.NEXT_PUBLIC_ENABLE_EXTERNAL_LOGOS !== "1") return null;
+  if (provider !== "logo-dev") return [];
+  if (process.env.NEXT_PUBLIC_ENABLE_EXTERNAL_LOGOS !== "1") return [];
 
   const token = process.env.NEXT_PUBLIC_LOGO_DEV_TOKEN;
-  if (!token) return null;
+  if (!token) return [];
 
-  if (logo.logoDomain) {
-    return `https://img.logo.dev/${encodeURIComponent(logo.logoDomain)}?token=${encodeURIComponent(token)}&format=png&retina=true`;
-  }
-
-  if (logo.cryptoLogoId) {
-    return `https://img.logo.dev/crypto/${encodeURIComponent(logo.cryptoLogoId)}?token=${encodeURIComponent(token)}&format=png&retina=true`;
-  }
-
-  return null;
+  return getLogoLookups({
+    ...input,
+    domain: logo.logoDomain,
+    cryptoId: logo.cryptoLogoId,
+  }).map((lookup) =>
+    `https://img.logo.dev/${logoLookupPath(lookup)}?token=${encodeURIComponent(token)}&size=64&format=png&retina=true&fallback=404`,
+  );
 }
 
 function getTradingViewLogoUrl(logo: ReturnType<typeof getAssetLogoMetadata>) {
@@ -127,9 +129,13 @@ function AssetLogoMark({ logo }: { logo: ReturnType<typeof getAssetLogoMetadata>
 
 export function AssetLogo({ symbol, name, type, size = "md", className = "" }: AssetLogoProps) {
   const logo = getAssetLogoMetadata(symbol, type, name);
-  const candidateExternalLogoUrl = getCryptoLogoUrl(logo) ?? getExternalLogoUrl(logo) ?? getTradingViewLogoUrl(logo);
-  const [failedExternalLogoUrl, setFailedExternalLogoUrl] = useState<string | null>(null);
-  const externalLogoUrl = candidateExternalLogoUrl !== failedExternalLogoUrl ? candidateExternalLogoUrl : null;
+  const externalLogoUrls = [
+    ...getExternalLogoUrls(logo, { symbol, name, type }),
+    getTradingViewLogoUrl(logo),
+    getCryptoLogoUrl(logo),
+  ].filter((url): url is string => Boolean(url));
+  const [failedExternalLogoUrls, setFailedExternalLogoUrls] = useState<string[]>([]);
+  const externalLogoUrl = externalLogoUrls.find((url) => !failedExternalLogoUrls.includes(url)) ?? null;
 
   return (
     <div
@@ -153,7 +159,9 @@ export function AssetLogo({ symbol, name, type, size = "md", className = "" }: A
           alt=""
           className="cma-asset-logo__image absolute inset-0 h-full w-full object-contain"
           loading="lazy"
-          onError={() => setFailedExternalLogoUrl(externalLogoUrl)}
+          onError={() => setFailedExternalLogoUrls((failed) =>
+            failed.includes(externalLogoUrl) ? failed : [...failed, externalLogoUrl]
+          )}
         />
       ) : null}
     </div>
