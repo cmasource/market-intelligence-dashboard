@@ -35,7 +35,6 @@ function getExternalLogoUrls(
 ) {
   const provider = process.env.NEXT_PUBLIC_ASSET_LOGO_PROVIDER?.toLowerCase();
   if (provider !== "logo-dev") return [];
-  if (process.env.NEXT_PUBLIC_ENABLE_EXTERNAL_LOGOS !== "1") return [];
 
   const token = process.env.NEXT_PUBLIC_LOGO_DEV_TOKEN;
   if (!token) return [];
