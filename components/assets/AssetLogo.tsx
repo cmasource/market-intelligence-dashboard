@@ -29,6 +29,18 @@ const accentClasses = {
   slate: "border-slate-300/30 bg-slate-300/10 text-slate-50",
 };
 
+// Some providers return compact brandmarks with generous transparent padding.
+// Keep these exceptions centralized so every surface renders them consistently.
+const compactLogoScaleBySymbol: Record<string, string> = {
+  CVX: "scale-[1.32]",
+  YPF: "scale-[1.38]",
+  YPFD: "scale-[1.38]",
+};
+
+function getExternalLogoScale(symbol: string) {
+  return compactLogoScaleBySymbol[symbol.trim().toUpperCase()] ?? "scale-100";
+}
+
 function getExternalLogoUrls(
   logo: ReturnType<typeof getAssetLogoMetadata>,
   input: Pick<AssetLogoProps, "symbol" | "name" | "type">,
@@ -44,7 +56,7 @@ function getExternalLogoUrls(
     domain: logo.logoDomain,
     cryptoId: logo.cryptoLogoId,
   }).map((lookup) =>
-    `https://img.logo.dev/${logoLookupPath(lookup)}?token=${encodeURIComponent(token)}&size=64&format=png&retina=true&fallback=404`,
+    `https://img.logo.dev/${logoLookupPath(lookup)}?token=${encodeURIComponent(token)}&size=64&format=png&theme=dark&retina=true&fallback=404`,
   );
 }
 
@@ -156,7 +168,10 @@ export function AssetLogo({ symbol, name, type, size = "md", className = "" }: A
         <img
           src={externalLogoUrl}
           alt=""
-          className="cma-asset-logo__image absolute inset-0 h-full w-full object-contain"
+          className={[
+            "cma-asset-logo__image absolute inset-0 h-full w-full object-contain transition-transform",
+            getExternalLogoScale(symbol),
+          ].join(" ")}
           loading="lazy"
           onError={() => setFailedExternalLogoUrls((failed) =>
             failed.includes(externalLogoUrl) ? failed : [...failed, externalLogoUrl]
