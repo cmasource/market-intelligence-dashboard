@@ -32,9 +32,9 @@ const accentClasses = {
 // Some providers return compact brandmarks with generous transparent padding.
 // Keep these exceptions centralized so every surface renders them consistently.
 const compactLogoScaleBySymbol: Record<string, string> = {
-  CVX: "scale-[1.32]",
-  YPF: "scale-[1.38]",
-  YPFD: "scale-[1.38]",
+  CVX: "scale-[1.8]",
+  YPF: "scale-[1.8]",
+  YPFD: "scale-[1.8]",
 };
 
 function getExternalLogoScale(symbol: string) {
