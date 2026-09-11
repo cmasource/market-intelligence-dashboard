@@ -11,7 +11,8 @@ test("resolves Logo.dev domains for representative US and Argentine equities", (
 });
 
 test("uses compact-list corrections without changing full asset logos", () => {
-  assert.equal(getAssetLogoScale("GCLA", "list"), "scale-[1.75]");
+  assert.equal(getAssetLogoMetadata("GCLA", "equity", "Grupo Clarin").tradingViewLogoSlug, "grupo-clarin-sa");
+  assert.equal(getAssetLogoScale("GCLA", "list"), "scale-100");
   assert.equal(getAssetLogoScale("GCLA", "default"), "scale-100");
   assert.equal(getAssetLogoScale("YPFD", "list"), "scale-[2.6]");
 });
