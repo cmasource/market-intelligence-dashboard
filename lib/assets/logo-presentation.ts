@@ -7,7 +7,6 @@ const listScaleBySymbol: Record<string, string> = {
   ALUA: "scale-[1.3]",
   AUSO: "scale-[1.65]",
   BHIP: "scale-[1.45]",
-  GCLA: "scale-[1.75]",
 };
 
 const defaultScaleBySymbol: Record<string, string> = {
