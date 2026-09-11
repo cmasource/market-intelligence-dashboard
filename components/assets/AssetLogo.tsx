@@ -144,11 +144,13 @@ function AssetLogoMark({ logo }: { logo: ReturnType<typeof getAssetLogoMetadata>
 
 export function AssetLogo({ symbol, name, type, size = "md", className = "", placement = "default" }: AssetLogoProps) {
   const logo = getAssetLogoMetadata(symbol, type, name);
-  const externalLogoUrls = [
-    ...getExternalLogoUrls(logo, { symbol, name, type }),
-    getTradingViewLogoUrl(logo),
-    getCryptoLogoUrl(logo),
-  ].filter((url): url is string => Boolean(url));
+  const logoDevUrls = getExternalLogoUrls(logo, { symbol, name, type });
+  const tradingViewLogoUrl = getTradingViewLogoUrl(logo);
+  const cryptoLogoUrl = getCryptoLogoUrl(logo);
+  const externalLogoUrls = (placement === "list"
+    ? [tradingViewLogoUrl, ...logoDevUrls, cryptoLogoUrl]
+    : [...logoDevUrls, tradingViewLogoUrl, cryptoLogoUrl]
+  ).filter((url): url is string => Boolean(url));
   const [failedExternalLogoUrls, setFailedExternalLogoUrls] = useState<string[]>([]);
   const [loadedExternalLogoUrl, setLoadedExternalLogoUrl] = useState<string | null>(null);
   const externalLogoUrl = externalLogoUrls.find((url) => !failedExternalLogoUrls.includes(url)) ?? null;
