@@ -158,13 +158,16 @@ export function AssetLogo({ symbol, name, type, size = "md", className = "" }: A
     getCryptoLogoUrl(logo),
   ].filter((url): url is string => Boolean(url));
   const [failedExternalLogoUrls, setFailedExternalLogoUrls] = useState<string[]>([]);
+  const [loadedExternalLogoUrl, setLoadedExternalLogoUrl] = useState<string | null>(null);
   const externalLogoUrl = externalLogoUrls.find((url) => !failedExternalLogoUrls.includes(url)) ?? null;
+  const externalLogoLoaded = externalLogoUrl !== null && loadedExternalLogoUrl === externalLogoUrl;
 
   return (
     <div
       aria-label={`${logo.label} logo`}
       data-testid="asset-logo"
       data-external-logo={externalLogoUrl ? "true" : "false"}
+      data-logo-loaded={externalLogoLoaded ? "true" : "false"}
       className={[
         "cma-asset-logo relative grid shrink-0 place-items-center overflow-hidden rounded-lg border font-semibold",
         isWideLogo(symbol) ? wideLogoSizeClasses[size] : sizeClasses[size],
@@ -172,7 +175,12 @@ export function AssetLogo({ symbol, name, type, size = "md", className = "" }: A
         className,
       ].join(" ")}
     >
-      <AssetLogoMark logo={logo} />
+      <span
+        aria-hidden="true"
+        className={`absolute inset-0 grid place-items-center transition-opacity ${externalLogoLoaded ? "opacity-0" : "opacity-100"}`}
+      >
+        <AssetLogoMark logo={logo} />
+      </span>
       {externalLogoUrl ? (
         // TradingView exposes these marks as SVGs. A plain img keeps them lightweight
         // and avoids Next image optimization restrictions for remote SVG assets.
@@ -185,9 +193,13 @@ export function AssetLogo({ symbol, name, type, size = "md", className = "" }: A
             getExternalLogoScale(symbol),
           ].join(" ")}
           loading="lazy"
-          onError={() => setFailedExternalLogoUrls((failed) =>
-            failed.includes(externalLogoUrl) ? failed : [...failed, externalLogoUrl]
-          )}
+          onLoad={() => setLoadedExternalLogoUrl(externalLogoUrl)}
+          onError={() => {
+            setLoadedExternalLogoUrl((loaded) => loaded === externalLogoUrl ? null : loaded);
+            setFailedExternalLogoUrls((failed) =>
+              failed.includes(externalLogoUrl) ? failed : [...failed, externalLogoUrl]
+            );
+          }}
         />
       ) : null}
     </div>

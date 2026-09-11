@@ -140,7 +140,7 @@ export function DashboardWelcome({ assets }: DashboardWelcomeProps) {
               return (
                 <div
                   key={item?.id ?? `metric-loading-${index}`}
-                  className={`flex min-h-[4.75rem] min-w-0 flex-col justify-center gap-1.5 p-2.5 odd:border-r odd:border-[var(--cma-border-soft)] xl:grid xl:min-h-[4rem] xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center xl:gap-4 xl:border-r-0 xl:px-0 xl:py-3 ${
+                  className={`flex min-h-[4.75rem] min-w-0 flex-col justify-center gap-1.5 p-2.5 odd:border-r odd:border-[var(--cma-border-soft)] xl:grid xl:min-h-[4.75rem] xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center xl:gap-4 xl:border-r-0 xl:py-4 xl:pl-0 xl:pr-4 ${
                     isInLastMobileRow ? "border-b-0" : "border-b border-[var(--cma-border-soft)]"
                   } ${isLastDesktopRow ? "xl:border-b-0" : "xl:border-b xl:border-[var(--cma-border-soft)]"}`}
                 >
