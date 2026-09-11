@@ -1,6 +1,7 @@
 "use client";
 
 import { getAssetLogoMetadata } from "@/lib/assets/logo-map";
+import { getAssetLogoScale, type AssetLogoPlacement } from "@/lib/assets/logo-presentation";
 import { getLogoLookups, logoLookupPath } from "@/lib/assets/logo-sources";
 import type { AssetType } from "@/types/asset";
 import { useState } from "react";
@@ -11,6 +12,7 @@ type AssetLogoProps = {
   type?: AssetType | string;
   size?: "sm" | "md" | "lg";
   className?: string;
+  placement?: AssetLogoPlacement;
 };
 
 const sizeClasses = {
@@ -37,20 +39,10 @@ const accentClasses = {
 
 // Some providers return compact brandmarks with generous transparent padding.
 // Keep these exceptions centralized so every surface renders them consistently.
-const compactLogoScaleBySymbol: Record<string, string> = {
-  CVX: "scale-[1.8]",
-  YPF: "scale-[2.6]",
-  YPFD: "scale-[2.6]",
-};
-
 const wideLogoSymbols = new Set(["YPF", "YPFD"]);
 
 function isWideLogo(symbol: string) {
   return wideLogoSymbols.has(symbol.trim().toUpperCase());
-}
-
-function getExternalLogoScale(symbol: string) {
-  return compactLogoScaleBySymbol[symbol.trim().toUpperCase()] ?? "scale-100";
 }
 
 function getExternalLogoUrls(
@@ -150,13 +142,15 @@ function AssetLogoMark({ logo }: { logo: ReturnType<typeof getAssetLogoMetadata>
   return <span className="relative cma-metric">{logo.initials}</span>;
 }
 
-export function AssetLogo({ symbol, name, type, size = "md", className = "" }: AssetLogoProps) {
+export function AssetLogo({ symbol, name, type, size = "md", className = "", placement = "default" }: AssetLogoProps) {
   const logo = getAssetLogoMetadata(symbol, type, name);
-  const externalLogoUrls = [
-    ...getExternalLogoUrls(logo, { symbol, name, type }),
-    getTradingViewLogoUrl(logo),
-    getCryptoLogoUrl(logo),
-  ].filter((url): url is string => Boolean(url));
+  const logoDevUrls = getExternalLogoUrls(logo, { symbol, name, type });
+  const tradingViewLogoUrl = getTradingViewLogoUrl(logo);
+  const cryptoLogoUrl = getCryptoLogoUrl(logo);
+  const externalLogoUrls = (placement === "list"
+    ? [tradingViewLogoUrl, ...logoDevUrls, cryptoLogoUrl]
+    : [...logoDevUrls, tradingViewLogoUrl, cryptoLogoUrl]
+  ).filter((url): url is string => Boolean(url));
   const [failedExternalLogoUrls, setFailedExternalLogoUrls] = useState<string[]>([]);
   const [loadedExternalLogoUrl, setLoadedExternalLogoUrl] = useState<string | null>(null);
   const externalLogoUrl = externalLogoUrls.find((url) => !failedExternalLogoUrls.includes(url)) ?? null;
@@ -190,7 +184,7 @@ export function AssetLogo({ symbol, name, type, size = "md", className = "" }: A
           alt=""
           className={[
             "cma-asset-logo__image absolute inset-0 h-full w-full object-contain transition-transform",
-            getExternalLogoScale(symbol),
+            getAssetLogoScale(symbol, placement),
           ].join(" ")}
           loading="lazy"
           onLoad={() => setLoadedExternalLogoUrl(externalLogoUrl)}

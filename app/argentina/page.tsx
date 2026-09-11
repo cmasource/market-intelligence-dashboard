@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { CaucionesPanel } from "@/components/argentina/CaucionesPanel";
+import { AssetLogo } from "@/components/assets/AssetLogo";
 import { FixedIncomeComparison } from "@/components/fixed-income/FixedIncomeComparison";
 import { AppShell } from "@/components/layout/AppShell";
 import { MarketHeatmap } from "@/components/market/MarketHeatmap";
@@ -229,7 +230,18 @@ export default function ArgentinaPage() {
                     const change = quote?.changePercent;
                     return (
                       <tr key={`${instrument.type}-${instrument.symbol}`} className="border-t border-white/10 transition hover:bg-cyan-300/[0.045]">
-                        <td className="px-4 py-3 font-semibold text-white">{instrument.displaySymbol}</td>
+                        <td className="px-4 py-3">
+                          <span className="flex items-center gap-3">
+                            <AssetLogo
+                              symbol={instrument.underlyingSymbol ?? instrument.symbol}
+                              name={instrument.name}
+                              type={instrument.type}
+                              size="sm"
+                              placement="list"
+                            />
+                            <span className="font-semibold text-white">{instrument.displaySymbol}</span>
+                          </span>
+                        </td>
                         <td className="max-w-64 truncate px-4 py-3 text-slate-300">{instrument.name}</td>
                         <td className="px-4 py-3 font-medium text-slate-100">
                           {typeof quote?.price === "number" ? formatCurrencyValue(quote.price, quote.currency, language) : "-"}

@@ -44,6 +44,7 @@ const knownLogos: Record<string, AssetLogoMetadata> = {
   "BTC-USD": { symbol: "BTC-USD", label: "Bitcoin", initials: "B", accent: "amber" },
   "ETH-USD": { symbol: "ETH-USD", label: "Ethereum", initials: "E", accent: "violet" },
   GGAL: { symbol: "GGAL", label: "Grupo Financiero Galicia", initials: "GG", accent: "emerald" },
+  GCLA: { symbol: "GCLA", label: "Grupo Clarin", initials: "GC", accent: "cyan", tradingViewLogoSlug: "grupo-clarin-sa" },
   YPFD: { symbol: "YPFD", label: "YPF", initials: "YP", accent: "blue" },
   PAMP: { symbol: "PAMP", label: "Pampa Energia", initials: "PA", accent: "emerald" },
   AL30: { symbol: "AL30", label: "AL30", initials: "30", accent: "amber" },
@@ -85,4 +86,3 @@ export function getAssetLogoMetadata(symbol: string, type?: AssetType | string, 
     cryptoLogoId: cryptoLogoIds[normalized],
   };
 }
-
