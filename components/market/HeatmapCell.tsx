@@ -54,7 +54,13 @@ export function HeatmapCell({ item, language }: HeatmapCellProps) {
     >
       <div className="flex items-start justify-between gap-2">
         <span className="flex min-w-0 items-center gap-2">
-          <AssetLogo symbol={item.symbol} name={item.name} type={item.assetType} size="sm" className="h-8 w-8 rounded-full" />
+          <AssetLogo
+            symbol={item.symbol}
+            name={item.name}
+            type={item.segment === "argentina" ? "argentine_equity" : item.assetType}
+            size="sm"
+            className="h-8 w-8 rounded-full"
+          />
           <span className="truncate text-sm font-semibold tracking-wide">{item.symbol}</span>
         </span>
         <span className="rounded-full bg-black/15 px-2 py-0.5 text-xs font-semibold">{changeLabel}</span>

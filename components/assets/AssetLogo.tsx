@@ -1,6 +1,7 @@
 "use client";
 
 import { getAssetLogoMetadata } from "@/lib/assets/logo-map";
+import { getLogoLookups, logoLookupPath } from "@/lib/assets/logo-sources";
 import type { AssetType } from "@/types/asset";
 import { useState } from "react";
 
@@ -18,6 +19,12 @@ const sizeClasses = {
   lg: "h-16 w-16 text-lg",
 };
 
+const wideLogoSizeClasses = {
+  sm: "h-9 w-14 text-xs",
+  md: "h-12 w-[4.5rem] text-sm",
+  lg: "h-16 w-24 text-lg",
+};
+
 const accentClasses = {
   cyan: "border-cyan-300/35 bg-cyan-300/12 text-cyan-50",
   blue: "border-blue-300/35 bg-blue-300/12 text-blue-50",
@@ -28,23 +35,41 @@ const accentClasses = {
   slate: "border-slate-300/30 bg-slate-300/10 text-slate-50",
 };
 
-function getExternalLogoUrl(logo: ReturnType<typeof getAssetLogoMetadata>) {
+// Some providers return compact brandmarks with generous transparent padding.
+// Keep these exceptions centralized so every surface renders them consistently.
+const compactLogoScaleBySymbol: Record<string, string> = {
+  CVX: "scale-[1.8]",
+  YPF: "scale-[2.6]",
+  YPFD: "scale-[2.6]",
+};
+
+const wideLogoSymbols = new Set(["YPF", "YPFD"]);
+
+function isWideLogo(symbol: string) {
+  return wideLogoSymbols.has(symbol.trim().toUpperCase());
+}
+
+function getExternalLogoScale(symbol: string) {
+  return compactLogoScaleBySymbol[symbol.trim().toUpperCase()] ?? "scale-100";
+}
+
+function getExternalLogoUrls(
+  logo: ReturnType<typeof getAssetLogoMetadata>,
+  input: Pick<AssetLogoProps, "symbol" | "name" | "type">,
+) {
   const provider = process.env.NEXT_PUBLIC_ASSET_LOGO_PROVIDER?.toLowerCase();
-  if (provider !== "logo-dev") return null;
-  if (process.env.NEXT_PUBLIC_ENABLE_EXTERNAL_LOGOS !== "1") return null;
+  if (provider !== "logo-dev") return [];
 
   const token = process.env.NEXT_PUBLIC_LOGO_DEV_TOKEN;
-  if (!token) return null;
+  if (!token) return [];
 
-  if (logo.logoDomain) {
-    return `https://img.logo.dev/${encodeURIComponent(logo.logoDomain)}?token=${encodeURIComponent(token)}&format=png&retina=true`;
-  }
-
-  if (logo.cryptoLogoId) {
-    return `https://img.logo.dev/crypto/${encodeURIComponent(logo.cryptoLogoId)}?token=${encodeURIComponent(token)}&format=png&retina=true`;
-  }
-
-  return null;
+  return getLogoLookups({
+    ...input,
+    domain: logo.logoDomain,
+    cryptoId: logo.cryptoLogoId,
+  }).map((lookup) =>
+    `https://img.logo.dev/${logoLookupPath(lookup)}?token=${encodeURIComponent(token)}&size=64&format=png&theme=dark&retina=true&fallback=404`,
+  );
 }
 
 function getTradingViewLogoUrl(logo: ReturnType<typeof getAssetLogoMetadata>) {
@@ -127,9 +152,13 @@ function AssetLogoMark({ logo }: { logo: ReturnType<typeof getAssetLogoMetadata>
 
 export function AssetLogo({ symbol, name, type, size = "md", className = "" }: AssetLogoProps) {
   const logo = getAssetLogoMetadata(symbol, type, name);
-  const candidateExternalLogoUrl = getCryptoLogoUrl(logo) ?? getExternalLogoUrl(logo) ?? getTradingViewLogoUrl(logo);
-  const [failedExternalLogoUrl, setFailedExternalLogoUrl] = useState<string | null>(null);
-  const externalLogoUrl = candidateExternalLogoUrl !== failedExternalLogoUrl ? candidateExternalLogoUrl : null;
+  const externalLogoUrls = [
+    ...getExternalLogoUrls(logo, { symbol, name, type }),
+    getTradingViewLogoUrl(logo),
+    getCryptoLogoUrl(logo),
+  ].filter((url): url is string => Boolean(url));
+  const [failedExternalLogoUrls, setFailedExternalLogoUrls] = useState<string[]>([]);
+  const externalLogoUrl = externalLogoUrls.find((url) => !failedExternalLogoUrls.includes(url)) ?? null;
 
   return (
     <div
@@ -138,7 +167,7 @@ export function AssetLogo({ symbol, name, type, size = "md", className = "" }: A
       data-external-logo={externalLogoUrl ? "true" : "false"}
       className={[
         "cma-asset-logo relative grid shrink-0 place-items-center overflow-hidden rounded-lg border font-semibold",
-        sizeClasses[size],
+        isWideLogo(symbol) ? wideLogoSizeClasses[size] : sizeClasses[size],
         accentClasses[logo.accent],
         className,
       ].join(" ")}
@@ -151,9 +180,14 @@ export function AssetLogo({ symbol, name, type, size = "md", className = "" }: A
         <img
           src={externalLogoUrl}
           alt=""
-          className="cma-asset-logo__image absolute inset-0 h-full w-full object-contain"
+          className={[
+            "cma-asset-logo__image absolute inset-0 h-full w-full object-contain transition-transform",
+            getExternalLogoScale(symbol),
+          ].join(" ")}
           loading="lazy"
-          onError={() => setFailedExternalLogoUrl(externalLogoUrl)}
+          onError={() => setFailedExternalLogoUrls((failed) =>
+            failed.includes(externalLogoUrl) ? failed : [...failed, externalLogoUrl]
+          )}
         />
       ) : null}
     </div>

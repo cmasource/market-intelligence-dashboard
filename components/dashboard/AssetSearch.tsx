@@ -177,7 +177,12 @@ export function AssetSearch({ assets, variant = "default" }: AssetSearchProps) {
             const content = (
               <>
                 <span className="flex min-w-0 items-start gap-3">
-                  <AssetLogo symbol={instrument.symbol} name={displayName(instrument)} type={instrument.category} size="sm" />
+                  <AssetLogo
+                    symbol={instrument.symbol}
+                    name={displayName(instrument)}
+                    type={instrument.country === "AR" && instrument.category === "equity" ? "argentine_equity" : instrument.category}
+                    size="sm"
+                  />
                   <span className="min-w-0">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold text-white">{instrument.symbol}</span>
