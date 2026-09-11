@@ -237,6 +237,7 @@ export default function ArgentinaPage() {
                               name={instrument.name}
                               type={instrument.type}
                               size="sm"
+                              placement="list"
                             />
                             <span className="font-semibold text-white">{instrument.displaySymbol}</span>
                           </span>
