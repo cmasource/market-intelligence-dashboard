@@ -19,6 +19,12 @@ const sizeClasses = {
   lg: "h-16 w-16 text-lg",
 };
 
+const wideLogoSizeClasses = {
+  sm: "h-9 w-14 text-xs",
+  md: "h-12 w-[4.5rem] text-sm",
+  lg: "h-16 w-24 text-lg",
+};
+
 const accentClasses = {
   cyan: "border-cyan-300/35 bg-cyan-300/12 text-cyan-50",
   blue: "border-blue-300/35 bg-blue-300/12 text-blue-50",
@@ -33,9 +39,15 @@ const accentClasses = {
 // Keep these exceptions centralized so every surface renders them consistently.
 const compactLogoScaleBySymbol: Record<string, string> = {
   CVX: "scale-[1.8]",
-  YPF: "scale-[1.8]",
-  YPFD: "scale-[1.8]",
+  YPF: "scale-[2.6]",
+  YPFD: "scale-[2.6]",
 };
+
+const wideLogoSymbols = new Set(["YPF", "YPFD"]);
+
+function isWideLogo(symbol: string) {
+  return wideLogoSymbols.has(symbol.trim().toUpperCase());
+}
 
 function getExternalLogoScale(symbol: string) {
   return compactLogoScaleBySymbol[symbol.trim().toUpperCase()] ?? "scale-100";
@@ -155,7 +167,7 @@ export function AssetLogo({ symbol, name, type, size = "md", className = "" }: A
       data-external-logo={externalLogoUrl ? "true" : "false"}
       className={[
         "cma-asset-logo relative grid shrink-0 place-items-center overflow-hidden rounded-lg border font-semibold",
-        sizeClasses[size],
+        isWideLogo(symbol) ? wideLogoSizeClasses[size] : sizeClasses[size],
         accentClasses[logo.accent],
         className,
       ].join(" ")}
