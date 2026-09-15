@@ -33,10 +33,10 @@ export default function ContactPage() {
               <p className="cma-kicker">CMA Consulting</p>
               <h1 className="mt-4 max-w-3xl text-4xl font-semibold text-white sm:text-5xl">{isSpanish ? "Conversemos sobre decisiones mejor informadas" : "Let us talk about better-informed decisions"}</h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300">{isSpanish ? "CMA Markets fue desarrollado por CMA Source, la division de tecnologia e inteligencia aplicada de CMA Consulting. Integramos estrategia, finanzas y datos para convertir informacion compleja en herramientas de decision." : "CMA Markets was developed by CMA Source, CMA Consulting's applied technology and intelligence division. We combine strategy, finance, and data to turn complex information into decision tools."}</p>
-              <a href="https://cma-consulting.vercel.app/" target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex items-center gap-2 rounded-md bg-cyan-300 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200">{isSpanish ? "Conocer CMA Consulting" : "Visit CMA Consulting"}<ArrowUpRight size={17} /></a>
+              <a href="https://cmaconsulting.com.ar" target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex items-center gap-2 rounded-md bg-cyan-300 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200">{isSpanish ? "Conocer CMA Consulting" : "Visit CMA Consulting"}<ArrowUpRight size={17} /></a>
             </div>
             <div className="flex min-h-72 flex-col justify-between border-t border-white/10 bg-slate-950/70 p-6 lg:border-l lg:border-t-0 sm:p-8">
-              <a href="https://cma-consulting.vercel.app/" target="_blank" rel="noopener noreferrer" className="group inline-flex max-w-sm flex-col items-start">
+              <a href="https://cmaconsulting.com.ar" target="_blank" rel="noopener noreferrer" className="group inline-flex max-w-sm flex-col items-start">
                 <Image src="/brand/cma-consulting-header-transparent.png" alt="CMA Consulting" width={622} height={144} className="h-auto w-full max-w-72 rounded bg-white p-3 transition group-hover:bg-cyan-50" />
                 <span className="mt-5 inline-flex items-center gap-2 text-base font-semibold text-white group-hover:text-cyan-200">
                   {isSpanish ? "Consultoria estrategica y financiera" : "Strategic and financial consulting"}<ArrowUpRight size={17} />
