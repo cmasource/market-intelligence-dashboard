@@ -84,7 +84,8 @@ test.describe("CMA Markets public smoke tests", () => {
     await expect(page.getByText("CMA Markets").first()).toBeVisible();
     await expect(page.getByRole("link", { name: /Markets|Mercados/, exact: true }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /Contact|Contacto/, exact: true }).first()).toBeVisible();
-    await expect(page.locator('footer a[aria-label="CMA Consulting"]')).toHaveAttribute("href", "https://cma-consulting.vercel.app/");
+    await expect(page.locator('footer a[aria-label="CMA Consulting"]')).toHaveAttribute("href", "https://cmaconsulting.com.ar");
+    await expect(page.locator('footer a[aria-label="cma_source"]')).toHaveAttribute("href", "https://cma-source.vercel.app");
     await page.getByRole("button", { name: "ES", exact: true }).click();
     await expect(page.getByText("Inteligencia financiera para entender el mercado antes de tomar una decisión.", { exact: true })).toBeVisible();
   });
@@ -286,7 +287,7 @@ test.describe("CMA Markets public smoke tests", () => {
 
   test("contact form is functional without exposing a server-side secret", async ({ page }) => {
     await page.goto("/contact");
-    await expect(page.getByRole("link", { name: /Visit CMA Consulting|Conocer CMA Consulting/ })).toHaveAttribute("href", "https://cma-consulting.vercel.app/");
+    await expect(page.getByRole("link", { name: /Visit CMA Consulting|Conocer CMA Consulting/ })).toHaveAttribute("href", "https://cmaconsulting.com.ar");
     await page.getByLabel(/Name|Nombre/).fill("CMA QA");
     await page.getByLabel(/Email|Correo/).fill("qa@example.com");
     await page.getByLabel(/Message|Mensaje/).fill("Consulta de prueba");
