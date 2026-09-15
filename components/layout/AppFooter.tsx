@@ -26,7 +26,7 @@ export function AppFooter() {
       <div className="mx-auto flex max-w-[1400px] flex-col gap-4 px-4 py-5 text-xs sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            href="https://cma-consulting.vercel.app/"
+            href="https://cmaconsulting.com.ar"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="CMA Consulting"
@@ -34,9 +34,15 @@ export function AppFooter() {
           >
             <Image src="/brand/cma-consulting-header-transparent.png" alt="CMA Consulting" width={622} height={144} className="h-full w-full object-contain" />
           </Link>
-          <div className="relative h-6 w-24 overflow-hidden rounded border border-[var(--cma-border-soft)] bg-white px-1.5 py-1">
+          <Link
+            href="https://cma-source.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="cma_source"
+            className="relative h-6 w-24 overflow-hidden rounded border border-[var(--cma-border-soft)] bg-white px-1.5 py-1 transition hover:border-[var(--cma-accent)]"
+          >
             <Image src="/brand/cma-source-horizontal-transparent.png" alt="cma_source" width={622} height={144} className="h-full w-full object-contain" />
-          </div>
+          </Link>
           <p className="leading-5">
             {isSpanish
               ? "Analisis informativo, no constituye asesoramiento financiero personalizado."
