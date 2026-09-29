@@ -120,11 +120,14 @@ test("ComparaDólar preserves the user perspective and never invents observation
     { slug: "plus", bid: 1475, ask: 1515 },
     { slug: "banco-hipotecario", bid: "1490.25", ask: "1520.50" },
     { slug: "fiwind-cripto", bid: 1504, ask: 1532 },
+    { slug: "cocos", bid: 1508, ask: 1528 },
+    { slug: "fiwind-mep", bid: 1510, ask: 1525 },
+    { slug: "plus-inversiones", bid: 1507, ask: 1526 },
     { slug: "uala", bid: 1_480_000, ask: 1_515_000 },
   ], fetchedAt);
 
   assert.equal(result.status, "partial");
-  assert.deepEqual(result.quotes.map((quote) => quote.providerId), ["banco-hipotecario", "fiwind"]);
+  assert.deepEqual(result.quotes.map((quote) => quote.providerId), ["banco-hipotecario", "fiwind", "cocos", "fiwind", "plus"]);
   const bank = result.quotes[0];
   assert.equal(bank?.userBuysUsdAt, 1520.5);
   assert.equal(bank?.userSellsUsdAt, 1490.25);
@@ -142,6 +145,19 @@ test("ComparaDólar preserves the user perspective and never invents observation
   assert.equal(fiwind?.userBuysUsdAt, 1532);
   assert.equal(fiwind?.userSellsUsdAt, 1504);
   assert.match(fiwind?.originalSellLabel ?? "", /USD → USDT → ARS/);
+
+  const mepQuotes = result.quotes.filter((quote) => quote.instrument === "mep");
+  assert.deepEqual(mepQuotes.map((quote) => quote.id), ["cocos-mep", "fiwind-mep", "plus-mep"]);
+  assert.ok(mepQuotes.every((quote) => quote.transferAsset === "USD_BANK"));
+  assert.ok(mepQuotes.every((quote) => quote.verification.quote === "reference_only"));
+});
+
+test("provider registry distinguishes documented official and MEP products", () => {
+  assert.equal(getArbitrageProvider("cocos")?.usdProducts?.mep?.status, "documented");
+  assert.equal(getArbitrageProvider("cocos")?.usdProducts?.official?.status, "not_documented");
+  assert.equal(getArbitrageProvider("mercadopago")?.usdProducts?.official?.status, "documented");
+  assert.equal(getArbitrageProvider("mercadopago")?.usdProducts?.mep?.status, "documented");
+  assert.equal(getArbitrageProvider("mercadopago")?.sourceType, "unavailable");
 });
 
 test("ComparaDólar rejects inverted or unusably scaled curated rows", () => {

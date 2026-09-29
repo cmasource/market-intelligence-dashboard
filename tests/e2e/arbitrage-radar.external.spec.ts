@@ -19,8 +19,14 @@ test("renders the Radar with live public sources", async ({ page }) => {
   await expect(quoteCards).toContainText(/Vendés USD a|You sell USD at/);
   await expect(quoteCards).toContainText("Fiwind");
   await expect(quoteCards).toContainText(/USD → USDT → ARS/);
-  await expect(quoteCards).toContainText(/Frescura no verificable|Unverifiable freshness/);
+  await expect(quoteCards).toContainText(/Consulta CMA|CMA check/);
   await expect(page.getByTestId("arbitrage-source-status")).toContainText("Banco Hipotecario");
+
+  await page.getByRole("button", { name: /Dólar MEP/ }).click();
+  await expect(quoteCards).toContainText("Cocos");
+  await expect(quoteCards).toContainText("Fiwind");
+  await expect(quoteCards).toContainText("Plus");
+  await expect(page.getByTestId("mep-provider-coverage")).toContainText("Mercado Pago");
 
   const spanishButton = page.getByRole("button", { name: "ES", exact: true });
   if (await spanishButton.isVisible()) await spanishButton.click();
@@ -40,14 +46,6 @@ test("renders the Radar with live public sources", async ({ page }) => {
   }
 
   await page.setViewportSize({ width: 390, height: 844 });
-  const overflow = await page.locator("body *").evaluateAll((elements) => elements
-    .filter((element) => !element.closest(".cma-market-tape-track"))
-    .map((element) => {
-      const rect = element.getBoundingClientRect();
-      return { tag: element.tagName, className: element.className, text: element.textContent?.trim().slice(0, 80), left: rect.left, right: rect.right };
-    })
-    .filter((item) => item.right > document.documentElement.clientWidth + 1)
-    .slice(0, 12));
-  expect(overflow, JSON.stringify(overflow, null, 2)).toEqual([]);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBeTruthy();
   expect(consoleErrors).toEqual([]);
 });

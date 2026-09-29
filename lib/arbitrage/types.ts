@@ -17,6 +17,9 @@ export type QuoteStatus = "live" | "delayed" | "stale" | "unavailable" | "error"
 export type CostConfidence = "confirmed" | "estimated" | "unknown";
 export type FreshnessStatus = "fresh" | "warning" | "stale" | "unverifiable";
 export type VerificationLevel = "verified" | "partially_verified" | "reference_only" | "unverified";
+export type UsdProductStatus = "documented" | "not_documented";
+export type ProductQuoteAccess = "direct_public" | "aggregated_public" | "authenticated_only";
+export type ProductOperatingWindow = "24x7" | "market_hours" | "not_published";
 export type OpportunityClassification =
   | "verified_opportunity"
   | "potential_gross_difference"
@@ -83,6 +86,19 @@ export type FxProvider = {
   sourceType: ProviderSourceType;
   status: ProviderStatus;
   verification: ProviderVerification;
+  usdProducts?: {
+    official?: {
+      status: UsdProductStatus;
+      quoteAccess: ProductQuoteAccess;
+      documentationUrl: string;
+    };
+    mep?: {
+      status: UsdProductStatus;
+      quoteAccess: ProductQuoteAccess;
+      operatingWindow: ProductOperatingWindow;
+      documentationUrl: string;
+    };
+  };
 };
 
 export type QuoteFees = {

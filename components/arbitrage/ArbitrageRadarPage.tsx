@@ -13,11 +13,13 @@ import { ArbitrageMatrix } from "./ArbitrageMatrix";
 import { formatArs, formatTimestamp, formatUsd } from "./format";
 import { ProviderLogo } from "./ProviderLogo";
 import { ProviderQuoteCard } from "./ProviderQuoteCard";
+import { MepProviderCoverage } from "./MepProviderCoverage";
 import { UsdCryptoCircuitMonitor } from "./UsdCryptoCircuitMonitor";
 
-const assets: TransferAsset[] = ["USD_BANK", "USDT", "USDC"];
+const mepTab = "MEP" as const;
 const usdCryptoCircuitTab = "USD_CRYPTO" as const;
-type RadarTab = TransferAsset | typeof usdCryptoCircuitTab;
+type RadarTab = TransferAsset | typeof mepTab | typeof usdCryptoCircuitTab;
+const comparisonTabs = ["USD_BANK", mepTab, "USDT", "USDC"] as const;
 
 function assetLabel(asset: TransferAsset, language: "es" | "en") {
   if (asset === "USD_BANK") return language === "es" ? "USD bancario" : "Bank USD";
@@ -90,10 +92,12 @@ export function ArbitrageRadarPage() {
   const providers = useMemo(() => new Map((payload?.providers ?? []).map((provider) => [provider.id, provider])), [payload]);
   const quotes = useMemo(() => (payload?.quotes ?? []).filter((quote) => {
     if (quote.transferAsset !== selectedAsset) return false;
+    if (selectedTab === mepTab && quote.instrument !== "mep") return false;
+    if (selectedTab === "USD_BANK" && quote.instrument === "mep") return false;
     if (providers.get(quote.providerId)?.status !== "active") return false;
     if (onlyFresh && ["stale", "unverifiable"].includes(getFreshnessStatus(quote))) return false;
     return true;
-  }), [onlyFresh, payload, providers, selectedAsset]);
+  }), [onlyFresh, payload, providers, selectedAsset, selectedTab]);
   const buyQuotes = useMemo(() => rankBuyQuotes(quotes), [quotes]);
   const sellQuotes = useMemo(() => rankSellQuotes(quotes), [quotes]);
   const matrix = useMemo(() => validAmount ? buildOpportunityMatrix(quotes, validAmount) : [], [quotes, validAmount]);
@@ -120,6 +124,14 @@ export function ArbitrageRadarPage() {
     setSelectedAsset(asset);
     setSourceId("");
     setDestinationId("");
+  }
+
+  function selectMep() {
+    setSelectedTab(mepTab);
+    setSelectedAsset("USD_BANK");
+    setSourceId("");
+    setDestinationId("");
+    setAlertConfig(null);
   }
 
   function selectSource(nextSourceId: string) {
@@ -157,11 +169,14 @@ export function ArbitrageRadarPage() {
         {error ? <div role="alert" className="flex items-center gap-3 rounded-xl border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-200"><AlertTriangle size={18} aria-hidden="true" />{t("arbitrageLoadError")}</div> : null}
 
         <section aria-label={language === "es" ? "Activo comparado" : "Compared asset"} className="border-b border-[var(--cma-border-soft)]">
-          <div className="flex gap-1 overflow-x-auto">
-            {assets.map((asset) => {
-              const active = selectedTab === asset;
-              const count = payload?.quotes.filter((quote) => quote.transferAsset === asset).length ?? 0;
-              return <button key={asset} type="button" onClick={() => selectAsset(asset)} aria-pressed={active} className={`relative min-h-12 shrink-0 px-4 text-sm font-semibold transition ${active ? "text-[var(--cma-accent-cyan)]" : "text-[var(--cma-text-muted)] hover:text-[var(--cma-text-primary)]"}`}>{assetLabel(asset, language)}<span className="ml-2 rounded-full border border-[var(--cma-border-soft)] px-1.5 py-0.5 text-[10px]">{count}</span>{active ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[var(--cma-accent-cyan)]" /> : null}</button>;
+          <div className="flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {comparisonTabs.map((tab) => {
+              const active = selectedTab === tab;
+              const count = tab === mepTab
+                ? payload?.quotes.filter((quote) => quote.instrument === "mep").length ?? 0
+                : payload?.quotes.filter((quote) => quote.transferAsset === tab && (tab !== "USD_BANK" || quote.instrument !== "mep")).length ?? 0;
+              const label = tab === mepTab ? "Dólar MEP" : assetLabel(tab, language);
+              return <button key={tab} type="button" onClick={() => tab === mepTab ? selectMep() : selectAsset(tab)} aria-pressed={active} className={`relative min-h-12 shrink-0 px-4 text-sm font-semibold transition ${active ? "text-[var(--cma-accent-cyan)]" : "text-[var(--cma-text-muted)] hover:text-[var(--cma-text-primary)]"}`}>{label}<span className="ml-2 rounded-full border border-[var(--cma-border-soft)] px-1.5 py-0.5 text-[10px]">{count}</span>{active ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[var(--cma-accent-cyan)]" /> : null}</button>;
             })}
             <button
               type="button"
@@ -179,15 +194,21 @@ export function ArbitrageRadarPage() {
         {selectedTab === usdCryptoCircuitTab ? (
           <UsdCryptoCircuitMonitor circuits={payload?.usdCryptoCircuits ?? []} providers={providers} language={language} />
         ) : <>
+          {selectedTab === mepTab ? (
+            <section className="flex gap-3 rounded-xl border border-violet-400/20 bg-violet-400/10 p-4 text-xs leading-5 text-[var(--cma-text-secondary)]">
+              <Info size={17} aria-hidden="true" className="mt-0.5 shrink-0 text-violet-300" />
+              <p>{language === "es" ? "Esta pestaña compara exclusivamente referencias de dólar MEP. No las mezcla con dólar oficial: el USD resultante puede transferirse por cuenta bancaria, pero el precio nace de una operación bursátil y puede depender de especie, liquidación y horario." : "This tab compares MEP dollar references only. It does not mix them with official USD: resulting USD may be transferred through a bank account, but pricing comes from a securities transaction and may depend on instrument, settlement, and market hours."}</p>
+            </section>
+          ) : null}
           <section className="rounded-xl border border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)] p-4 sm:p-5" data-testid="best-arbitrage-opportunity">
-            <OpportunitySummary opportunity={summaryOpportunity} verified={Boolean(best)} potential={Boolean(bestPotential)} providers={providers} language={language} onCreateAlert={summaryOpportunity ? () => setAlertConfig({ opportunity: summaryOpportunity, scope: "any_verified" }) : undefined} />
+            <OpportunitySummary opportunity={summaryOpportunity} verified={Boolean(best)} potential={Boolean(bestPotential)} providers={providers} language={language} onCreateAlert={summaryOpportunity && selectedTab !== mepTab ? () => setAlertConfig({ opportunity: summaryOpportunity, scope: "any_verified" }) : undefined} />
           </section>
 
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)]">
           <section className="min-w-0" data-testid="arbitrage-quote-cards">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-[var(--cma-text-muted)]">{language === "es" ? `Cotizaciones de ${assetLabel(selectedAsset, language)}` : `${assetLabel(selectedAsset, language)} quotes`}</h2>
+                <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-[var(--cma-text-muted)]">{selectedTab === mepTab ? (language === "es" ? "Cotizaciones de dólar MEP" : "MEP dollar quotes") : (language === "es" ? `Cotizaciones de ${assetLabel(selectedAsset, language)}` : `${assetLabel(selectedAsset, language)} quotes`)}</h2>
                 <p className="mt-1 text-xs text-[var(--cma-text-muted)]">{language === "es" ? `${quotes.length} cotización(es) comparables en este activo.` : `${quotes.length} comparable quote(s) for this asset.`}</p>
               </div>
               <div className="inline-flex rounded-lg border border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] p-1" aria-label={language === "es" ? "Filtro de frescura" : "Freshness filter"}>
@@ -201,9 +222,10 @@ export function ArbitrageRadarPage() {
 
           <aside className="min-w-0 space-y-5">
             <ArbitrageMatrix buyQuotes={buyQuotes} sellQuotes={sellQuotes} opportunities={matrix} providers={providers} language={language} asset={selectedAsset} t={translate} />
-            <ArbitrageCalculator amount={amount} onAmountChange={setAmount} sourceId={selectedSource?.id ?? ""} destinationId={selectedDestination?.id ?? ""} onSourceChange={selectSource} onDestinationChange={setDestinationId} buyQuotes={buyQuotes} sellQuotes={sellQuotes} opportunity={selectedOpportunity} providers={providers} asset={selectedAsset} language={language} t={translate} onCreateAlert={(opportunity) => setAlertConfig({ opportunity, scope: "route" })} />
+            <ArbitrageCalculator amount={amount} onAmountChange={setAmount} sourceId={selectedSource?.id ?? ""} destinationId={selectedDestination?.id ?? ""} onSourceChange={selectSource} onDestinationChange={setDestinationId} buyQuotes={buyQuotes} sellQuotes={sellQuotes} opportunity={selectedOpportunity} providers={providers} asset={selectedAsset} language={language} t={translate} onCreateAlert={selectedTab === mepTab ? undefined : (opportunity) => setAlertConfig({ opportunity, scope: "route" })} />
           </aside>
           </div>
+          {selectedTab === mepTab ? <MepProviderCoverage providers={payload?.providers ?? []} language={language} /> : null}
         </>}
 
         <section className="rounded-xl border border-[var(--cma-border-soft)] bg-[var(--cma-bg-panel)] p-4 sm:p-5" data-testid="arbitrage-source-status">

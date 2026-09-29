@@ -34,6 +34,7 @@ async function loadAdapter(adapter: ArbitrageQuoteProvider, forceRefresh: boolea
 
   const request = adapter.fetchQuotes()
     .then((result) => {
+      if (result.status === "error" && !result.quotes.length && cached) return staleFallback(cached.result);
       const normalized = { ...result, cacheStatus: "refreshed" as const };
       if (result.quotes.length) cache.set(adapter.id, { result: normalized, expiresAt: Date.now() + adapter.ttlSeconds * 1000 });
       return normalized;
