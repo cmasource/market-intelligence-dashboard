@@ -105,10 +105,45 @@ test("documented USD account providers can build a transfer route to Fiwind", ()
     assert.equal(provider?.supportsUsdDeposit, true, `${providerId} should accept USD transfers`);
     assert.equal(provider?.supportsUsdWithdrawal, true, `${providerId} should send USD transfers`);
 
-    const source = quote({ id: `${providerId}-usd`, providerId });
+    const source = quote({ id: `${providerId}-usd`, providerId, instrument: "official_usd" });
     const route = buildTransferRoute(source, destination, 1000);
     assert.equal(route.blockers.includes("transfer_capability_unverified"), false, `${providerId} should not be blocked by an unknown transfer capability`);
+    assert.equal(route.blockers.includes("instrument_mismatch"), false, `${providerId} official USD should be compatible with Fiwind's USD bank route`);
     assert.equal(route.isCompatible, true, `${providerId} should be transfer-compatible with Fiwind`);
+  }
+});
+
+test("Brubank and Reba official USD routes to Fiwind preserve a positive gross difference as operable", () => {
+  const destination = quote({
+    id: "fiwind-usd-via-usdt",
+    providerId: "fiwind",
+    instrument: "crypto_usd_route",
+    userSellsUsdAt: 1535.92,
+    observedAt: undefined,
+    status: "delayed",
+    fees: { confidence: "unknown" },
+    warnings: ["observed_at_unavailable", "costs_unverified", "verify_final_price"],
+    verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" },
+  });
+
+  for (const providerId of ["brubank", "reba"]) {
+    const source = quote({
+      id: `${providerId}-usd`,
+      providerId,
+      instrument: "official_usd",
+      userBuysUsdAt: 1535,
+      observedAt: undefined,
+      status: "delayed",
+      fees: { confidence: "unknown" },
+      warnings: ["observed_at_unavailable", "costs_unverified", "verify_final_price"],
+      verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" },
+    });
+    const result = calculateArbitrageOpportunity(source, destination, 1000);
+
+    assert.equal(result.blockers.includes("instrument_mismatch"), false);
+    assert.equal(result.isCompatible, true);
+    assert.equal(result.classification, "potential_gross_difference");
+    assert.ok(result.grossSpreadPerUsd > 0);
   }
 });
 
