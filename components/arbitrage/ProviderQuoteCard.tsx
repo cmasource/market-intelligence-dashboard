@@ -71,6 +71,12 @@ export function ProviderQuoteCard({ quote, provider, asset, isBestBuy, isBestSel
         </div>
       ) : null}
 
+      {quote.availabilityNote ? (
+        <div className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-[11px] leading-relaxed text-amber-200">
+          {language === "es" ? "Condición informada por la fuente" : "Condition reported by source"}: {quote.availabilityNote}
+        </div>
+      ) : null}
+
       <div className="mt-4 grid grid-cols-2 gap-3">
         <div className={`rounded-lg border p-3 ${isBestBuy ? "border-emerald-400/30 bg-emerald-400/10" : "border-[var(--cma-border-soft)] bg-[var(--cma-bg-elevated)]"}`}>
           <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--cma-text-muted)]">

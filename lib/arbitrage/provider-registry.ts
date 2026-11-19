@@ -43,7 +43,7 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     legalName: "Global Fintech S.A.",
     providerType: "exchange_agency",
     websiteUrl: "https://plus.com.ar/operar/",
-    operates24x7: false,
+    operates24x7: true,
     supportsArsDeposit: true,
     supportsArsWithdrawal: true,
     supportsUsdDeposit: true,
@@ -51,7 +51,7 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     requiresSameHolderAccount: true,
     sourceType: "public_endpoint",
     status: "active",
-    verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "unverified" },
+    verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "verified" },
     usdProducts: {
       official: { status: "documented", quoteAccess: "direct_public", documentationUrl: "https://plus.com.ar/operar/" },
       mep: { status: "documented", quoteAccess: "aggregated_public", operatingWindow: "market_hours", documentationUrl: "https://plus.com.ar/operar/" },
@@ -173,7 +173,7 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     status: "temporarily_unavailable",
     verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "unverified" },
     usdProducts: {
-      official: { status: "documented", quoteAccess: "authenticated_only", documentationUrl: "https://www.mercadolibre.com.ar/ayuda/terminos-y-condiciones_299" },
+      official: { status: "not_documented", quoteAccess: "authenticated_only", documentationUrl: "https://www.mercadopago.com.ar/cuenta" },
       mep: { status: "documented", quoteAccess: "authenticated_only", operatingWindow: "not_published", documentationUrl: "https://www.mercadolibre.com.ar/ayuda/terminos-y-condiciones_299" },
     },
   },
@@ -189,19 +189,26 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     sourceType: "aggregator",
     status: "active",
     verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "reference_only" },
+    usdProducts: {
+      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://servicios.bancobica.com.ar/Informacion/cotiza.aspx" },
+    },
   },
   {
-    id: "voii",
-    name: "Voii",
-    providerType: "wallet",
-    websiteUrl: "https://voii.com.ar/",
-    operates24x7: true,
+    id: "cocos-bank",
+    name: "Cocos Bank",
+    legalName: "Banco Voii S.A.",
+    providerType: "bank",
+    websiteUrl: "https://cocos.capital/prensa/cocos-integra-banco-app-productos-bancarios",
+    operates24x7: false,
     supportsUsdDeposit: true,
     supportsUsdWithdrawal: true,
     requiresSameHolderAccount: true,
     sourceType: "aggregator",
     status: "active",
     verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "reference_only" },
+    usdProducts: {
+      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://cocos.capital/prensa/cocos-integra-banco-app-productos-bancarios" },
+    },
   },
   {
     id: "banco-ciudad",
@@ -215,6 +222,9 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     sourceType: "aggregator",
     status: "active",
     verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "reference_only" },
+    usdProducts: {
+      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://www.bancociudad.com.ar/institucional/institucional/Normativa/Informaci%C3%B3n%20al%20Usuario%20Financiero" },
+    },
   },
   {
     id: "banco-hipotecario",
@@ -228,6 +238,10 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     sourceType: "aggregator",
     status: "active",
     verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "reference_only" },
+    usdProducts: {
+      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://www.hipotecario.com.ar/personas/inversiones/" },
+      mep: { status: "documented", quoteAccess: "authenticated_only", operatingWindow: "market_hours", documentationUrl: "https://www.hipotecario.com.ar/buhobank/buho-inversor/" },
+    },
   },
   {
     id: "banco-provincia",
@@ -242,7 +256,7 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     status: "active",
     verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "reference_only" },
     usdProducts: {
-      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://www.bancoprovincia.com.ar/" },
+      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://www.bancoprovincia.com.ar/productos/inversiones/dolares_bip/dolares_bip_info_gral" },
       mep: { status: "documented", quoteAccess: "authenticated_only", operatingWindow: "market_hours", documentationUrl: "https://www.bancoprovincia.com.ar/CDN/Get/Compra_Dolar_MEP_Automatico" },
     },
   },
@@ -258,6 +272,9 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     sourceType: "aggregator",
     status: "active",
     verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "reference_only" },
+    usdProducts: {
+      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://www.supervielle.com.ar/personas/inversiones/moneda-extranjera/compra-y-venta" },
+    },
   },
   {
     id: "bancor",
@@ -271,19 +288,41 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     sourceType: "aggregator",
     status: "active",
     verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "reference_only" },
+    usdProducts: {
+      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://www.bancor.com.ar/downloads/bancon/guiadeusuariocompressed2.pdf" },
+    },
   },
   {
     id: "brubank",
-    name: "Brubank Ultra",
+    name: "Brubank",
     providerType: "bank",
-    websiteUrl: "https://www.brubank.com/",
-    operates24x7: false,
+    websiteUrl: "https://www.brubank.com/dolar-oficial",
+    operates24x7: true,
     supportsUsdDeposit: true,
     supportsUsdWithdrawal: true,
     requiresSameHolderAccount: true,
     sourceType: "aggregator",
     status: "active",
-    verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "reference_only" },
+    verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "verified" },
+    usdProducts: {
+      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://www.brubank.com/dolar-oficial" },
+    },
+  },
+  {
+    id: "brubank-ultra",
+    name: "Brubank Ultra",
+    providerType: "bank",
+    websiteUrl: "https://www.brubank.com/planes/ultra",
+    operates24x7: true,
+    supportsUsdDeposit: true,
+    supportsUsdWithdrawal: true,
+    requiresSameHolderAccount: true,
+    sourceType: "aggregator",
+    status: "active",
+    verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "verified" },
+    usdProducts: {
+      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://www.brubank.com/planes/ultra" },
+    },
   },
   {
     id: "uala",
@@ -296,7 +335,11 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     requiresSameHolderAccount: true,
     sourceType: "aggregator",
     status: "active",
-    verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "reference_only" },
+    verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "verified" },
+    usdProducts: {
+      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://www.uala.com.ar/inversiones/comprar-vender-dolares" },
+      mep: { status: "documented", quoteAccess: "authenticated_only", operatingWindow: "market_hours", documentationUrl: "https://www.uala.com.ar/inversiones/comprar-vender-dolares" },
+    },
   },
   {
     id: "reba",
@@ -309,7 +352,11 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     requiresSameHolderAccount: true,
     sourceType: "aggregator",
     status: "active",
-    verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "reference_only" },
+    verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "verified" },
+    usdProducts: {
+      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://www.reba.com.ar/dolar-oficial/" },
+      mep: { status: "documented", quoteAccess: "authenticated_only", operatingWindow: "market_hours", documentationUrl: "https://www.reba.com.ar/dolar-mep/" },
+    },
   },
   {
     id: "tiendadolar",
@@ -320,6 +367,26 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     sourceType: "aggregator",
     status: "active",
     verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "partially_verified", availability24x7: "reference_only" },
+    usdProducts: {
+      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://tiendadolar.com.ar/" },
+    },
+  },
+  {
+    id: "balanz-cambio",
+    name: "Dólar Balanz",
+    legalName: "Dólar Balanz S.A.U.",
+    providerType: "exchange_agency",
+    websiteUrl: "https://www.dolarbalanz.com/",
+    operates24x7: false,
+    supportsUsdDeposit: true,
+    supportsUsdWithdrawal: true,
+    requiresSameHolderAccount: true,
+    sourceType: "aggregator",
+    status: "active",
+    verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "verified", transferAsset: "partially_verified", availability24x7: "reference_only" },
+    usdProducts: {
+      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://www.dolarbalanz.com/" },
+    },
   },
   {
     id: "balanz",
@@ -334,8 +401,8 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     status: "active",
     verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "reference_only" },
     usdProducts: {
-      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://www3.balanz.com/dolar-oficial/" },
-      mep: { status: "documented", quoteAccess: "authenticated_only", operatingWindow: "market_hours", documentationUrl: "https://www3.balanz.com/inversiones/dolar-mep/" },
+      official: { status: "not_documented", quoteAccess: "authenticated_only", documentationUrl: "https://balanz.com/" },
+      mep: { status: "documented", quoteAccess: "authenticated_only", operatingWindow: "market_hours", documentationUrl: "https://balanz.com/inversiones/dolar-mep/" },
     },
   },
   {

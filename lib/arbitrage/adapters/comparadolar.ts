@@ -1,4 +1,5 @@
 import type { ArbitrageIssueCode, ArbitrageQuoteProvider, FxInstrument, ProviderQuoteResult, VerificationLevel } from "../types";
+import { deriveQuoteStatus } from "../freshness";
 import { parseNumber, readJsonResponse } from "./shared";
 
 const COMPARADOLAR_API_URL = "https://api.comparadolar.ar/usd";
@@ -8,32 +9,47 @@ type ComparaDolarRow = {
   slug?: unknown;
   bid?: unknown;
   ask?: unknown;
+  usdType?: unknown;
+  lastSeenAt?: unknown;
+  stale?: unknown;
+  conditions?: unknown;
 };
 
 type ProviderMapping = {
   providerId: string;
   instrument: FxInstrument;
   transferVerification: VerificationLevel;
+  expectedUsdType: "Oficial" | "MEP" | "Cripto";
 };
 
 const CURATED_PROVIDERS: Record<string, ProviderMapping> = {
-  "fiwind-cripto": { providerId: "fiwind", instrument: "crypto_usd_route", transferVerification: "partially_verified" },
-  "fiwind-mep": { providerId: "fiwind", instrument: "mep", transferVerification: "partially_verified" },
-  cocos: { providerId: "cocos", instrument: "mep", transferVerification: "partially_verified" },
-  "plus-inversiones": { providerId: "plus", instrument: "mep", transferVerification: "partially_verified" },
-  balanz: { providerId: "balanz", instrument: "official_usd", transferVerification: "partially_verified" },
-  "banco-bica": { providerId: "banco-bica", instrument: "official_usd", transferVerification: "partially_verified" },
-  "banco-ciudad": { providerId: "banco-ciudad", instrument: "official_usd", transferVerification: "partially_verified" },
-  "banco-hipotecario": { providerId: "banco-hipotecario", instrument: "official_usd", transferVerification: "partially_verified" },
-  "banco-provincia": { providerId: "banco-provincia", instrument: "official_usd", transferVerification: "partially_verified" },
-  "banco-supervielle": { providerId: "banco-supervielle", instrument: "official_usd", transferVerification: "partially_verified" },
-  bancor: { providerId: "bancor", instrument: "official_usd", transferVerification: "partially_verified" },
-  "brubank-ultra": { providerId: "brubank", instrument: "official_usd", transferVerification: "partially_verified" },
-  reba: { providerId: "reba", instrument: "official_usd", transferVerification: "partially_verified" },
-  tiendadolar: { providerId: "tiendadolar", instrument: "official_usd", transferVerification: "partially_verified" },
-  uala: { providerId: "uala", instrument: "official_usd", transferVerification: "partially_verified" },
-  "voii-oficial": { providerId: "voii", instrument: "official_usd", transferVerification: "partially_verified" },
+  "fiwind-cripto": { providerId: "fiwind", instrument: "crypto_usd_route", transferVerification: "partially_verified", expectedUsdType: "Cripto" },
+  "fiwind-mep": { providerId: "fiwind", instrument: "mep", transferVerification: "partially_verified", expectedUsdType: "MEP" },
+  cocos: { providerId: "cocos", instrument: "mep", transferVerification: "partially_verified", expectedUsdType: "MEP" },
+  "plus-inversiones": { providerId: "plus", instrument: "mep", transferVerification: "partially_verified", expectedUsdType: "MEP" },
+  balanz: { providerId: "balanz-cambio", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
+  "banco-bica": { providerId: "banco-bica", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
+  "banco-ciudad": { providerId: "banco-ciudad", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
+  "banco-hipotecario": { providerId: "banco-hipotecario", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
+  "banco-provincia": { providerId: "banco-provincia", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
+  "banco-supervielle": { providerId: "banco-supervielle", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
+  bancor: { providerId: "bancor", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
+  "brubank-ultra": { providerId: "brubank-ultra", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
+  "cocos-bank": { providerId: "cocos-bank", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
+  reba: { providerId: "reba", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
+  tiendadolar: { providerId: "tiendadolar", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
+  uala: { providerId: "uala", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
+  "voii-oficial": { providerId: "cocos-bank", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
 };
+
+function parseObservedAt(value: unknown, fetchedAt: string) {
+  if (typeof value !== "string") return undefined;
+  const timestamp = new Date(value);
+  const fetched = new Date(fetchedAt);
+  if (!Number.isFinite(timestamp.getTime()) || !Number.isFinite(fetched.getTime())) return undefined;
+  if (timestamp.getTime() > fetched.getTime() + 60_000) return undefined;
+  return timestamp.toISOString();
+}
 
 function median(values: number[]) {
   if (!values.length) return undefined;
@@ -62,6 +78,7 @@ export function normalizeComparaDolarUsdPayload(payload: unknown, fetchedAt: str
     const slug = typeof row.slug === "string" ? row.slug.toLowerCase() : "";
     const mapping = CURATED_PROVIDERS[slug];
     if (!mapping) return [];
+    if (typeof row.usdType === "string" && row.usdType !== mapping.expectedUsdType) return [];
 
     const userBuysUsdAt = parseNumber(row.ask);
     const userSellsUsdAt = parseNumber(row.bid);
@@ -72,7 +89,16 @@ export function normalizeComparaDolarUsdPayload(payload: unknown, fetchedAt: str
     const isCryptoCircuit = mapping.instrument === "crypto_usd_route";
     const isMep = mapping.instrument === "mep";
     const quoteKind = isCryptoCircuit ? "usd-via-usdt" : isMep ? "mep" : "usd";
-    const warnings: ArbitrageIssueCode[] = ["observed_at_unavailable", "costs_unverified", "verify_final_price", "provider_partial_data"];
+    const observedAt = parseObservedAt(row.lastSeenAt, fetchedAt);
+    const sourceStale = row.stale === true;
+    const status = sourceStale
+      ? "stale" as const
+      : observedAt
+        ? deriveQuoteStatus(mapping.providerId, observedAt, new Date(fetchedAt))
+        : "delayed" as const;
+    const warnings: ArbitrageIssueCode[] = ["costs_unverified", "verify_final_price", "provider_partial_data"];
+    if (!observedAt) warnings.push("observed_at_unavailable");
+    if (status === "stale") warnings.push("stale_quote");
 
     return [{
       id: `${mapping.providerId}-${quoteKind}`,
@@ -84,12 +110,14 @@ export function normalizeComparaDolarUsdPayload(payload: unknown, fetchedAt: str
       originalBuyLabel: isCryptoCircuit ? "ask (USD → USDT → ARS, ComparaDólar)" : `ask (${isMep ? "Dólar MEP" : "Comprás a"}, ComparaDólar)`,
       originalSellLabel: isCryptoCircuit ? "bid (USD → USDT → ARS, ComparaDólar)" : `bid (${isMep ? "Dólar MEP" : "Vendés a"}, ComparaDólar)`,
       quoteCurrency: "ARS" as const,
+      observedAt,
       fetchedAt,
       sourceUrl: COMPARADOLAR_API_URL,
       sourceType: "aggregator" as const,
-      status: "delayed" as const,
+      status,
       estimatedDelaySeconds: 300,
       sourcePollingIntervalSeconds: 300,
+      availabilityNote: typeof row.conditions === "string" && row.conditions.trim() ? row.conditions.trim() : undefined,
       fees: {
         description: isCryptoCircuit
           ? "Tipo de cambio compuesto USD → USDT → ARS agregado por ComparaDólar; costos y monto final deben verificarse en Fiwind."

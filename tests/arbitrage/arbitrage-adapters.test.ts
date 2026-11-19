@@ -3,6 +3,7 @@ import test from "node:test";
 import { parseBnaBilleteHtml } from "../../lib/arbitrage/adapters/bna";
 import { normalizeComparaDolarUsdPayload } from "../../lib/arbitrage/adapters/comparadolar";
 import { normalizeCriptoYaPayloads } from "../../lib/arbitrage/adapters/criptoya";
+import { parseDolaritoBrubankHtml } from "../../lib/arbitrage/adapters/dolarito";
 import { errorResult } from "../../lib/arbitrage/adapters/shared";
 import { normalizePlusPayload } from "../../lib/arbitrage/adapters/plus";
 import { getFreshnessStatus, getRetrievalFreshnessStatus } from "../../lib/arbitrage/freshness";
@@ -21,10 +22,10 @@ test("normalizes Plus sell/buy fields to the user perspective", () => {
   assert.equal(quote?.fees?.confidence, "confirmed");
 });
 
-test("Plus is registered as bank USD without a verified 24/7 claim", () => {
+test("Plus is registered as bank USD with its documented 24/7 availability", () => {
   const plus = getArbitrageProvider("plus");
-  assert.equal(plus?.operates24x7, false);
-  assert.equal(plus?.verification.availability24x7, "unverified");
+  assert.equal(plus?.operates24x7, true);
+  assert.equal(plus?.verification.availability24x7, "verified");
 });
 
 test("Plus parses the real Argentina timestamp separately from fetchedAt and preserves genuine staleness", () => {
@@ -115,14 +116,14 @@ test("Fiwind is integrated as an aggregator reference without upgrading route ca
   assert.equal(fiwind?.verification.sameHolder, "verified");
 });
 
-test("ComparaDólar preserves the user perspective and never invents observation time", () => {
+test("ComparaDólar preserves the user perspective and uses source metadata without inventing it", () => {
   const result = normalizeComparaDolarUsdPayload([
-    { slug: "plus", bid: 1475, ask: 1515 },
-    { slug: "banco-hipotecario", bid: "1490.25", ask: "1520.50" },
-    { slug: "fiwind-cripto", bid: 1504, ask: 1532 },
-    { slug: "cocos", bid: 1508, ask: 1528 },
-    { slug: "fiwind-mep", bid: 1510, ask: 1525 },
-    { slug: "plus-inversiones", bid: 1507, ask: 1526 },
+    { slug: "plus", bid: 1475, ask: 1515, usdType: "Oficial" },
+    { slug: "banco-hipotecario", bid: "1490.25", ask: "1520.50", usdType: "Oficial", lastSeenAt: "2026-08-04T20:09:00.000Z", stale: false },
+    { slug: "fiwind-cripto", bid: 1504, ask: 1532, usdType: "Cripto" },
+    { slug: "cocos", bid: 1508, ask: 1528, usdType: "MEP" },
+    { slug: "fiwind-mep", bid: 1510, ask: 1525, usdType: "MEP" },
+    { slug: "plus-inversiones", bid: 1507, ask: 1526, usdType: "MEP" },
     { slug: "uala", bid: 1_480_000, ask: 1_515_000 },
   ], fetchedAt);
 
@@ -131,8 +132,8 @@ test("ComparaDólar preserves the user perspective and never invents observation
   const bank = result.quotes[0];
   assert.equal(bank?.userBuysUsdAt, 1520.5);
   assert.equal(bank?.userSellsUsdAt, 1490.25);
-  assert.equal(bank?.observedAt, undefined);
-  assert.equal(getFreshnessStatus(bank!), "unverifiable");
+  assert.equal(bank?.observedAt, "2026-08-04T20:09:00.000Z");
+  assert.equal(getFreshnessStatus(bank!, new Date(fetchedAt)), "fresh");
   assert.equal(getRetrievalFreshnessStatus(bank!, new Date("2026-08-04T20:14:59.000Z")), "recent");
   assert.equal(getRetrievalFreshnessStatus(bank!, new Date("2026-08-04T20:15:01.000Z")), "delayed");
   assert.equal(getRetrievalFreshnessStatus(bank!, new Date("2026-08-04T20:20:01.000Z")), "stale");
@@ -155,9 +156,45 @@ test("ComparaDólar preserves the user perspective and never invents observation
 test("provider registry distinguishes documented official and MEP products", () => {
   assert.equal(getArbitrageProvider("cocos")?.usdProducts?.mep?.status, "documented");
   assert.equal(getArbitrageProvider("cocos")?.usdProducts?.official?.status, "not_documented");
-  assert.equal(getArbitrageProvider("mercadopago")?.usdProducts?.official?.status, "documented");
+  assert.equal(getArbitrageProvider("mercadopago")?.usdProducts?.official?.status, "not_documented");
   assert.equal(getArbitrageProvider("mercadopago")?.usdProducts?.mep?.status, "documented");
   assert.equal(getArbitrageProvider("mercadopago")?.sourceType, "unavailable");
+  assert.equal(getArbitrageProvider("balanz")?.usdProducts?.official?.status, "not_documented");
+  assert.equal(getArbitrageProvider("balanz")?.usdProducts?.mep?.status, "documented");
+  assert.equal(getArbitrageProvider("balanz-cambio")?.legalName, "Dólar Balanz S.A.U.");
+  assert.equal(getArbitrageProvider("balanz-cambio")?.usdProducts?.official?.status, "documented");
+  assert.equal(getArbitrageProvider("cocos-bank")?.usdProducts?.official?.status, "documented");
+  assert.equal(getArbitrageProvider("brubank")?.name, "Brubank");
+  assert.equal(getArbitrageProvider("brubank-ultra")?.name, "Brubank Ultra");
+});
+
+test("Dolarito exposes the standard Brubank quote separately from Ultra", () => {
+  const observedAt = "2026-08-04T20:09:00.000Z";
+  const html = `<script>self.__next_f.push([1,"\\\"quotation\\\":{\\\"name\\\":\\\"Brubank\\\",\\\"buy\\\":1495,\\\"sell\\\":1518,\\\"timestamp\\\":${Date.parse(observedAt)},\\\"variation\\\":null}"])</script>`;
+  const result = parseDolaritoBrubankHtml(html, fetchedAt);
+  const quote = result.quotes[0];
+
+  assert.equal(result.status, "success");
+  assert.equal(quote?.providerId, "brubank");
+  assert.equal(quote?.userBuysUsdAt, 1518);
+  assert.equal(quote?.userSellsUsdAt, 1495);
+  assert.equal(quote?.observedAt, observedAt);
+  assert.match(quote?.availabilityNote ?? "", /estándar/i);
+});
+
+test("ComparaDólar validates product type, source staleness and provider conditions", () => {
+  const result = normalizeComparaDolarUsdPayload([
+    { slug: "balanz", bid: 1490, ask: 1520, usdType: "MEP", lastSeenAt: "2026-08-04T20:09:00.000Z" },
+    { slug: "banco-supervielle", bid: 1480, ask: 1525, usdType: "Oficial", lastSeenAt: "2026-07-20T12:00:00.000Z", stale: true },
+    { slug: "brubank-ultra", bid: 1495, ask: 1519, usdType: "Oficial", lastSeenAt: "2026-08-04T20:09:00.000Z", stale: false, conditions: "Solo para clientes Ultra" },
+    { slug: "cocos-bank", bid: 1492, ask: 1518, usdType: "Oficial", lastSeenAt: "2026-08-04T20:09:00.000Z", stale: false },
+  ], fetchedAt);
+
+  assert.deepEqual(result.quotes.map((quote) => quote.providerId), ["banco-supervielle", "brubank-ultra", "cocos-bank"]);
+  assert.equal(result.quotes[0]?.status, "stale");
+  assert.ok(result.quotes[0]?.warnings.includes("stale_quote"));
+  assert.equal(result.quotes[1]?.availabilityNote, "Solo para clientes Ultra");
+  assert.equal(result.quotes[2]?.instrument, "official_usd");
 });
 
 test("ComparaDólar rejects inverted or unusably scaled curated rows", () => {

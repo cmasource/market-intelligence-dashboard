@@ -7,6 +7,8 @@ const DEFAULT_POLICY: FreshnessPolicy = { freshSeconds: 120, warningSeconds: 300
 const POLICIES: Record<string, FreshnessPolicy> = {
   plus: { freshSeconds: 120, warningSeconds: 600 },
   bna: { freshSeconds: 4 * 60 * 60, warningSeconds: 12 * 60 * 60 },
+  brubank: { freshSeconds: 6 * 60, warningSeconds: 15 * 60 },
+  "brubank-ultra": { freshSeconds: 6 * 60, warningSeconds: 15 * 60 },
   belo: DEFAULT_POLICY,
   dolarapp: DEFAULT_POLICY,
   satoshitango: DEFAULT_POLICY,

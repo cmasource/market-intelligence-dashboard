@@ -134,6 +134,7 @@ export type FxQuote = {
   status: QuoteStatus;
   estimatedDelaySeconds?: number;
   sourcePollingIntervalSeconds?: number;
+  availabilityNote?: string;
   fees?: QuoteFees;
   limits?: QuoteLimits;
   warnings: ArbitrageIssueCode[];
@@ -242,6 +243,7 @@ export type ArbitrageQuotesResponse = {
     bnaTtlSeconds: number;
     criptoYaTtlSeconds: number;
     comparaDolarTtlSeconds: number;
+    dolaritoBrubankTtlSeconds: number;
   };
   disclaimer: "informational_only";
 };
