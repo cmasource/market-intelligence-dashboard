@@ -301,11 +301,11 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     supportsUsdDeposit: true,
     supportsUsdWithdrawal: true,
     requiresSameHolderAccount: true,
-    sourceType: "aggregator",
+    sourceType: "unavailable",
     status: "active",
     verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "verified" },
     usdProducts: {
-      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://www.brubank.com/dolar-oficial" },
+      official: { status: "documented", quoteAccess: "authenticated_only", documentationUrl: "https://www.brubank.com/dolar-oficial" },
     },
   },
   {
@@ -369,23 +369,6 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     verification: { deposit: "unverified", withdrawal: "unverified", sameHolder: "unverified", transferAsset: "partially_verified", availability24x7: "reference_only" },
     usdProducts: {
       official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://tiendadolar.com.ar/" },
-    },
-  },
-  {
-    id: "balanz-cambio",
-    name: "Dólar Balanz",
-    legalName: "Dólar Balanz S.A.U.",
-    providerType: "exchange_agency",
-    websiteUrl: "https://www.dolarbalanz.com/",
-    operates24x7: false,
-    supportsUsdDeposit: true,
-    supportsUsdWithdrawal: true,
-    requiresSameHolderAccount: true,
-    sourceType: "aggregator",
-    status: "active",
-    verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "verified", transferAsset: "partially_verified", availability24x7: "reference_only" },
-    usdProducts: {
-      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://www.dolarbalanz.com/" },
     },
   },
   {

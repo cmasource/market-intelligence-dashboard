@@ -3,7 +3,6 @@ import test from "node:test";
 import { parseBnaBilleteHtml } from "../../lib/arbitrage/adapters/bna";
 import { normalizeComparaDolarUsdPayload } from "../../lib/arbitrage/adapters/comparadolar";
 import { normalizeCriptoYaPayloads } from "../../lib/arbitrage/adapters/criptoya";
-import { parseDolaritoBrubankHtml } from "../../lib/arbitrage/adapters/dolarito";
 import { errorResult } from "../../lib/arbitrage/adapters/shared";
 import { normalizePlusPayload } from "../../lib/arbitrage/adapters/plus";
 import { getFreshnessStatus, getRetrievalFreshnessStatus } from "../../lib/arbitrage/freshness";
@@ -161,30 +160,17 @@ test("provider registry distinguishes documented official and MEP products", () 
   assert.equal(getArbitrageProvider("mercadopago")?.sourceType, "unavailable");
   assert.equal(getArbitrageProvider("balanz")?.usdProducts?.official?.status, "not_documented");
   assert.equal(getArbitrageProvider("balanz")?.usdProducts?.mep?.status, "documented");
-  assert.equal(getArbitrageProvider("balanz-cambio")?.legalName, "Dólar Balanz S.A.U.");
-  assert.equal(getArbitrageProvider("balanz-cambio")?.usdProducts?.official?.status, "documented");
+  assert.equal(getArbitrageProvider("balanz-cambio"), undefined);
   assert.equal(getArbitrageProvider("cocos-bank")?.usdProducts?.official?.status, "documented");
-  assert.equal(getArbitrageProvider("brubank")?.name, "Brubank");
+  assert.equal(getArbitrageProvider("brubank")?.sourceType, "unavailable");
+  assert.equal(getArbitrageProvider("brubank")?.usdProducts?.official?.quoteAccess, "authenticated_only");
   assert.equal(getArbitrageProvider("brubank-ultra")?.name, "Brubank Ultra");
-});
-
-test("Dolarito exposes the standard Brubank quote separately from Ultra", () => {
-  const observedAt = "2026-08-04T20:09:00.000Z";
-  const html = `<script>self.__next_f.push([1,"\\\"quotation\\\":{\\\"name\\\":\\\"Brubank\\\",\\\"buy\\\":1495,\\\"sell\\\":1518,\\\"timestamp\\\":${Date.parse(observedAt)},\\\"variation\\\":null}"])</script>`;
-  const result = parseDolaritoBrubankHtml(html, fetchedAt);
-  const quote = result.quotes[0];
-
-  assert.equal(result.status, "success");
-  assert.equal(quote?.providerId, "brubank");
-  assert.equal(quote?.userBuysUsdAt, 1518);
-  assert.equal(quote?.userSellsUsdAt, 1495);
-  assert.equal(quote?.observedAt, observedAt);
-  assert.match(quote?.availabilityNote ?? "", /estándar/i);
 });
 
 test("ComparaDólar validates product type, source staleness and provider conditions", () => {
   const result = normalizeComparaDolarUsdPayload([
     { slug: "balanz", bid: 1490, ask: 1520, usdType: "MEP", lastSeenAt: "2026-08-04T20:09:00.000Z" },
+    { slug: "balanz", bid: 1490, ask: 1520, usdType: "Oficial", lastSeenAt: "2026-08-04T20:09:00.000Z" },
     { slug: "banco-supervielle", bid: 1480, ask: 1525, usdType: "Oficial", lastSeenAt: "2026-07-20T12:00:00.000Z", stale: true },
     { slug: "brubank-ultra", bid: 1495, ask: 1519, usdType: "Oficial", lastSeenAt: "2026-08-04T20:09:00.000Z", stale: false, conditions: "Solo para clientes Ultra" },
     { slug: "cocos-bank", bid: 1492, ask: 1518, usdType: "Oficial", lastSeenAt: "2026-08-04T20:09:00.000Z", stale: false },

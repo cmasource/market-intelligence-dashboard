@@ -100,7 +100,7 @@ test("documented USD account providers can build a transfer route to Fiwind", ()
     userSellsUsdAt: 1510,
   });
 
-  for (const providerId of ["banco-ciudad", "banco-hipotecario", "banco-provincia", "banco-supervielle", "bancor", "brubank", "brubank-ultra", "uala", "reba", "balanz-cambio"]) {
+  for (const providerId of ["banco-ciudad", "banco-hipotecario", "banco-provincia", "banco-supervielle", "bancor", "brubank-ultra", "uala", "reba"]) {
     const provider = getArbitrageProvider(providerId);
     assert.equal(provider?.supportsUsdDeposit, true, `${providerId} should accept USD transfers`);
     assert.equal(provider?.supportsUsdWithdrawal, true, `${providerId} should send USD transfers`);
@@ -113,7 +113,7 @@ test("documented USD account providers can build a transfer route to Fiwind", ()
   }
 });
 
-test("Brubank and Reba official USD routes to Fiwind preserve a positive gross difference as operable", () => {
+test("Brubank Ultra and Reba official USD routes to Fiwind preserve a positive gross difference as operable", () => {
   const destination = quote({
     id: "fiwind-usd-via-usdt",
     providerId: "fiwind",
@@ -126,7 +126,7 @@ test("Brubank and Reba official USD routes to Fiwind preserve a positive gross d
     verification: { quote: "reference_only", costs: "unverified", limits: "unverified", transferAsset: "partially_verified" },
   });
 
-  for (const providerId of ["brubank", "brubank-ultra", "reba"]) {
+  for (const providerId of ["brubank-ultra", "reba"]) {
     const source = quote({
       id: `${providerId}-usd`,
       providerId,

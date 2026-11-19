@@ -2,14 +2,13 @@ import "server-only";
 import { BnaQuoteAdapter } from "./adapters/bna";
 import { ComparaDolarUsdAdapter } from "./adapters/comparadolar";
 import { CriptoYaStablecoinAdapter } from "./adapters/criptoya";
-import { DolaritoBrubankAdapter } from "./adapters/dolarito";
 import { errorResult } from "./adapters/shared";
 import { PlusQuoteAdapter } from "./adapters/plus";
 import { ARBITRAGE_PROVIDERS } from "./provider-registry";
 import { buildUsdCryptoCircuits } from "./conversion-circuits";
 import type { ArbitrageQuoteProvider, ArbitrageQuotesResponse, ProviderQuoteResult } from "./types";
 
-const adapters: ArbitrageQuoteProvider[] = [new PlusQuoteAdapter(), new BnaQuoteAdapter(), new CriptoYaStablecoinAdapter(), new ComparaDolarUsdAdapter(), new DolaritoBrubankAdapter()];
+const adapters: ArbitrageQuoteProvider[] = [new PlusQuoteAdapter(), new BnaQuoteAdapter(), new CriptoYaStablecoinAdapter(), new ComparaDolarUsdAdapter()];
 const cache = new Map<string, { result: ProviderQuoteResult; expiresAt: number }>();
 const inFlight = new Map<string, Promise<ProviderQuoteResult>>();
 
@@ -58,7 +57,7 @@ export async function getArbitrageQuotes(forceRefresh = false): Promise<Arbitrag
     quotes,
     usdCryptoCircuits: buildUsdCryptoCircuits(quotes),
     providerResults,
-    cache: { plusTtlSeconds: 60, bnaTtlSeconds: 300, criptoYaTtlSeconds: 60, comparaDolarTtlSeconds: 60, dolaritoBrubankTtlSeconds: 300 },
+    cache: { plusTtlSeconds: 60, bnaTtlSeconds: 300, criptoYaTtlSeconds: 60, comparaDolarTtlSeconds: 60 },
     disclaimer: "informational_only",
   };
 }

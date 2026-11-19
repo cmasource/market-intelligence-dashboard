@@ -19,7 +19,6 @@ const PROVIDER_LOGO_DOMAINS: Record<string, string> = {
   brubank: "brubank.com",
   "brubank-ultra": "brubank.com",
   balanz: "balanz.com",
-  "balanz-cambio": "dolarbalanz.com",
   "cocos-bank": "cocos.capital",
   galicia: "galicia.ar",
   santander: "santander.com.ar",

@@ -27,7 +27,6 @@ const CURATED_PROVIDERS: Record<string, ProviderMapping> = {
   "fiwind-mep": { providerId: "fiwind", instrument: "mep", transferVerification: "partially_verified", expectedUsdType: "MEP" },
   cocos: { providerId: "cocos", instrument: "mep", transferVerification: "partially_verified", expectedUsdType: "MEP" },
   "plus-inversiones": { providerId: "plus", instrument: "mep", transferVerification: "partially_verified", expectedUsdType: "MEP" },
-  balanz: { providerId: "balanz-cambio", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
   "banco-bica": { providerId: "banco-bica", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
   "banco-ciudad": { providerId: "banco-ciudad", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
   "banco-hipotecario": { providerId: "banco-hipotecario", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },

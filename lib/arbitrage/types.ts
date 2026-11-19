@@ -243,7 +243,6 @@ export type ArbitrageQuotesResponse = {
     bnaTtlSeconds: number;
     criptoYaTtlSeconds: number;
     comparaDolarTtlSeconds: number;
-    dolaritoBrubankTtlSeconds: number;
   };
   disclaimer: "informational_only";
 };
