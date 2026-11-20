@@ -38,6 +38,9 @@ export function ProviderQuoteCard({ quote, provider, asset, isBestBuy, isBestSel
   const referenceOnly = quote.verification.quote === "reference_only";
   const observedLabel = quote.observedAt ? formatAge(quote.observedAt, language) : undefined;
   const fetchedLabel = formatAge(quote.fetchedAt, language);
+  const sourceDateLabel = quote.sourceDate
+    ? new Intl.DateTimeFormat(language === "es" ? "es-AR" : "en-US", { timeZone: "UTC", dateStyle: "short" }).format(new Date(`${quote.sourceDate}T12:00:00Z`))
+    : undefined;
   const displayedFreshness = freshness === "unverifiable" ? retrievalFreshness : freshness;
   const freshnessLabel = freshness === "unverifiable"
     ? retrievalFreshness === "stale"
@@ -99,6 +102,7 @@ export function ProviderQuoteCard({ quote, provider, asset, isBestBuy, isBestSel
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] text-[var(--cma-text-muted)]">
         <span className="inline-flex items-center gap-1"><Info size={11} aria-hidden="true" />{getVerificationLabel(quote.verification.quote, t)}</span>
         {quote.observedAt ? <span title={formatTimestamp(quote.observedAt, language)}>{language === "es" ? "Hora de la fuente" : "Source time"}: {observedLabel}</span> : null}
+        {sourceDateLabel ? <span>{language === "es" ? "Fecha de la fuente" : "Source date"}: {sourceDateLabel}</span> : null}
         <span title={formatTimestamp(quote.fetchedAt, language)} className="font-medium text-[var(--cma-text-secondary)]">{language === "es" ? "Última consulta CMA" : "Latest CMA check"}: {fetchedLabel}</span>
         {quote.quotedAmountUsd ? <span>{language === "es" ? "Volumen" : "Volume"}: {formatUsd(quote.quotedAmountUsd, language)}</span> : null}
         {referenceOnly ? <span className="inline-flex items-center gap-1 text-sky-300"><ShieldCheck size={11} aria-hidden="true" />{language === "es" ? "Operabilidad por verificar" : "Operability pending verification"}</span> : null}

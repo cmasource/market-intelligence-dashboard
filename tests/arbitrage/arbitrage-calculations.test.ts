@@ -43,6 +43,14 @@ test("ranks user buy prices ascending and user sell prices descending", () => {
   assert.deepEqual(rankSellQuotes(quotes).map((item) => item.id), ["plus", "bna"]);
 });
 
+test("stale quotes stay visible as references but are excluded from rankings and matrices", () => {
+  const stale = quote({ id: "stale", providerId: "banco-supervielle", userBuysUsdAt: 1400, userSellsUsdAt: 1600, status: "stale" });
+  const live = quote({ id: "live", providerId: "bna", userBuysUsdAt: 1500, userSellsUsdAt: 1490 });
+  assert.deepEqual(rankBuyQuotes([stale, live]).map((item) => item.id), ["live"]);
+  assert.deepEqual(rankSellQuotes([stale, live]).map((item) => item.id), ["live"]);
+  assert.ok(buildOpportunityMatrix([stale, live], 1000).every((item) => item.sourceQuoteId === "live" && item.destinationQuoteId === "live"));
+});
+
 test("calculates positive spread, gross profit, known costs and return", () => {
   const source = quote({ id: "plus", providerId: "plus", userBuysUsdAt: 1500, fees: { fixedArs: 100, percentage: 0.001, confidence: "confirmed" } });
   const destination = quote({ id: "bna", providerId: "bna", userSellsUsdAt: 1520, fees: { fixedArs: 50, percentage: 0.002, confidence: "confirmed" } });

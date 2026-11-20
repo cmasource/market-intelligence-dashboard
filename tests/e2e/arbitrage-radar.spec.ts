@@ -81,7 +81,7 @@ function response({ negative = false } = {}) {
       { providerId: "comparadolar-usd", quotes: [quotes[2], quotes[3]], status: "partial", fetchedAt: now, cacheStatus: "fresh" },
       { providerId: "criptoya-stablecoins", quotes: quotes.slice(4), status: "success", fetchedAt: now, cacheStatus: "fresh" },
     ],
-    cache: { plusTtlSeconds: 60, bnaTtlSeconds: 300, criptoYaTtlSeconds: 60, comparaDolarTtlSeconds: 60 },
+    cache: { plusTtlSeconds: 60, bnaTtlSeconds: 300, supervielleTtlSeconds: 300, criptoYaTtlSeconds: 60, comparaDolarTtlSeconds: 60 },
     disclaimer: "informational_only",
   };
 }

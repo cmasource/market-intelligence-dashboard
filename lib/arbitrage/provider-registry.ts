@@ -269,11 +269,11 @@ export const ARBITRAGE_PROVIDERS: FxProvider[] = [
     supportsUsdDeposit: true,
     supportsUsdWithdrawal: true,
     requiresSameHolderAccount: true,
-    sourceType: "aggregator",
+    sourceType: "public_page",
     status: "active",
     verification: { deposit: "partially_verified", withdrawal: "partially_verified", sameHolder: "partially_verified", transferAsset: "partially_verified", availability24x7: "reference_only" },
     usdProducts: {
-      official: { status: "documented", quoteAccess: "aggregated_public", documentationUrl: "https://www.supervielle.com.ar/personas/inversiones/moneda-extranjera/compra-y-venta" },
+      official: { status: "documented", quoteAccess: "direct_public", documentationUrl: "https://personas.supervielle.com.ar/Pages/QuotesPanel/Quotes.aspx" },
     },
   },
   {

@@ -36,7 +36,10 @@ export function getRetrievalFreshnessStatus(quote: FxQuote, now = new Date()): R
 
 export function getFreshnessStatus(quote: FxQuote, now = new Date()): FreshnessStatus {
   if (["stale", "unavailable", "error"].includes(quote.status)) return "stale";
-  if (!quote.observedAt) return "unverifiable";
+  if (!quote.observedAt) {
+    if (quote.sourceDate) return quote.status === "live" ? "fresh" : "warning";
+    return "unverifiable";
+  }
   const policy = POLICIES[quote.providerId] ?? DEFAULT_POLICY;
   const age = quoteAgeSeconds(quote, now);
   if (age > policy.warningSeconds) return "stale";

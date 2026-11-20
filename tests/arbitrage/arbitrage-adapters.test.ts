@@ -5,6 +5,7 @@ import { normalizeComparaDolarUsdPayload } from "../../lib/arbitrage/adapters/co
 import { normalizeCriptoYaPayloads } from "../../lib/arbitrage/adapters/criptoya";
 import { errorResult } from "../../lib/arbitrage/adapters/shared";
 import { normalizePlusPayload } from "../../lib/arbitrage/adapters/plus";
+import { parseSupervielleQuotesHtml } from "../../lib/arbitrage/adapters/supervielle";
 import { getFreshnessStatus, getRetrievalFreshnessStatus } from "../../lib/arbitrage/freshness";
 import { getArbitrageProvider } from "../../lib/arbitrage/provider-registry";
 
@@ -50,6 +51,32 @@ test("normalizes BNA entity Compra/Venta labels to the user perspective", () => 
   assert.equal(quote?.userSellsUsdAt, 1465);
   assert.equal(quote?.originalBuyLabel, "Venta");
   assert.equal(quote?.originalSellLabel, "Compra");
+});
+
+test("Supervielle uses the official page date without inventing a source time", () => {
+  const result = parseSupervielleQuotesHtml(`
+    <span id="lblDate">20-11-2026</span>
+    <table><tr><td class="texto">U$S EEUU</td><td class="coti">1520,50</td><td class="coti">1575,50</td></tr></table>
+  `, "2026-11-20T14:45:00.000Z");
+  const quote = result.quotes[0];
+  assert.equal(result.status, "success");
+  assert.equal(quote?.userSellsUsdAt, 1520.5);
+  assert.equal(quote?.userBuysUsdAt, 1575.5);
+  assert.equal(quote?.sourceDate, "2026-11-20");
+  assert.equal(quote?.observedAt, undefined);
+  assert.equal(quote?.status, "live");
+  assert.equal(quote?.verification.quote, "partially_verified");
+  assert.equal(getFreshnessStatus(quote!, new Date("2026-11-20T14:45:00.000Z")), "fresh");
+});
+
+test("Supervielle rejects an old official-page date as stale", () => {
+  const result = parseSupervielleQuotesHtml(`
+    <span id="lblDate">05-11-2026</span>
+    <table><tr><td class="texto">U$S EEUU</td><td class="coti">1520,50</td><td class="coti">1575,50</td></tr></table>
+  `, "2026-11-20T14:45:00.000Z");
+  assert.equal(result.status, "partial");
+  assert.equal(result.quotes[0]?.status, "stale");
+  assert.equal(getFreshnessStatus(result.quotes[0]!), "stale");
 });
 
 test("CriptoYa normalizes effective stablecoin prices, assets, timestamps and reference volume", () => {
@@ -176,11 +203,9 @@ test("ComparaDólar validates product type, source staleness and provider condit
     { slug: "cocos-bank", bid: 1492, ask: 1518, usdType: "Oficial", lastSeenAt: "2026-08-04T20:09:00.000Z", stale: false },
   ], fetchedAt);
 
-  assert.deepEqual(result.quotes.map((quote) => quote.providerId), ["banco-supervielle", "brubank-ultra", "cocos-bank"]);
-  assert.equal(result.quotes[0]?.status, "stale");
-  assert.ok(result.quotes[0]?.warnings.includes("stale_quote"));
-  assert.equal(result.quotes[1]?.availabilityNote, "Solo para clientes Ultra");
-  assert.equal(result.quotes[2]?.instrument, "official_usd");
+  assert.deepEqual(result.quotes.map((quote) => quote.providerId), ["brubank-ultra", "cocos-bank"]);
+  assert.equal(result.quotes[0]?.availabilityNote, "Solo para clientes Ultra");
+  assert.equal(result.quotes[1]?.instrument, "official_usd");
 });
 
 test("ComparaDólar rejects inverted or unusably scaled curated rows", () => {

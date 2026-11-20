@@ -31,7 +31,6 @@ const CURATED_PROVIDERS: Record<string, ProviderMapping> = {
   "banco-ciudad": { providerId: "banco-ciudad", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
   "banco-hipotecario": { providerId: "banco-hipotecario", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
   "banco-provincia": { providerId: "banco-provincia", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
-  "banco-supervielle": { providerId: "banco-supervielle", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
   bancor: { providerId: "bancor", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
   "brubank-ultra": { providerId: "brubank-ultra", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },
   "cocos-bank": { providerId: "cocos-bank", instrument: "official_usd", transferVerification: "partially_verified", expectedUsdType: "Oficial" },

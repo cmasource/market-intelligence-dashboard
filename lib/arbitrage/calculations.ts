@@ -118,13 +118,13 @@ export function buildOpportunityMatrixForAsset(quotes: FxQuote[], transferAsset:
 
 export function rankBuyQuotes(quotes: FxQuote[]) {
   return quotes
-    .filter((quote) => typeof quote.userBuysUsdAt === "number" && quote.userBuysUsdAt > 0)
+    .filter((quote) => getFreshnessStatus(quote) !== "stale" && typeof quote.userBuysUsdAt === "number" && quote.userBuysUsdAt > 0)
     .toSorted((left, right) => (left.userBuysUsdAt ?? Infinity) - (right.userBuysUsdAt ?? Infinity));
 }
 
 export function rankSellQuotes(quotes: FxQuote[]) {
   return quotes
-    .filter((quote) => typeof quote.userSellsUsdAt === "number" && quote.userSellsUsdAt > 0)
+    .filter((quote) => getFreshnessStatus(quote) !== "stale" && typeof quote.userSellsUsdAt === "number" && quote.userSellsUsdAt > 0)
     .toSorted((left, right) => (right.userSellsUsdAt ?? 0) - (left.userSellsUsdAt ?? 0));
 }
 

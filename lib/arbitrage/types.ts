@@ -128,6 +128,7 @@ export type FxQuote = {
   quoteCurrency: "ARS";
   quotedAmountUsd?: number;
   observedAt?: string;
+  sourceDate?: string;
   fetchedAt: string;
   sourceUrl?: string;
   sourceType: QuoteSourceType;
@@ -241,6 +242,7 @@ export type ArbitrageQuotesResponse = {
   cache: {
     plusTtlSeconds: number;
     bnaTtlSeconds: number;
+    supervielleTtlSeconds: number;
     criptoYaTtlSeconds: number;
     comparaDolarTtlSeconds: number;
   };
